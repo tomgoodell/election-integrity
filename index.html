@@ -93,6 +93,19 @@
   .btn-approve:hover { background: #9fe1cb; }
   .btn-reject { padding: 6px 16px; font-size: 13px; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; cursor: pointer; font-family: inherit; }
   .btn-reject:hover { background: #f5c4b3; }
+  .view-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  .results-count { font-size: 13px; color: #888; }
+  .toggle-btn { font-size: 13px; padding: 5px 12px; border: 1px solid #ddd; border-radius: 8px; background: none; color: #666; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .toggle-btn:hover { background: #f5f5f3; }
+  .alpha-bar { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 1rem; }
+  .alpha-btn { width: 28px; height: 28px; font-size: 12px; font-weight: 500; border: 1px solid #e0e0db; border-radius: 6px; background: none; color: #888; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
+  .alpha-btn:hover { background: #f5f5f3; color: #1a1a1a; border-color: #ccc; }
+  .alpha-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+  .alpha-btn.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+  .card-compact { padding: 0.7rem 1.25rem; }
+  .card-compact .card-desc { display: none; }
+  .card-compact .card-name { margin-bottom: 2px; }
+  .card-compact .card-geo { margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -122,7 +135,11 @@
       <select id="f-partisan" onchange="renderCards()"><option value="">All affiliations</option><option>Non-partisan</option><option>Partisan - left</option><option>Partisan - right</option></select>
       <select id="f-state-filter" onchange="renderCards()"><option value="">All states</option><option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option></select>
     </div>
-    <div class="results-count" id="results-count"></div>
+    <div class="view-controls">
+      <div class="results-count" id="results-count"></div>
+      <button class="toggle-btn" id="toggle-desc" onclick="toggleDesc()">Show descriptions</button>
+    </div>
+    <div class="alpha-bar" id="alpha-bar"></div>
     <div id="cards-container"><div class="loading">Loading organizations…</div></div>
   </div>
 
@@ -437,7 +454,7 @@ function orgToFields(org) {
   };
 }
 
-let orgs = [], pending = [], adminLoggedIn = false;
+let orgs = [], pending = [], adminLoggedIn = false, showDesc = false, activeLetter = '';
 
 async function init() {
   try {
@@ -468,6 +485,7 @@ function showTab(t, btn) {
 function clearFilters() {
   document.getElementById('search').value = '';
   ['f-geo','f-work','f-phase','f-demo','f-voter','f-state-filter','f-partisan'].forEach(id => document.getElementById(id).value = '');
+  activeLetter = '';
   renderCards();
 }
 
@@ -486,6 +504,26 @@ function matches(org, f) {
   return true;
 }
 
+function toggleDesc() {
+  showDesc = !showDesc;
+  document.getElementById('toggle-desc').textContent = showDesc ? 'Hide descriptions' : 'Show descriptions';
+  renderCards();
+}
+
+function setLetter(letter) {
+  activeLetter = activeLetter === letter ? '' : letter;
+  renderCards();
+}
+
+function renderAlphaBar(filtered) {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const available = new Set(orgs.map(o => o.name[0].toUpperCase()));
+  const bar = document.getElementById('alpha-bar');
+  bar.innerHTML = letters.map(l => `
+    <button class="alpha-btn ${!available.has(l) ? 'disabled' : ''} ${activeLetter === l ? 'active' : ''}"
+      onclick="setLetter('${l}')">${l}</button>`).join('');
+}
+
 function renderCards() {
   const f = {
     q: document.getElementById('search').value.toLowerCase(),
@@ -497,12 +535,15 @@ function renderCards() {
     stateFilter: document.getElementById('f-state-filter').value,
     partisan: document.getElementById('f-partisan').value
   };
-  const filtered = orgs.filter(o => matches(o, f));
+  let filtered = orgs.filter(o => matches(o, f));
+  if (activeLetter) filtered = filtered.filter(o => o.name[0].toUpperCase() === activeLetter);
+  filtered.sort((a, b) => a.name.localeCompare(b.name));
+  renderAlphaBar(filtered);
   document.getElementById('results-count').textContent = filtered.length + ' organization' + (filtered.length !== 1 ? 's' : '') + ' found';
   const c = document.getElementById('cards-container');
   if (!filtered.length) { c.innerHTML = '<div class="no-results">No organizations match your filters. Try broadening your search.</div>'; return; }
   c.innerHTML = filtered.map((org, i) => `
-    <div class="card" onclick="openModal(${i})">
+    <div class="card${showDesc ? '' : ' card-compact'}" onclick="openModal(${i})">
       <div class="card-name">${org.name}</div>
       <div class="card-geo">${org.geo}${org.state ? ' · ' + org.state : ''}</div>
       <div class="card-desc">${org.desc}</div>
@@ -516,7 +557,6 @@ function renderCards() {
         ${org.needs.slice(0,2).map(t=>`<span class="tag tag-need">Need: ${t}</span>`).join('')}
       </div>
     </div>`).join('');
-  // store filtered list for modal lookup by index
   window._filtered = filtered;
 }
 
