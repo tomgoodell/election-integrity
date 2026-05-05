@@ -403,6 +403,8 @@ async function atDelete(table, id) {
   if (!res.ok) throw new Error(`Server error ${res.status}`);
   return res.json();
 }
+
+const SEED = [
   {Name:"Verified Voting Foundation",Email:"info@verifiedvoting.org",Website:"https://verifiedvoting.org",Description:"Advocates for the use of voter-verified paper ballots and accurate post-election audits to ensure elections are secure and accurate.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Research,Technology",Phase:"Voting,Vote counting,Certification",Demo:"",Voter:"",Strengths:"Research capacity,Media relations,Technology tools",StrengthsText:"Leading experts in voting technology standards and audit methodologies.",Needs:"Community organizing,Funding",NeedsText:"",SubmittedAt:new Date().toISOString()},
   {Name:"Election Protection Coalition",Email:"info@866ourvote.org",Website:"https://866ourvote.org",Description:"A nonpartisan voter protection coalition that operates the largest election protection hotline in the country on Election Day.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Legal,Training",Phase:"Voting,Voter registration",Demo:"Black communities,Latino communities",Voter:"Re-registration help",Strengths:"Legal expertise,Community organizing,Multilingual outreach,Training programs",StrengthsText:"Runs a large volunteer network of lawyers and poll workers.",Needs:"Technology tools,Data analysis",NeedsText:"Need better data tools to track and respond to polling place issues in real time.",SubmittedAt:new Date().toISOString()},
   {Name:"Midwest Election Observers Network",Email:"contact@mideobs.example.org",Website:"",Description:"Trains and deploys nonpartisan election observers across Midwestern states to monitor polling places and canvassing boards.",Geo:"State",State:"Minnesota, Wisconsin, Michigan, Ohio",Partisan:"Non-partisan",Work:"Training,Research",Phase:"Voting,Vote counting,Certification",Demo:"Rural communities",Voter:"Vote rejection monitoring",Strengths:"Training programs,Community organizing,Research capacity",StrengthsText:"Deep relationships with county election officials and experienced observer trainers.",Needs:"Legal expertise,Litigation capacity,Funding",NeedsText:"Need legal support when observers are denied access or results are contested.",SubmittedAt:new Date().toISOString()},
@@ -480,6 +482,7 @@ function matches(org, f) {
   if (f.demo && !org.demo.includes(f.demo)) return false;
   if (f.voter && !org.voter.includes(f.voter)) return false;
   if (f.stateFilter && !org.state.toLowerCase().includes(f.stateFilter.toLowerCase())) return false;
+  if (f.partisan && org.partisan !== f.partisan) return false;
   return true;
 }
 
