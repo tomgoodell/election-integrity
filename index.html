@@ -436,7 +436,7 @@
 const TABLE_ORGS     = 'Organizations';
 const TABLE_PENDING  = 'Pending';
 const ADMIN_PASSWORD = 'VerilyNow74';
-const API = '/functions/airtable';
+const API = '/airtable';
 
 async function atGet(table) {
   const res = await fetch(`${API}?table=${encodeURIComponent(table)}`);
