@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Election Integrity Resource Directory</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.6/standalone/umd/vis-network.min.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; background: #f5f5f3; min-height: 100vh; }
@@ -124,6 +125,7 @@
   <div class="tabs">
     <button class="tab active" onclick="showTab('browse',this)">Browse groups</button>
     <button class="tab" onclick="showTab('submit',this)">List your group</button>
+    <button class="tab" onclick="showTab('map',this)">Network map</button>
     <button class="tab" onclick="showTab('admin',this)">Admin</button>
   </div>
 
@@ -150,6 +152,24 @@
     </div>
     <div class="alpha-bar" id="alpha-bar"></div>
     <div id="cards-container"><div class="loading">Loading organizations…</div></div>
+  </div>
+
+  <!-- MAP -->
+  <div id="tab-map" class="view">
+    <p style="font-size:14px;color:#666;margin-bottom:1rem;line-height:1.6">Select a shared attribute to see which organizations are connected by it. Click any node to view that organization's profile.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
+      <select id="map-filter-type" onchange="updateMapFilterOptions()" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#f5f5f3;color:#1a1a1a;font-family:inherit">
+        <option value="strength">Shared strength</option>
+        <option value="need">Shared need</option>
+        <option value="work">Shared service type</option>
+        <option value="phase">Shared election phase</option>
+        <option value="demo">Shared community focus</option>
+      </select>
+      <select id="map-filter-value" onchange="renderMap()" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#f5f5f3;color:#1a1a1a;font-family:inherit">
+      </select>
+      <span id="map-legend" style="font-size:12px;color:#888;margin-left:4px"></span>
+    </div>
+    <div id="map-container" style="width:100%;height:500px;border:1px solid #e0e0db;border-radius:10px;background:#fafaf8;overflow:hidden"></div>
   </div>
 
   <!-- SUBMIT -->
@@ -446,7 +466,18 @@ const SEED = [
   {Name:"Midwest Election Observers Network",Email:"contact@mideobs.example.org",Website:"",Description:"Trains and deploys nonpartisan election observers across Midwestern states to monitor polling places and canvassing boards.",Geo:"State",State:"Minnesota, Wisconsin, Michigan, Ohio",Partisan:"Non-partisan",Work:"Training,Research",Phase:"Voting,Vote counting,Certification",Demo:"Rural communities",Voter:"Vote rejection monitoring",Strengths:"Training programs,Community organizing,Research capacity",StrengthsText:"Deep relationships with county election officials and experienced observer trainers.",Needs:"Legal expertise,Litigation capacity,Funding",NeedsText:"Need legal support when observers are denied access or results are contested.",SubmittedAt:new Date().toISOString()},
   {Name:"Voter Roll Watch",Email:"data@vrwatch.example.org",Website:"",Description:"Monitors voter registration rolls across multiple states to identify and document improper purges, and helps affected voters get re-registered.",Geo:"State",State:"Arizona, Georgia, Pennsylvania, Wisconsin",Partisan:"Non-partisan",Work:"Research,Advocacy,Legal",Phase:"Voter registration",Demo:"",Voter:"Roll monitoring,Re-registration help,Vote rejection monitoring,Ballot cure",Strengths:"Data analysis,Research capacity,Legal expertise",StrengthsText:"Maintains a database of purge activity going back to 2012 and partners with academic researchers.",Needs:"Community organizing,Multilingual outreach,Funding",NeedsText:"Need on-the-ground partners who can reach affected voters directly.",SubmittedAt:new Date().toISOString()},
   {Name:"Native Vote Alliance",Email:"info@nativevote.example.org",Website:"",Description:"Works to remove barriers to voting for Native American and Alaska Native communities, including distance, ID requirements, and language access.",Geo:"State",State:"Montana, South Dakota, Alaska, New Mexico",Partisan:"Non-partisan",Work:"Advocacy,Legal,Training",Phase:"Voter registration,Voting",Demo:"Native communities,Rural communities",Voter:"Re-registration help,Roll monitoring",Strengths:"Community organizing,Multilingual outreach,Legal expertise",StrengthsText:"Deep trust within Native communities and experience with federal voting rights law.",Needs:"Technology tools,Data analysis,Media relations",NeedsText:"Need tools to document and publicize barriers voters face.",SubmittedAt:new Date().toISOString()},
-  {Name:"League of Women Voters",Email:"lwv@lwv.org",Website:"https://lwv.org",Description:"A nonpartisan organization that encourages informed and active participation in government, works to increase understanding of major public policy issues, and influences public policy through education and advocacy.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Training,Research",Phase:"Voter registration,Voting",Demo:"Youth,Seniors",Voter:"Re-registration help,Roll monitoring",Strengths:"Community organizing,Outreach,Training programs,Research capacity,Media relations",StrengthsText:"One of the oldest and most trusted nonpartisan civic organizations in the country, with chapters in all 50 states.",Needs:"Technology tools,Data analysis,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()}
+  {Name:"League of Women Voters",Email:"lwv@lwv.org",Website:"https://lwv.org",Description:"A nonpartisan organization that encourages informed and active participation in government, works to increase understanding of major public policy issues, and influences public policy through education and advocacy.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Training,Research",Phase:"Voter registration,Voting",Demo:"Youth,Seniors",Voter:"Re-registration help,Roll monitoring",Strengths:"Community organizing,Outreach,Training programs,Research capacity,Media relations",StrengthsText:"One of the oldest and most trusted nonpartisan civic organizations in the country, with chapters in all 50 states.",Needs:"Technology tools,Data analysis,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"Brennan Center for Justice",Email:"brennancenter@nyu.edu",Website:"https://brennancenter.org",Description:"A nonpartisan law and policy institute that works to ensure all Americans have an equal voice in elections, advocating through litigation, research, and policy development on voting rights, redistricting, and election security.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Research,Advocacy,Litigation",Phase:"Voter registration,Voting,Certification,Litigation",Demo:"Black communities,Latino communities",Voter:"Roll monitoring,Vote rejection monitoring",Strengths:"Legal expertise,Research capacity,Litigation capacity,Media relations",StrengthsText:"Leading national think tank and public interest law firm on democracy and voting rights issues.",Needs:"Community organizing,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"ACLU Voting Rights Project",Email:"voting@aclu.org",Website:"https://aclu.org/issues/voting-rights",Description:"Protects and expands Americans' freedom to vote through litigation, advocacy, and public education, with active cases challenging voter suppression laws in over a dozen states.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Litigation,Advocacy",Phase:"Voter registration,Voting,Litigation",Demo:"Black communities,Latino communities,Youth",Voter:"Roll monitoring,Re-registration help,Vote rejection monitoring",Strengths:"Legal expertise,Litigation capacity,Media relations,Research capacity",StrengthsText:"Has filed more than 60 lawsuits to protect voters in the 2020 and 2024 elections.",Needs:"Community organizing,Multilingual outreach,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"NAACP Legal Defense Fund",Email:"info@naacpldf.org",Website:"https://naacpldf.org",Description:"The nation's premier civil and human rights law organization, conducting litigation, advocacy, and public education to advance racial justice and protect Black voters' access to the ballot.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Litigation,Advocacy,Research",Phase:"Voter registration,Voting,Certification,Litigation",Demo:"Black communities",Voter:"Roll monitoring,Vote rejection monitoring,Re-registration help",Strengths:"Legal expertise,Litigation capacity,Research capacity,Media relations",StrengthsText:"Has represented voters in landmark Supreme Court cases and monitors elections in multiple southern states.",Needs:"Community organizing,Technology tools,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"Common Cause",Email:"democracy@commoncause.org",Website:"https://commoncause.org",Description:"A nonpartisan citizen advocacy organization fighting to ensure every adult American has equal access to the ballot and that every vote is counted, with chapters in 35 states.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Legal,Research,Training",Phase:"Voter registration,Voting,Certification",Demo:"Youth,Black communities,Latino communities",Voter:"Roll monitoring,Re-registration help",Strengths:"Community organizing,Outreach,Media relations,Research capacity,Legal expertise",StrengthsText:"Chapters in 35 states with millions of members providing grassroots organizing power.",Needs:"Technology tools,Data analysis,Funding",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"Campaign Legal Center",Email:"info@campaignlegalcenter.org",Website:"https://campaignlegalcenter.org",Description:"A nonpartisan organization that protects and strengthens democracy through litigation and policy advocacy in the areas of campaign finance, voting rights, redistricting, and government ethics.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Litigation,Advocacy,Research",Phase:"Voter registration,Voting,Certification,Litigation",Demo:"",Voter:"Roll monitoring,Vote rejection monitoring",Strengths:"Legal expertise,Litigation capacity,Research capacity",StrengthsText:"Represents voters in redistricting, voter purge, and election administration cases across the country.",Needs:"Community organizing,Media relations,Funding",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"Lawyers' Committee for Civil Rights Under Law",Email:"info@lawyerscommittee.org",Website:"https://lawyerscommittee.org",Description:"Mobilizes the private bar to advance civil rights through litigation, advocacy, and public policy work, including operating the nonpartisan 866-OUR-VOTE election protection hotline.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Litigation,Advocacy",Phase:"Voting,Voter registration,Litigation",Demo:"Black communities,Latino communities",Voter:"Vote rejection monitoring,Roll monitoring",Strengths:"Legal expertise,Litigation capacity,Community organizing",StrengthsText:"Operates the 866-OUR-VOTE hotline and has fought voter suppression in Georgia, Texas, Mississippi and beyond.",Needs:"Technology tools,Research capacity,Funding",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"Fair Fight Action",Email:"info@fairfight.com",Website:"https://fairfight.com",Description:"A Georgia-based organization that fights voter suppression nationwide, promotes fair elections, and engages voters through advocacy, education, and litigation.",Geo:"State",State:"Georgia",Partisan:"Non-partisan",Work:"Advocacy,Legal,Training",Phase:"Voter registration,Voting,Litigation",Demo:"Black communities,Youth",Voter:"Roll monitoring,Re-registration help,Vote rejection monitoring",Strengths:"Community organizing,Media relations,Outreach,Legal expertise",StrengthsText:"Founded after the 2018 Georgia governor's race, now a national force against voter suppression.",Needs:"Technology tools,Data analysis,Research capacity",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"Native American Rights Fund",Email:"info@narf.org",Website:"https://narf.org",Description:"Protects and enforces the legal rights of Native American tribes and individuals, including voting rights, language access, and removal of barriers to Native participation in elections.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Litigation,Advocacy",Phase:"Voter registration,Voting",Demo:"Native communities",Voter:"Re-registration help,Roll monitoring",Strengths:"Legal expertise,Litigation capacity,Multilingual outreach",StrengthsText:"The oldest and largest nonprofit law firm serving Native Americans, with deep expertise in federal Indian law.",Needs:"Community organizing,Technology tools,Research capacity",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"Rock the Vote",Email:"info@rockthevote.org",Website:"https://rockthevote.com",Description:"The largest nonprofit and nonpartisan organization in the United States devoted to building the political power of young people through voter registration, education, and civic engagement.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Training,Voting process information",Phase:"Voter registration,Voting",Demo:"Youth",Voter:"Re-registration help,Understanding the voting process",Strengths:"Outreach,Community organizing,Technology tools,Media relations",StrengthsText:"Pioneer in digital voter registration tools and youth civic engagement with decades of experience.",Needs:"Funding,Research capacity,Legal expertise",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"VoteRiders",Email:"info@voteriders.org",Website:"https://voteriders.org",Description:"Helps voters obtain and understand voter ID requirements, ensuring everyone can vote with confidence through direct assistance, outreach, and advocacy.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Training,Voting process information",Phase:"Voter registration,Voting",Demo:"Black communities,Latino communities,Seniors,Native communities",Voter:"Re-registration help,Understanding the voting process",Strengths:"Community organizing,Multilingual outreach,Outreach,Training programs",StrengthsText:"Provides direct one-on-one assistance to voters who need help obtaining ID, with multilingual staff.",Needs:"Funding,Technology tools,Legal expertise",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"Advancement Project",Email:"info@advancementproject.org",Website:"https://advancementproject.org",Description:"A next-generation, multi-racial civil rights organization that uses innovative tools and strategies to strengthen social movements and achieve universal opportunity for all.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Advocacy,Research,Training",Phase:"Voter registration,Voting,Litigation",Demo:"Black communities,Latino communities,Youth",Voter:"Roll monitoring,Vote rejection monitoring,Re-registration help",Strengths:"Legal expertise,Community organizing,Research capacity,Media relations",StrengthsText:"Combines cutting-edge legal tools with community organizing to combat voter suppression.",Needs:"Technology tools,Funding,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()}
 ];
 
 function recordToOrg(r) {
@@ -475,6 +506,101 @@ function orgToFields(org) {
 
 let orgs = [], pending = [], adminLoggedIn = false, showDesc = false, activeLetter = '';
 
+// ── Network Map ─────────────────────────────────────────────────
+const MAP_OPTIONS = {
+  strength: { label: 'Shared strength', values: ['Legal expertise','Data analysis','Community organizing','Litigation capacity','Training programs','Technology tools','Multilingual outreach','Outreach','Media relations','Funding','Research capacity'] },
+  need:     { label: 'Shared need',     values: ['Legal expertise','Data analysis','Community organizing','Litigation capacity','Training programs','Technology tools','Multilingual outreach','Media relations','Funding','Research capacity','Volunteers'] },
+  work:     { label: 'Shared service',  values: ['Legal','Advocacy','Technology','Research','Training','Litigation','Voting process information'] },
+  phase:    { label: 'Shared phase',    values: ['Voter registration','Voting','Get out the vote','Vote counting','Certification','Litigation'] },
+  demo:     { label: 'Shared community',values: ['Youth','Seniors','Rural communities','AAPI communities','Black communities','Latino communities','Native communities'] }
+};
+
+let networkInstance = null;
+
+function updateMapFilterOptions() {
+  const type = document.getElementById('map-filter-type').value;
+  const sel = document.getElementById('map-filter-value');
+  const opts = MAP_OPTIONS[type].values;
+  sel.innerHTML = opts.map(v => `<option value="${v}">${v}</option>`).join('');
+  renderMap();
+}
+
+function renderMap() {
+  const type = document.getElementById('map-filter-type').value;
+  const value = document.getElementById('map-filter-value').value;
+  if (!value || !orgs.length) return;
+
+  const getAttr = (org) => {
+    if (type === 'strength') return org.strengths;
+    if (type === 'need') return org.needs;
+    if (type === 'work') return org.work;
+    if (type === 'phase') return org.phase;
+    if (type === 'demo') return org.demo;
+    return [];
+  };
+
+  const matched = orgs.filter(o => getAttr(o).includes(value));
+  const unmatched = orgs.filter(o => !getAttr(o).includes(value));
+
+  const nodes = new vis.DataSet([
+    ...matched.map((org, i) => ({
+      id: org._id,
+      label: org.name.length > 22 ? org.name.substring(0, 20) + '…' : org.name,
+      title: org.name,
+      color: { background: '#e6f1fb', border: '#0c447c', highlight: { background: '#b5d4f4', border: '#0c447c' } },
+      font: { color: '#0c447c', size: 13 },
+      shape: 'ellipse',
+      size: 20
+    })),
+    ...unmatched.map((org) => ({
+      id: org._id,
+      label: org.name.length > 22 ? org.name.substring(0, 20) + '…' : org.name,
+      title: org.name,
+      color: { background: '#f0f0f0', border: '#ccc', highlight: { background: '#e0e0db', border: '#aaa' } },
+      font: { color: '#aaa', size: 11 },
+      shape: 'ellipse',
+      size: 14
+    }))
+  ]);
+
+  // Draw edges between all matched orgs
+  const edges = new vis.DataSet();
+  for (let i = 0; i < matched.length; i++) {
+    for (let j = i + 1; j < matched.length; j++) {
+      edges.add({ from: matched[i]._id, to: matched[j]._id, color: { color: '#b5d4f4', highlight: '#0c447c' }, width: 1.5 });
+    }
+  }
+
+  document.getElementById('map-legend').textContent =
+    `${matched.length} organization${matched.length !== 1 ? 's' : ''} share "${value}"`;
+
+  const container = document.getElementById('map-container');
+  if (networkInstance) { networkInstance.destroy(); networkInstance = null; }
+
+  networkInstance = new vis.Network(container, { nodes, edges }, {
+    physics: { solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -60, springLength: 120 }, stabilization: { iterations: 150 } },
+    interaction: { hover: true, tooltipDelay: 100 },
+    nodes: { borderWidth: 1.5 },
+    edges: { smooth: { type: 'continuous' } }
+  });
+
+  networkInstance.on('click', (params) => {
+    if (params.nodes.length) {
+      const id = params.nodes[0];
+      const org = orgs.find(o => o._id === id);
+      if (org) {
+        const idx = window._filtered ? window._filtered.findIndex(o => o._id === id) : -1;
+        if (idx >= 0) { openModal(idx); }
+        else {
+          // org not in current filtered list — open directly
+          window._filtered = orgs;
+          openModal(orgs.findIndex(o => o._id === id));
+        }
+      }
+    }
+  });
+}
+
 async function init() {
   try {
     const records = await atGet(TABLE_ORGS);
@@ -499,6 +625,7 @@ function showTab(t, btn) {
   btn.classList.add('active');
   document.getElementById('tab-' + t).classList.add('active');
   if (t === 'admin' && adminLoggedIn) loadPending();
+  if (t === 'map') { updateMapFilterOptions(); }
 }
 
 function clearFilters() {
