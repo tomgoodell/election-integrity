@@ -6,130 +6,141 @@
 <title>Election Integrity Resource Directory</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.6/standalone/umd/vis-network.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; background: #f5f5f3; min-height: 100vh; }
-  .page { max-width: 780px; margin: 2rem auto; background: #fff; border-radius: 12px; border: 1px solid #e0e0db; overflow: hidden; }
-  .header { padding: 1.75rem 1.5rem 1.25rem; border-bottom: 1px solid #e0e0db; }
-  .header h1 { font-size: 22px; font-weight: 500; margin-bottom: 6px; }
-  .header p { font-size: 14px; color: #666; line-height: 1.6; }
-  .tabs { display: flex; border-bottom: 1px solid #e0e0db; padding: 0 1.5rem; background: #fff; }
-  .tab { padding: 10px 18px; font-size: 14px; cursor: pointer; border: none; border-bottom: 2px solid transparent; color: #888; background: none; transition: color 0.15s; font-family: inherit; }
-  .tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 500; }
-  .tab:hover:not(.active) { color: #1a1a1a; }
-  .view { padding: 1.5rem; display: none; }
-  .view.active { display: block; }
-  .search-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
-  .search-row input { flex: 1; min-width: 200px; padding: 8px 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; color: #1a1a1a; }
-  .search-row input:focus { outline: none; border-color: #888; }
-  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
-  .filter-row select { font-size: 13px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px; background: #f5f5f3; color: #1a1a1a; cursor: pointer; font-family: inherit; }
-  .clear-btn { font-size: 13px; padding: 6px 14px; border: 1px solid #ddd; border-radius: 8px; background: none; color: #666; cursor: pointer; font-family: inherit; }
-  .clear-btn:hover { background: #f5f5f3; }
-  .results-count { font-size: 13px; color: #888; margin-bottom: 1rem; }
-  .card { background: #fff; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
-  .card:hover { border-color: #aaa; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-  .card-name { font-size: 16px; font-weight: 500; margin-bottom: 2px; }
-  .card-geo { font-size: 12px; color: #888; margin-bottom: 8px; }
-  .card-desc { font-size: 13px; color: #555; line-height: 1.55; margin-bottom: 10px; }
-  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
-  .tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; }
-  .tag-work  { background: #eeedfe; color: #3c3489; }
-  .tag-phase { background: #e1f5ee; color: #085041; }
-  .tag-demo  { background: #faeeda; color: #633806; }
-  .tag-voter { background: #faece7; color: #712b13; }
-  .tag-partisan { background: #f0f0f0; color: #444; border: 1px solid #ccc; }
-  .tag-partisan-left { background: #e8f0fe; color: #1a4fa0; border: 1px solid #b5cdf5; }
-  .tag-partisan-right { background: #fde8e8; color: #a01a1a; border: 1px solid #f5b5b5; }
-  .tag-need  { background: #eaf3de; color: #27500a; border: 1px solid #c0dd97; }
-  .tag-strength { background: #e6f1fb; color: #0c447c; border: 1px solid #b5d4f4; }
-  .no-results { text-align: center; padding: 2.5rem; color: #888; font-size: 14px; }
-  .loading { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
-  .error-msg { background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; padding: 1rem; font-size: 14px; margin-bottom: 1rem; line-height: 1.5; }
-  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
-  .modal-overlay.open { display: flex; }
-  .modal { background: #fff; border-radius: 12px; border: 1px solid #e0e0db; padding: 1.75rem; width: 100%; max-width: 540px; margin: auto; position: relative; }
-  .modal h2 { font-size: 20px; font-weight: 500; margin-bottom: 4px; padding-right: 60px; }
-  .modal-geo { font-size: 13px; color: #888; margin-bottom: 1.25rem; }
-  .modal-section { margin-bottom: 1.25rem; }
-  .modal-section h3 { font-size: 11px; font-weight: 500; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
-  .modal-close { position: absolute; top: 1.75rem; right: 1.75rem; background: none; border: 1px solid #ddd; border-radius: 8px; padding: 4px 14px; font-size: 13px; cursor: pointer; color: #666; font-family: inherit; }
-  .modal-close:hover { background: #f5f5f3; }
-  .contact-link { display: inline-block; margin-top: 4px; font-size: 14px; color: #185fa5; text-decoration: none; }
-  .contact-link:hover { text-decoration: underline; }
-  .form-intro { font-size: 14px; color: #666; margin-bottom: 1.5rem; line-height: 1.6; }
-  .section-label { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; display: block; }
-  .section-divider { border: none; border-top: 1px solid #e0e0db; margin: 1.75rem 0; }
-  .form-group { margin-bottom: 1.1rem; }
-  .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #555; }
-  .form-group input, .form-group textarea, .form-group select { width: 100%; font-size: 14px; padding: 9px 12px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: #1a1a1a; font-family: inherit; }
-  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #888; }
-  .form-group textarea { min-height: 76px; resize: vertical; line-height: 1.5; }
-  .cb-columns { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 10px; }
-  .cb-columns label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1a1a1a; cursor: pointer; line-height: 1.4; }
-  .cb-columns input[type=checkbox] { flex-shrink: 0; width: 15px; height: 15px; cursor: pointer; accent-color: #1a1a1a; }
-  .submit-btn { padding: 11px 24px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; font-family: inherit; }
-  .submit-btn:hover { background: #333; }
-  .submit-btn:disabled { background: #999; cursor: not-allowed; }
-  .cancel-btn { margin-top: 10px; padding: 10px 24px; background: none; color: #666; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; cursor: pointer; width: 100%; font-family: inherit; }
-  .cancel-btn:hover { background: #f5f5f3; }
-  .select-all-btn { margin-top: 6px; padding: 5px 12px; font-size: 13px; background: none; color: #555; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-family: inherit; }
-  .select-all-btn:hover { background: #f5f5f3; }
-  .success-msg { display: none; background: #e1f5ee; color: #085041; border: 1px solid #9fe1cb; border-radius: 8px; padding: 1rem 1.25rem; font-size: 14px; line-height: 1.6; margin-top: 1rem; }
-  .success-msg.show { display: block; }
-  .btn-edit { padding: 6px 16px; font-size: 13px; background: #f5f5f3; color: #333; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; font-family: inherit; }
-  .btn-edit:hover { background: #e8e8e5; }
-  .btn-delete { padding: 6px 16px; font-size: 13px; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; cursor: pointer; font-family: inherit; }
-  .btn-delete:hover { background: #f5c4b3; }
-  .admin-section-title { font-size: 16px; font-weight: 500; margin: 1.5rem 0 0.25rem; }
-  .admin-section-title:first-child { margin-top: 0; }
-  .admin-section-sub { font-size: 13px; color: #888; margin-bottom: 1rem; }
-  .admin-nav { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
-  .admin-nav-item { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; cursor: pointer; color: #666; background: #f5f5f3; user-select: none; }
-  .admin-nav-item input[type=radio] { display: none; }
-  .admin-nav-item.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; font-weight: 500; }
-  .admin-nav-item:hover:not(.active) { background: #e8e8e5; border-color: #ccc; }
-  .edit-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
-  .edit-overlay.open { display: flex; }
-  .edit-modal { background: #fff; border-radius: 12px; border: 1px solid #e0e0db; padding: 1.75rem; width: 100%; max-width: 600px; margin: auto; position: relative; }
-  .edit-modal h2 { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; padding-right: 60px; }
-  .edit-close { position: absolute; top: 1.75rem; right: 1.75rem; background: none; border: 1px solid #ddd; border-radius: 8px; padding: 4px 14px; font-size: 13px; cursor: pointer; color: #666; font-family: inherit; }
-  .edit-close:hover { background: #f5f5f3; }
-  .save-btn { padding: 10px 24px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; font-family: inherit; margin-top: 0.5rem; }
-  .save-btn:hover { background: #333; }
-  .save-btn:disabled { background: #999; cursor: not-allowed; }
-  .admin-card { background: #f9f9f7; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 12px; }
-  .admin-actions { display: flex; gap: 8px; margin-top: 12px; }
-  .btn-approve { padding: 6px 16px; font-size: 13px; background: #e1f5ee; color: #085041; border: 1px solid #9fe1cb; border-radius: 8px; cursor: pointer; font-family: inherit; }
-  .btn-approve:hover { background: #9fe1cb; }
-  .btn-reject { padding: 6px 16px; font-size: 13px; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; cursor: pointer; font-family: inherit; }
-  .btn-reject:hover { background: #f5c4b3; }
-  .list-category { background: #fff; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 16px; }
-  .list-category-title { font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 10px; }
-  .list-items { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; min-height: 32px; }
-  .list-item { display: flex; align-items: center; gap: 6px; background: #f5f5f3; border: 1px solid #e0e0db; border-radius: 6px; padding: 4px 10px; font-size: 13px; color: #333; }
-  .list-item-delete { background: none; border: none; color: #bbb; cursor: pointer; font-size: 16px; padding: 0; line-height: 1; }
-  .list-item-delete:hover { color: #712b13; }
-  .list-add-row { display: flex; gap: 8px; margin-top: 4px; }
-  .list-add-input { flex: 1; font-size: 13px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; }
-  .list-add-input:focus { outline: none; border-color: #888; }
-  .list-add-btn { padding: 6px 14px; font-size: 13px; background: #1a1a1a; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; white-space: nowrap; }
-  .list-add-btn:hover { background: #333; }
-  .view-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
-  .results-count { font-size: 13px; color: #888; }
-  .toggle-btn { font-size: 13px; padding: 5px 12px; border: 1px solid #ddd; border-radius: 8px; background: none; color: #666; cursor: pointer; font-family: inherit; white-space: nowrap; }
-  .toggle-btn:hover { background: #f5f5f3; }
-  .alpha-bar { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 1rem; }
-  .alpha-btn { width: 28px; height: 28px; font-size: 12px; font-weight: 600; border: 1px solid #b5d4f4; border-radius: 6px; background: #e6f1fb; color: #0c447c; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
-  .alpha-btn:hover { background: #b5d4f4; border-color: #0c447c; }
-  .alpha-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-  .alpha-btn.disabled { background: none; color: #ccc; border-color: #e0e0db; cursor: default; pointer-events: none; font-weight: 400; }
-  .alpha-all-btn { height: 28px; padding: 0 10px; font-size: 12px; font-weight: 500; border: 1px solid #1a1a1a; border-radius: 6px; background: none; color: #1a1a1a; cursor: pointer; font-family: inherit; margin-left: 6px; transition: all 0.1s; }
-  .alpha-all-btn:hover { background: #f5f5f3; }
-  .alpha-all-btn.active { background: #1a1a1a; color: #fff; }
-  .card-compact { padding: 0.7rem 1.25rem; }
-  .card-compact .card-desc { display: none; }
-  .card-compact .card-name { margin-bottom: 2px; }
-  .card-compact .card-geo { margin-bottom: 6px; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; background: #f5f5f3; min-height: 100vh; }
+.page { max-width: 820px; margin: 2rem auto; background: #fff; border-radius: 12px; border: 1px solid #e0e0db; overflow: hidden; }
+.header { padding: 1.75rem 1.5rem 1.25rem; border-bottom: 1px solid #e0e0db; }
+.header h1 { font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+.header p { font-size: 14px; color: #666; line-height: 1.6; }
+.tabs { display: flex; border-bottom: 1px solid #e0e0db; padding: 0 1.5rem; background: #fff; }
+.tab { padding: 10px 18px; font-size: 14px; cursor: pointer; border: none; border-bottom: 2px solid transparent; color: #888; background: none; transition: color 0.15s; font-family: inherit; }
+.tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 500; }
+.tab:hover:not(.active) { color: #1a1a1a; }
+.view { padding: 1.5rem; display: none; }
+.view.active { display: block; }
+/* Browse */
+.search-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+.search-row input { flex: 1; min-width: 200px; padding: 8px 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; color: #1a1a1a; }
+.search-row input:focus { outline: none; border-color: #888; }
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+.filter-row select { font-size: 13px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px; background: #f5f5f3; color: #1a1a1a; cursor: pointer; font-family: inherit; }
+.clear-btn { font-size: 13px; padding: 6px 14px; border: 1px solid #ddd; border-radius: 8px; background: none; color: #666; cursor: pointer; font-family: inherit; }
+.clear-btn:hover { background: #f5f5f3; }
+.view-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+.results-count { font-size: 13px; color: #888; }
+.toggle-btn { font-size: 13px; padding: 5px 12px; border: 1px solid #ddd; border-radius: 8px; background: none; color: #666; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.toggle-btn:hover { background: #f5f5f3; }
+/* Alpha bar */
+.alpha-bar { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 1rem; }
+.alpha-btn { width: 28px; height: 28px; font-size: 12px; font-weight: 600; border: 1px solid #b5d4f4; border-radius: 6px; background: #e6f1fb; color: #0c447c; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
+.alpha-btn:hover { background: #b5d4f4; border-color: #0c447c; }
+.alpha-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.alpha-btn.disabled { background: none; color: #ccc; border-color: #e0e0db; cursor: default; pointer-events: none; font-weight: 400; }
+.alpha-all-btn { height: 28px; padding: 0 10px; font-size: 12px; font-weight: 500; border: 1px solid #1a1a1a; border-radius: 6px; background: none; color: #1a1a1a; cursor: pointer; font-family: inherit; margin-left: 6px; transition: all 0.1s; }
+.alpha-all-btn:hover { background: #f5f5f3; }
+.alpha-all-btn.active { background: #1a1a1a; color: #fff; }
+/* Cards */
+.card { background: #fff; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.card:hover { border-color: #aaa; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.card-compact { padding: 0.7rem 1.25rem; }
+.card-compact .card-desc { display: none; }
+.card-name { font-size: 16px; font-weight: 500; margin-bottom: 2px; }
+.card-geo { font-size: 12px; color: #888; margin-bottom: 8px; }
+.card-desc { font-size: 13px; color: #555; line-height: 1.55; margin-bottom: 10px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; }
+.tag-work     { background: #eeedfe; color: #3c3489; }
+.tag-phase    { background: #e1f5ee; color: #085041; }
+.tag-demo     { background: #faeeda; color: #633806; }
+.tag-voter    { background: #faece7; color: #712b13; }
+.tag-geo      { background: #f0f0f0; color: #444; border: 1px solid #ddd; }
+.tag-partisan { background: #f0f0f0; color: #444; border: 1px solid #ccc; }
+.tag-partisan-left  { background: #e8f0fe; color: #1a4fa0; border: 1px solid #b5cdf5; }
+.tag-partisan-right { background: #fde8e8; color: #a01a1a; border: 1px solid #f5b5b5; }
+.tag-need     { background: #eaf3de; color: #27500a; border: 1px solid #c0dd97; }
+.tag-strength { background: #e6f1fb; color: #0c447c; border: 1px solid #b5d4f4; }
+.no-results { text-align: center; padding: 2.5rem; color: #888; font-size: 14px; }
+.loading { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
+.error-msg { background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; padding: 1rem; font-size: 14px; margin-bottom: 1rem; line-height: 1.5; }
+/* Modals */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
+.modal-overlay.open { display: flex; }
+.modal { background: #fff; border-radius: 12px; border: 1px solid #e0e0db; padding: 1.75rem; width: 100%; max-width: 540px; margin: auto; position: relative; }
+.modal h2 { font-size: 20px; font-weight: 500; margin-bottom: 4px; padding-right: 60px; }
+.modal-geo { font-size: 13px; color: #888; margin-bottom: 1.25rem; }
+.modal-section { margin-bottom: 1.25rem; }
+.modal-section h3 { font-size: 11px; font-weight: 500; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+.modal-close { position: absolute; top: 1.75rem; right: 1.75rem; background: none; border: 1px solid #ddd; border-radius: 8px; padding: 4px 14px; font-size: 13px; cursor: pointer; color: #666; font-family: inherit; }
+.modal-close:hover { background: #f5f5f3; }
+.contact-link { display: inline-block; margin-top: 4px; font-size: 14px; color: #185fa5; text-decoration: none; }
+.contact-link:hover { text-decoration: underline; }
+/* Forms */
+.form-intro { font-size: 14px; color: #666; margin-bottom: 1.5rem; line-height: 1.6; }
+.section-label { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; display: block; }
+.section-divider { border: none; border-top: 1px solid #e0e0db; margin: 1.75rem 0; }
+.form-group { margin-bottom: 1.1rem; }
+.form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #555; }
+.form-group input, .form-group textarea, .form-group select { width: 100%; font-size: 14px; padding: 9px 12px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: #1a1a1a; font-family: inherit; }
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #888; }
+.form-group textarea { min-height: 76px; resize: vertical; line-height: 1.5; }
+.cb-columns { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 10px; }
+.cb-columns label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1a1a1a; cursor: pointer; line-height: 1.4; }
+.cb-columns input[type=checkbox] { flex-shrink: 0; width: 15px; height: 15px; cursor: pointer; accent-color: #1a1a1a; }
+.cb-columns input[type=radio] { flex-shrink: 0; width: 15px; height: 15px; cursor: pointer; accent-color: #1a1a1a; }
+.submit-btn { padding: 11px 24px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; font-family: inherit; }
+.submit-btn:hover { background: #333; }
+.submit-btn:disabled { background: #999; cursor: not-allowed; }
+.cancel-btn { margin-top: 10px; padding: 10px 24px; background: none; color: #666; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; cursor: pointer; width: 100%; font-family: inherit; }
+.cancel-btn:hover { background: #f5f5f3; }
+.select-all-btn { margin-top: 6px; padding: 5px 12px; font-size: 13px; background: none; color: #555; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-family: inherit; }
+.select-all-btn:hover { background: #f5f5f3; }
+/* Admin */
+.admin-nav { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.admin-nav-item { display: flex; align-items: center; gap: 6px; padding: 8px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; cursor: pointer; color: #666; background: #f5f5f3; user-select: none; }
+.admin-nav-item input[type=radio] { display: none; }
+.admin-nav-item.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; font-weight: 500; }
+.admin-nav-item:hover:not(.active) { background: #e8e8e5; border-color: #ccc; }
+.admin-section-sub { font-size: 13px; color: #888; margin-bottom: 1rem; }
+.admin-card { background: #f9f9f7; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+.admin-actions { display: flex; gap: 8px; margin-top: 12px; }
+.btn-approve { padding: 6px 16px; font-size: 13px; background: #e1f5ee; color: #085041; border: 1px solid #9fe1cb; border-radius: 8px; cursor: pointer; font-family: inherit; }
+.btn-approve:hover { background: #9fe1cb; }
+.btn-reject { padding: 6px 16px; font-size: 13px; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; cursor: pointer; font-family: inherit; }
+.btn-reject:hover { background: #f5c4b3; }
+.btn-edit { padding: 6px 16px; font-size: 13px; background: #f5f5f3; color: #333; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; font-family: inherit; }
+.btn-edit:hover { background: #e8e8e5; }
+.btn-delete { padding: 6px 16px; font-size: 13px; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; cursor: pointer; font-family: inherit; }
+.btn-delete:hover { background: #f5c4b3; }
+/* Lists management */
+.list-category { background: #fff; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 16px; }
+.list-category-title { font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.list-category-key { font-size: 11px; color: #aaa; font-weight: 400; }
+.list-items { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; min-height: 32px; }
+.list-item { display: flex; align-items: center; gap: 6px; background: #f5f5f3; border: 1px solid #e0e0db; border-radius: 6px; padding: 4px 10px; font-size: 13px; color: #333; }
+.list-item.inactive { opacity: 0.45; background: #fff; border-style: dashed; }
+.list-item-toggle { background: none; border: none; color: #aaa; cursor: pointer; font-size: 13px; padding: 0; line-height: 1; }
+.list-item-toggle:hover { color: #1a1a1a; }
+.list-item-rename { background: none; border: none; color: #888; cursor: pointer; font-size: 13px; padding: 0; line-height: 1; text-decoration: underline; }
+.list-item-rename:hover { color: #1a1a1a; }
+.list-add-row { display: flex; gap: 8px; margin-top: 4px; }
+.list-add-input { flex: 1; font-size: 13px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; }
+.list-add-input:focus { outline: none; border-color: #888; }
+.list-add-btn { padding: 6px 14px; font-size: 13px; background: #1a1a1a; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+.list-add-btn:hover { background: #333; }
+/* Category management */
+.cat-add-row { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.cat-add-row input { flex: 1; min-width: 140px; font-size: 13px; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; }
+.cat-add-row input:focus { outline: none; border-color: #888; }
+/* Edit overlay */
+.edit-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
+.edit-overlay.open { display: flex; }
+.edit-modal { background: #fff; border-radius: 12px; border: 1px solid #e0e0db; padding: 1.75rem; width: 100%; max-width: 620px; margin: auto; position: relative; }
+.edit-modal h2 { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; padding-right: 60px; }
+.edit-close { position: absolute; top: 1.75rem; right: 1.75rem; background: none; border: 1px solid #ddd; border-radius: 8px; padding: 4px 14px; font-size: 13px; cursor: pointer; color: #666; font-family: inherit; }
+.edit-close:hover { background: #f5f5f3; }
+.save-btn { padding: 10px 24px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; font-family: inherit; margin-top: 0.5rem; }
+.save-btn:hover { background: #333; }
+.save-btn:disabled { background: #999; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -151,16 +162,9 @@
       <input type="text" id="search" placeholder="Search by name, strength, or need..." oninput="renderCards()">
       <button class="clear-btn" onclick="clearFilters()">Clear filters</button>
     </div>
-    <div class="filter-row">
-      <select id="f-geo" onchange="renderCards()"><option value="">All regions</option><option>Local</option><option>State</option><option>National</option><option>International</option></select>
-      <select id="f-work" onchange="renderCards()"><option value="">All services</option><option>Legal</option><option>Advocacy</option><option>Technology</option><option>Research</option><option>Training</option><option>Litigation</option><option>Voting process information</option></select>
-      <select id="f-phase" onchange="renderCards()"><option value="">All election phases</option><option>Voter registration</option><option>Voting</option><option>Get out the vote</option><option>Vote counting</option><option>Certification</option><option>Litigation</option></select>
-      <select id="f-demo" onchange="renderCards()"><option value="">All communities</option><option>Youth</option><option>Seniors</option><option>Rural communities</option><option>AAPI communities</option><option>Black communities</option><option>Latino communities</option><option>Native communities</option></select>
-      <select id="f-voter" onchange="renderCards()"><option value="">All voter reg focus</option><option>Roll monitoring</option><option>Re-registration help</option><option>Vote rejection monitoring</option><option>Ballot cure</option><option>Understanding the voting process</option></select>
-      <select id="f-partisan" onchange="renderCards()"><option value="">All affiliations</option><option>Non-partisan</option><option>Partisan - left</option><option>Partisan - right</option></select>
+    <div class="filter-row" id="browse-filters">
+      <!-- Built dynamically from Categories -->
       <select id="f-state-filter" onchange="renderCards()"><option value="">All states</option><option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option></select>
-      <select id="f-strength" onchange="renderCards()"><option value="">Has strength: any</option><option>Legal expertise</option><option>Data analysis</option><option>Community organizing</option><option>Litigation capacity</option><option>Training programs</option><option>Technology tools</option><option>Multilingual outreach</option><option>Outreach</option><option>Media relations</option><option>Funding</option><option>Research capacity</option></select>
-      <select id="f-need" onchange="renderCards()"><option value="">Has need: any</option><option>Legal expertise</option><option>Data analysis</option><option>Community organizing</option><option>Litigation capacity</option><option>Training programs</option><option>Technology tools</option><option>Multilingual outreach</option><option>Media relations</option><option>Funding</option><option>Research capacity</option><option>Volunteers</option></select>
     </div>
     <div class="view-controls">
       <div class="results-count" id="results-count"></div>
@@ -170,27 +174,6 @@
     <div id="cards-container"><div class="loading">Loading organizations…</div></div>
   </div>
 
-  <!-- MAP -->
-  <div id="tab-map" class="view">
-    <p style="font-size:14px;color:#666;margin-bottom:1rem;line-height:1.6">Select a shared attribute to see which organizations are connected by it. Click any node to view that organization's profile.</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
-      <select id="map-filter-type" onchange="updateMapFilterOptions()" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#f5f5f3;color:#1a1a1a;font-family:inherit">
-        <option value="strength">Shared strength</option>
-        <option value="need">Shared need</option>
-        <option value="work">Shared service type</option>
-        <option value="phase">Shared election phase</option>
-        <option value="voter">Shared voter reg focus</option>
-        <option value="demo">Shared community focus</option>
-        <option value="partisan">Shared affiliation</option>
-        <option value="geo">Shared region</option>
-      </select>
-      <select id="map-filter-value" onchange="renderMap()" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#f5f5f3;color:#1a1a1a;font-family:inherit">
-      </select>
-      <span id="map-legend" style="font-size:12px;color:#888;margin-left:4px"></span>
-    </div>
-    <div id="map-container" style="width:100%;height:650px;border:1px solid #e0e0db;border-radius:10px;background:#fafaf8;overflow:hidden"></div>
-  </div>
-
   <!-- SUBMIT -->
   <div id="tab-submit" class="view">
     <p class="form-intro">Fill out the form below to list your organization. Your submission will be reviewed by an administrator before appearing in the directory.</p>
@@ -198,36 +181,12 @@
     <div class="form-group"><label>Organization name *</label><input type="text" id="f-name" placeholder="Full legal or common name"></div>
     <div class="form-group"><label>Contact email</label><input type="text" id="f-email" placeholder="contact@yourorg.org"></div>
     <div class="form-group"><label>Website</label><input type="text" id="f-website" placeholder="https://..."></div>
-    <div class="form-group">
-      <label>Partisan affiliation</label>
-      <div class="cb-columns">
-        <label><input type="radio" name="partisan" value="Non-partisan"> Non-partisan</label>
-        <label><input type="radio" name="partisan" value="Partisan - left"> Partisan — left</label>
-        <label><input type="radio" name="partisan" value="Partisan - right"> Partisan — right</label>
-      </div>
-    </div>
     <div class="form-group"><label>Brief description *</label><textarea id="f-desc" placeholder="1–3 sentences about your organization's mission"></textarea></div>
-    <div class="form-group"><label>Geographic scope *</label><select id="f-geo-s"><option value="">Select...</option><option>Local</option><option>State</option><option>National</option><option>International</option></select></div>
     <div class="form-group"><label>State / region (if applicable)</label><input type="text" id="f-state" placeholder="e.g. Minnesota, Midwest"></div>
     <hr class="section-divider">
     <span class="section-label">Focus areas</span>
-    <div class="form-group">
-      <label>Type of work</label>
-      <div class="cb-columns" id="cb-work-container"></div>
-    </div>
-    <div class="form-group">
-      <label>Election phases</label>
-      <div class="cb-columns" id="cb-phase-container"></div>
-    </div>
-    <div class="form-group">
-      <label>Voter registration focus</label>
-      <div class="cb-columns" id="cb-voter-container"></div>
-    </div>
-    <div class="form-group">
-      <label>Community focus</label>
-      <div class="cb-columns" id="cb-demo-container"></div>
-      <button type="button" class="select-all-btn" onclick="selectAllCommunities('cb-demo')">Select all communities</button>
-    </div>
+    <!-- Category checkboxes built dynamically -->
+    <div id="submit-categories"></div>
     <hr class="section-divider">
     <span class="section-label">Strengths and needs</span>
     <div class="form-group">
@@ -245,10 +204,21 @@
     <button class="cancel-btn" onclick="cancelForm()">Cancel</button>
   </div>
 
+  <!-- MAP -->
+  <div id="tab-map" class="view">
+    <p style="font-size:14px;color:#666;margin-bottom:1rem;line-height:1.6">Select a shared attribute to see which organizations are connected by it. Click any node to view that organization's profile.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
+      <select id="map-filter-cat" onchange="updateMapFilterValues()" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#f5f5f3;color:#1a1a1a;font-family:inherit"></select>
+      <select id="map-filter-val" onchange="renderMap()" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#f5f5f3;color:#1a1a1a;font-family:inherit"></select>
+      <span id="map-legend" style="font-size:12px;color:#888;margin-left:4px"></span>
+    </div>
+    <div id="map-container" style="width:100%;height:650px;border:1px solid #e0e0db;border-radius:10px;background:#fafaf8;overflow:hidden"></div>
+  </div>
+
   <!-- ADMIN -->
   <div id="tab-admin" class="view">
     <div id="admin-login-view">
-      <div class="admin-login">
+      <div style="max-width:320px;margin:2rem auto">
         <p style="font-size:14px;color:#666;margin-bottom:1rem">Enter the admin password to review pending submissions.</p>
         <div class="form-group"><label>Password</label><input type="password" id="admin-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()"></div>
         <button class="submit-btn" onclick="adminLogin()">Sign in</button>
@@ -275,7 +245,12 @@
         <div id="approved-container"></div>
       </div>
       <div id="admin-section-lists" style="display:none">
-        <p class="admin-section-sub">Add or remove options for each category. Changes take effect immediately across the directory.</p>
+        <p class="admin-section-sub">Manage categories and their values. Hidden values are preserved in existing data but no longer appear as options.</p>
+        <div class="cat-add-row">
+          <input type="text" id="new-cat-name" placeholder="New category name…">
+          <input type="text" id="new-cat-key" placeholder="Field key (e.g. work, phase)…">
+          <button class="list-add-btn" onclick="addCategory()">Add category</button>
+        </div>
         <div id="lists-container"><div class="loading">Loading…</div></div>
       </div>
     </div>
@@ -283,7 +258,7 @@
 </div>
 
 <!-- SUCCESS MODAL -->
-<div class="modal-overlay" id="success-modal" onclick="">
+<div class="modal-overlay" id="success-modal">
   <div class="modal" style="max-width:420px;text-align:center">
     <div style="font-size:32px;margin-bottom:12px">✓</div>
     <h2 style="font-size:18px;margin-bottom:8px;padding-right:0">Submission received</h2>
@@ -292,21 +267,19 @@
   </div>
 </div>
 
-<!-- MODAL -->
+<!-- ORG DETAIL MODAL -->
 <div class="modal-overlay" id="modal" onclick="closeModal(event)">
   <div class="modal">
     <button class="modal-close" onclick="closeModalDirect()">Close</button>
     <h2 id="modal-name"></h2>
     <p class="modal-geo" id="modal-geo"></p>
     <div class="modal-section"><h3>About</h3><p id="modal-desc" style="font-size:14px;line-height:1.6;color:#333"></p></div>
-    <div class="modal-section"><h3>Strengths</h3><div id="modal-strengths"></div></div>
-    <div class="modal-section"><h3>Needs</h3><div id="modal-needs"></div></div>
-    <div class="modal-section"><h3>Focus areas</h3><div id="modal-tags" class="tags"></div></div>
+    <div id="modal-tag-sections"></div>
     <div class="modal-section"><h3>Contact</h3><div id="modal-contact"></div></div>
   </div>
 </div>
 
-<!-- EDIT MODAL -->
+<!-- EDIT ORG MODAL -->
 <div class="edit-overlay" id="edit-overlay" onclick="closeEditModal(event)">
   <div class="edit-modal">
     <button class="edit-close" onclick="closeEditModalDirect()">Close</button>
@@ -315,36 +288,9 @@
     <div class="form-group"><label>Organization name *</label><input type="text" id="e-name"></div>
     <div class="form-group"><label>Contact email</label><input type="text" id="e-email"></div>
     <div class="form-group"><label>Website</label><input type="text" id="e-website"></div>
-    <div class="form-group">
-      <label>Partisan affiliation</label>
-      <div class="cb-columns">
-        <label><input type="radio" name="e-partisan" value="Non-partisan"> Non-partisan</label>
-        <label><input type="radio" name="e-partisan" value="Partisan - left"> Partisan — left</label>
-        <label><input type="radio" name="e-partisan" value="Partisan - right"> Partisan — right</label>
-      </div>
-    </div>
     <div class="form-group"><label>Brief description *</label><textarea id="e-desc"></textarea></div>
-    <div class="form-group"><label>Geographic scope *</label>
-      <select id="e-geo"><option value="">Select...</option><option>Local</option><option>State</option><option>National</option><option>International</option></select>
-    </div>
     <div class="form-group"><label>State / region</label><input type="text" id="e-state"></div>
-    <div class="form-group">
-      <label>Type of work</label>
-      <div class="cb-columns" id="e-work-container"></div>
-    </div>
-    <div class="form-group">
-      <label>Election phases</label>
-      <div class="cb-columns" id="e-phase-container"></div>
-    </div>
-    <div class="form-group">
-      <label>Voter registration focus</label>
-      <div class="cb-columns" id="e-voter-container"></div>
-    </div>
-    <div class="form-group">
-      <label>Community focus</label>
-      <div class="cb-columns" id="e-demo-container"></div>
-      <button type="button" class="select-all-btn" onclick="selectAllCommunities('e-demo')">Select all communities</button>
-    </div>
+    <div id="edit-categories"></div>
     <div class="form-group">
       <label>Strengths</label>
       <div class="cb-columns" id="e-str-container" style="margin-bottom:8px"></div>
@@ -360,263 +306,62 @@
 </div>
 
 <script>
-const TABLE_ORGS     = 'Organizations';
-const TABLE_PENDING  = 'Pending';
+// ── Configuration ──────────────────────────────────────────────
 const ADMIN_PASSWORD = 'VerilyNow74';
 const API = '/airtable';
+const T_ORGS     = 'Organizations';
+const T_PENDING  = 'Pending';
+const T_CATS     = 'Categories';
+const T_CATVALS  = 'CategoryValues';
+const T_ORGTAGS  = 'OrgTags';
 
+// ── Airtable helpers ───────────────────────────────────────────
 async function atGet(table) {
   const res = await fetch(`${API}?table=${encodeURIComponent(table)}`);
   if (!res.ok) throw new Error(`Server error ${res.status}`);
   const data = await res.json();
   return data.records;
 }
-
 async function atCreate(table, fields) {
   const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ records: [{ fields }] })
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({records:[{fields}]})
   });
   if (!res.ok) throw new Error(`Server error ${res.status}`);
   return res.json();
 }
-
-async function atDelete(table, id) {
+async function atUpdate(table, id, fields) {
   const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {
-    method: 'DELETE'
+    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({fields})
   });
   if (!res.ok) throw new Error(`Server error ${res.status}`);
   return res.json();
 }
-
-const SEED = [
-  {Name:"Verified Voting Foundation",Email:"info@verifiedvoting.org",Website:"https://verifiedvoting.org",Description:"Advocates for the use of voter-verified paper ballots and accurate post-election audits to ensure elections are secure and accurate.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Research,Technology",Phase:"Voting,Vote counting,Certification",Demo:"",Voter:"",Strengths:"Research capacity,Media relations,Technology tools",StrengthsText:"Leading experts in voting technology standards and audit methodologies.",Needs:"Community organizing,Funding",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"Election Protection Coalition",Email:"info@866ourvote.org",Website:"https://866ourvote.org",Description:"A nonpartisan voter protection coalition that operates the largest election protection hotline in the country on Election Day.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Legal,Training",Phase:"Voting,Voter registration",Demo:"Black communities,Latino communities",Voter:"Re-registration help",Strengths:"Legal expertise,Community organizing,Multilingual outreach,Training programs",StrengthsText:"Runs a large volunteer network of lawyers and poll workers.",Needs:"Technology tools,Data analysis",NeedsText:"Need better data tools to track and respond to polling place issues in real time.",SubmittedAt:new Date().toISOString()},
-  {Name:"Midwest Election Observers Network",Email:"contact@mideobs.example.org",Website:"",Description:"Trains and deploys nonpartisan election observers across Midwestern states to monitor polling places and canvassing boards.",Geo:"State",State:"Minnesota, Wisconsin, Michigan, Ohio",Partisan:"Non-partisan",Work:"Training,Research",Phase:"Voting,Vote counting,Certification",Demo:"Rural communities",Voter:"Vote rejection monitoring",Strengths:"Training programs,Community organizing,Research capacity",StrengthsText:"Deep relationships with county election officials and experienced observer trainers.",Needs:"Legal expertise,Litigation capacity,Funding",NeedsText:"Need legal support when observers are denied access or results are contested.",SubmittedAt:new Date().toISOString()},
-  {Name:"Voter Roll Watch",Email:"data@vrwatch.example.org",Website:"",Description:"Monitors voter registration rolls across multiple states to identify and document improper purges, and helps affected voters get re-registered.",Geo:"State",State:"Arizona, Georgia, Pennsylvania, Wisconsin",Partisan:"Non-partisan",Work:"Research,Advocacy,Legal",Phase:"Voter registration",Demo:"",Voter:"Roll monitoring,Re-registration help,Vote rejection monitoring,Ballot cure",Strengths:"Data analysis,Research capacity,Legal expertise",StrengthsText:"Maintains a database of purge activity going back to 2012 and partners with academic researchers.",Needs:"Community organizing,Multilingual outreach,Funding",NeedsText:"Need on-the-ground partners who can reach affected voters directly.",SubmittedAt:new Date().toISOString()},
-  {Name:"Native Vote Alliance",Email:"info@nativevote.example.org",Website:"",Description:"Works to remove barriers to voting for Native American and Alaska Native communities, including distance, ID requirements, and language access.",Geo:"State",State:"Montana, South Dakota, Alaska, New Mexico",Partisan:"Non-partisan",Work:"Advocacy,Legal,Training",Phase:"Voter registration,Voting",Demo:"Native communities,Rural communities",Voter:"Re-registration help,Roll monitoring",Strengths:"Community organizing,Multilingual outreach,Legal expertise",StrengthsText:"Deep trust within Native communities and experience with federal voting rights law.",Needs:"Technology tools,Data analysis,Media relations",NeedsText:"Need tools to document and publicize barriers voters face.",SubmittedAt:new Date().toISOString()},
-  {Name:"League of Women Voters",Email:"lwv@lwv.org",Website:"https://lwv.org",Description:"A nonpartisan organization that encourages informed and active participation in government, works to increase understanding of major public policy issues, and influences public policy through education and advocacy.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Training,Research",Phase:"Voter registration,Voting",Demo:"Youth,Seniors",Voter:"Re-registration help,Roll monitoring",Strengths:"Community organizing,Outreach,Training programs,Research capacity,Media relations",StrengthsText:"One of the oldest and most trusted nonpartisan civic organizations in the country, with chapters in all 50 states.",Needs:"Technology tools,Data analysis,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"Brennan Center for Justice",Email:"brennancenter@nyu.edu",Website:"https://brennancenter.org",Description:"A nonpartisan law and policy institute that works to ensure all Americans have an equal voice in elections, advocating through litigation, research, and policy development on voting rights, redistricting, and election security.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Research,Advocacy,Litigation",Phase:"Voter registration,Voting,Certification,Litigation",Demo:"Black communities,Latino communities",Voter:"Roll monitoring,Vote rejection monitoring",Strengths:"Legal expertise,Research capacity,Litigation capacity,Media relations",StrengthsText:"Leading national think tank and public interest law firm on democracy and voting rights issues.",Needs:"Community organizing,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"ACLU Voting Rights Project",Email:"voting@aclu.org",Website:"https://aclu.org/issues/voting-rights",Description:"Protects and expands Americans' freedom to vote through litigation, advocacy, and public education, with active cases challenging voter suppression laws in over a dozen states.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Litigation,Advocacy",Phase:"Voter registration,Voting,Litigation",Demo:"Black communities,Latino communities,Youth",Voter:"Roll monitoring,Re-registration help,Vote rejection monitoring",Strengths:"Legal expertise,Litigation capacity,Media relations,Research capacity",StrengthsText:"Has filed more than 60 lawsuits to protect voters in the 2020 and 2024 elections.",Needs:"Community organizing,Multilingual outreach,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"NAACP Legal Defense Fund",Email:"info@naacpldf.org",Website:"https://naacpldf.org",Description:"The nation's premier civil and human rights law organization, conducting litigation, advocacy, and public education to advance racial justice and protect Black voters' access to the ballot.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Litigation,Advocacy,Research",Phase:"Voter registration,Voting,Certification,Litigation",Demo:"Black communities",Voter:"Roll monitoring,Vote rejection monitoring,Re-registration help",Strengths:"Legal expertise,Litigation capacity,Research capacity,Media relations",StrengthsText:"Has represented voters in landmark Supreme Court cases and monitors elections in multiple southern states.",Needs:"Community organizing,Technology tools,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"Common Cause",Email:"democracy@commoncause.org",Website:"https://commoncause.org",Description:"A nonpartisan citizen advocacy organization fighting to ensure every adult American has equal access to the ballot and that every vote is counted, with chapters in 35 states.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Legal,Research,Training",Phase:"Voter registration,Voting,Certification",Demo:"Youth,Black communities,Latino communities",Voter:"Roll monitoring,Re-registration help",Strengths:"Community organizing,Outreach,Media relations,Research capacity,Legal expertise",StrengthsText:"Chapters in 35 states with millions of members providing grassroots organizing power.",Needs:"Technology tools,Data analysis,Funding",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"Campaign Legal Center",Email:"info@campaignlegalcenter.org",Website:"https://campaignlegalcenter.org",Description:"A nonpartisan organization that protects and strengthens democracy through litigation and policy advocacy in the areas of campaign finance, voting rights, redistricting, and government ethics.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Litigation,Advocacy,Research",Phase:"Voter registration,Voting,Certification,Litigation",Demo:"",Voter:"Roll monitoring,Vote rejection monitoring",Strengths:"Legal expertise,Litigation capacity,Research capacity",StrengthsText:"Represents voters in redistricting, voter purge, and election administration cases across the country.",Needs:"Community organizing,Media relations,Funding",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"Lawyers' Committee for Civil Rights Under Law",Email:"info@lawyerscommittee.org",Website:"https://lawyerscommittee.org",Description:"Mobilizes the private bar to advance civil rights through litigation, advocacy, and public policy work, including operating the nonpartisan 866-OUR-VOTE election protection hotline.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Litigation,Advocacy",Phase:"Voting,Voter registration,Litigation",Demo:"Black communities,Latino communities",Voter:"Vote rejection monitoring,Roll monitoring",Strengths:"Legal expertise,Litigation capacity,Community organizing",StrengthsText:"Operates the 866-OUR-VOTE hotline and has fought voter suppression in Georgia, Texas, Mississippi and beyond.",Needs:"Technology tools,Research capacity,Funding",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"Fair Fight Action",Email:"info@fairfight.com",Website:"https://fairfight.com",Description:"A Georgia-based organization that fights voter suppression nationwide, promotes fair elections, and engages voters through advocacy, education, and litigation.",Geo:"State",State:"Georgia",Partisan:"Non-partisan",Work:"Advocacy,Legal,Training",Phase:"Voter registration,Voting,Litigation",Demo:"Black communities,Youth",Voter:"Roll monitoring,Re-registration help,Vote rejection monitoring",Strengths:"Community organizing,Media relations,Outreach,Legal expertise",StrengthsText:"Founded after the 2018 Georgia governor's race, now a national force against voter suppression.",Needs:"Technology tools,Data analysis,Research capacity",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"Native American Rights Fund",Email:"info@narf.org",Website:"https://narf.org",Description:"Protects and enforces the legal rights of Native American tribes and individuals, including voting rights, language access, and removal of barriers to Native participation in elections.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Litigation,Advocacy",Phase:"Voter registration,Voting",Demo:"Native communities",Voter:"Re-registration help,Roll monitoring",Strengths:"Legal expertise,Litigation capacity,Multilingual outreach",StrengthsText:"The oldest and largest nonprofit law firm serving Native Americans, with deep expertise in federal Indian law.",Needs:"Community organizing,Technology tools,Research capacity",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"Rock the Vote",Email:"info@rockthevote.org",Website:"https://rockthevote.com",Description:"The largest nonprofit and nonpartisan organization in the United States devoted to building the political power of young people through voter registration, education, and civic engagement.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Training,Voting process information",Phase:"Voter registration,Voting",Demo:"Youth",Voter:"Re-registration help,Understanding the voting process",Strengths:"Outreach,Community organizing,Technology tools,Media relations",StrengthsText:"Pioneer in digital voter registration tools and youth civic engagement with decades of experience.",Needs:"Funding,Research capacity,Legal expertise",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"VoteRiders",Email:"info@voteriders.org",Website:"https://voteriders.org",Description:"Helps voters obtain and understand voter ID requirements, ensuring everyone can vote with confidence through direct assistance, outreach, and advocacy.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Training,Voting process information",Phase:"Voter registration,Voting",Demo:"Black communities,Latino communities,Seniors,Native communities",Voter:"Re-registration help,Understanding the voting process",Strengths:"Community organizing,Multilingual outreach,Outreach,Training programs",StrengthsText:"Provides direct one-on-one assistance to voters who need help obtaining ID, with multilingual staff.",Needs:"Funding,Technology tools,Legal expertise",NeedsText:"",SubmittedAt:new Date().toISOString()},
-  {Name:"Advancement Project",Email:"info@advancementproject.org",Website:"https://advancementproject.org",Description:"A next-generation, multi-racial civil rights organization that uses innovative tools and strategies to strengthen social movements and achieve universal opportunity for all.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Legal,Advocacy,Research,Training",Phase:"Voter registration,Voting,Litigation",Demo:"Black communities,Latino communities,Youth",Voter:"Roll monitoring,Vote rejection monitoring,Re-registration help",Strengths:"Legal expertise,Community organizing,Research capacity,Media relations",StrengthsText:"Combines cutting-edge legal tools with community organizing to combat voter suppression.",Needs:"Technology tools,Funding,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()}
-];
-
-function recordToOrg(r) {
-  const f = r.fields;
-  const split = v => v ? v.split(',').map(s=>s.trim()).filter(Boolean) : [];
-  return {
-    _id: r.id,
-    name: f.Name||'', email: f.Email||'', website: f.Website||'',
-    desc: f.Description||'', geo: f.Geo||'', state: f.State||'',
-    partisan: f.Partisan||'',
-    work: split(f.Work), phase: split(f.Phase), demo: split(f.Demo), voter: split(f.Voter),
-    strengths: split(f.Strengths), strengthsText: f.StrengthsText||'',
-    needs: split(f.Needs), needsText: f.NeedsText||''
-  };
+async function atDelete(table, id) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {method:'DELETE'});
+  if (!res.ok) throw new Error(`Server error ${res.status}`);
+  return res.json();
 }
 
-function orgToFields(org) {
-  return {
-    Name:org.name, Email:org.email, Website:org.website, Description:org.desc,
-    Geo:org.geo, State:org.state, Partisan:org.partisan||'', Work:org.work.join(','), Phase:org.phase.join(','),
-    Demo:org.demo.join(','), Voter:org.voter.join(','),
-    Strengths:org.strengths.join(','), StrengthsText:org.strengthsText,
-    Needs:org.needs.join(','), NeedsText:org.needsText, SubmittedAt:new Date().toISOString()
-  };
-}
+// ── State ──────────────────────────────────────────────────────
+let orgs        = [];   // [{_id, name, desc, email, website, state, strengthsText, needsText}]
+let orgTags     = {};   // {orgId: [{valueId, tagType, value, catKey}]}
+let pending     = [];
+let pendingTags = {};   // {orgId: [...]}
+let categories  = [];   // [{_id, name, fieldKey, sortOrder, active}]
+let catValues   = {};   // {catId: [{_id, value, sortOrder, active}]}
+let valueIndex  = {};   // {valueId: {value, catId, catKey, catName}}
+let adminLoggedIn = false;
+let showDesc = false;
+let activeLetter = '';
 
-let orgs = [], pending = [], lists = {}, adminLoggedIn = false, showDesc = false, activeLetter = '';
-
-// ── Network Map ─────────────────────────────────────────────────
-function getMapOptions() {
-  return {
-    strength: { label: 'Shared strength',        values: getListValues('Strengths') },
-    need:     { label: 'Shared need',             values: getListValues('Needs') },
-    work:     { label: 'Shared service type',     values: getListValues('Services') },
-    phase:    { label: 'Shared election phase',   values: getListValues('Election phases') },
-    voter:    { label: 'Shared voter reg focus',  values: getListValues('Voter reg focus') },
-    demo:     { label: 'Shared community focus',  values: getListValues('Community focus') },
-    partisan: { label: 'Shared affiliation',      values: getListValues('Affiliations') },
-    geo:      { label: 'Shared region',           values: getListValues('Regions') }
-  };
-}
-
-let networkInstance = null;
-
-function updateMapFilterOptions() {
-  const type = document.getElementById('map-filter-type').value;
-  const sel = document.getElementById('map-filter-value');
-  const opts = getMapOptions()[type]?.values || [];
-  sel.innerHTML = opts.map(v => `<option value="${v}">${v}</option>`).join('');
-  renderMap();
-}
-
-function renderMap() {
-  const type = document.getElementById('map-filter-type').value;
-  const value = document.getElementById('map-filter-value').value;
-  if (!value || !orgs.length) return;
-  const mapOptions = getMapOptions();
-
-  const getAttr = (org) => {
-    if (type === 'strength') return org.strengths;
-    if (type === 'need') return org.needs;
-    if (type === 'work') return org.work;
-    if (type === 'phase') return org.phase;
-    if (type === 'voter') return org.voter;
-    if (type === 'demo') return org.demo;
-    if (type === 'partisan') return org.partisan ? [org.partisan] : [];
-    if (type === 'geo') return org.geo ? [org.geo] : [];
-    return [];
-  };
-
-  const matched = orgs.filter(o => getAttr(o).includes(value));
-  const unmatched = orgs.filter(o => !getAttr(o).includes(value));
-
-  const nodes = new vis.DataSet([
-    ...matched.map((org, i) => ({
-      id: org._id,
-      label: org.name.length > 22 ? org.name.substring(0, 20) + '…' : org.name,
-      title: org.name,
-      color: { background: '#e6f1fb', border: '#0c447c', highlight: { background: '#b5d4f4', border: '#0c447c' } },
-      font: { color: '#0c447c', size: 13 },
-      shape: 'ellipse',
-      size: 20
-    })),
-    ...unmatched.map((org) => ({
-      id: org._id,
-      label: org.name.length > 22 ? org.name.substring(0, 20) + '…' : org.name,
-      title: org.name,
-      color: { background: '#f0f0f0', border: '#ccc', highlight: { background: '#e0e0db', border: '#aaa' } },
-      font: { color: '#aaa', size: 11 },
-      shape: 'ellipse',
-      size: 14
-    }))
-  ]);
-
-  // Draw edges between all matched orgs
-  const edges = new vis.DataSet();
-  for (let i = 0; i < matched.length; i++) {
-    for (let j = i + 1; j < matched.length; j++) {
-      edges.add({ from: matched[i]._id, to: matched[j]._id, color: { color: '#b5d4f4', highlight: '#0c447c' }, width: 1.5 });
-    }
-  }
-
-  document.getElementById('map-legend').textContent =
-    `${matched.length} organization${matched.length !== 1 ? 's' : ''} share "${value}"`;
-
-  const container = document.getElementById('map-container');
-  if (networkInstance) { networkInstance.destroy(); networkInstance = null; }
-
-  networkInstance = new vis.Network(container, { nodes, edges }, {
-    physics: { solver: 'forceAtlas2Based', forceAtlas2Based: { gravitationalConstant: -60, springLength: 120 }, stabilization: { iterations: 150 } },
-    interaction: { hover: true, tooltipDelay: 100 },
-    nodes: { borderWidth: 1.5 },
-    edges: { smooth: { type: 'continuous' } }
-  });
-
-  networkInstance.on('click', (params) => {
-    if (params.nodes.length) {
-      const id = params.nodes[0];
-      const org = orgs.find(o => o._id === id);
-      if (org) {
-        const idx = window._filtered ? window._filtered.findIndex(o => o._id === id) : -1;
-        if (idx >= 0) { openModal(idx); }
-        else {
-          // org not in current filtered list — open directly
-          window._filtered = orgs;
-          openModal(orgs.findIndex(o => o._id === id));
-        }
-      }
-    }
-  });
-}
-
-async function loadLists() {
-  try {
-    const records = await atGet('Lists');
-    lists = {};
-    records
-      .filter(r => r.fields.Active)
-      .sort((a,b) => (a.fields.SortOrder||0) - (b.fields.SortOrder||0))
-      .forEach(r => {
-        const cat = r.fields.Category;
-        if (!lists[cat]) lists[cat] = [];
-        lists[cat].push({ id: r.id, value: r.fields.Value, sort: r.fields.SortOrder||0 });
-      });
-  } catch(e) {
-    console.error('Could not load lists:', e.message);
-  }
-}
-
-function getListValues(category) {
-  return (lists[category] || []).map(l => l.value);
-}
-
-function buildCheckboxes(containerId, category, cssClass) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  const values = getListValues(category);
-  el.innerHTML = values.map(v =>
-    `<label><input type="checkbox" class="${cssClass}" value="${v}"> ${v}</label>`
-  ).join('');
-}
-
-function buildFilterSelect(selectId, defaultLabel, category) {
-  const el = document.getElementById(selectId);
-  if (!el) return;
-  const values = getListValues(category);
-  const current = el.value;
-  el.innerHTML = `<option value="">${defaultLabel}</option>` +
-    values.map(v => `<option${v===current?' selected':''}>${v}</option>`).join('');
-}
-
-function rebuildDynamicUI() {
-  // Browse filters
-  buildFilterSelect('f-work', 'All services', 'Services');
-  buildFilterSelect('f-phase', 'All election phases', 'Election phases');
-  buildFilterSelect('f-voter', 'All voter reg focus', 'Voter reg focus');
-  buildFilterSelect('f-demo', 'All communities', 'Community focus');
-  buildFilterSelect('f-partisan', 'All affiliations', 'Affiliations');
-  buildFilterSelect('f-geo', 'All regions', 'Regions');
-  buildFilterSelect('f-strength', 'Has strength: any', 'Strengths');
-  buildFilterSelect('f-need', 'Has need: any', 'Needs');
-  // Submit form checkboxes
-  buildCheckboxes('cb-work-container', 'Services', 'cb-work');
-  buildCheckboxes('cb-phase-container', 'Election phases', 'cb-phase');
-  buildCheckboxes('cb-voter-container', 'Voter reg focus', 'cb-voter');
-  buildCheckboxes('cb-demo-container', 'Community focus', 'cb-demo');
-  buildCheckboxes('cb-str-container', 'Strengths', 'cb-str');
-  buildCheckboxes('cb-need-container', 'Needs', 'cb-need');
-  // Edit modal checkboxes
-  buildCheckboxes('e-work-container', 'Services', 'e-work');
-  buildCheckboxes('e-phase-container', 'Election phases', 'e-phase');
-  buildCheckboxes('e-voter-container', 'Voter reg focus', 'e-voter');
-  buildCheckboxes('e-demo-container', 'Community focus', 'e-demo');
-  buildCheckboxes('e-str-container', 'Strengths', 'e-str');
-  buildCheckboxes('e-need-container', 'Needs', 'e-need');
-}
-
+// ── Boot ───────────────────────────────────────────────────────
 async function init() {
   try {
-    await loadLists();
-    rebuildDynamicUI();
-    const records = await atGet(TABLE_ORGS);
-    if (records.length === 0) {
-      for (const s of SEED) await atCreate(TABLE_ORGS, s);
-      const seeded = await atGet(TABLE_ORGS);
-      orgs = seeded.map(recordToOrg);
-    } else {
-      orgs = records.map(recordToOrg);
-    }
+    await loadSchema();
+    rebuildUI();
+    await loadOrgs();
   } catch(e) {
     document.getElementById('cards-container').innerHTML =
       `<div class="error-msg">Could not connect to the database. Please check your internet connection and try refreshing.<br><small>${e.message}</small></div>`;
@@ -625,37 +370,231 @@ async function init() {
   renderCards();
 }
 
+async function loadSchema() {
+  const [catRecords, valRecords] = await Promise.all([
+    atGet(T_CATS),
+    atGet(T_CATVALS)
+  ]);
+  categories = catRecords
+    .map(r => ({ _id: r.id, name: r.fields.Name||'', fieldKey: r.fields.FieldKey||'', sortOrder: r.fields.SortOrder||0, active: !!r.fields.Active }))
+    .filter(c => c.active)
+    .sort((a,b) => a.sortOrder - b.sortOrder);
+
+  catValues = {};
+  valueIndex = {};
+  valRecords.forEach(r => {
+    const f = r.fields;
+    const catId = f.CategoryID;
+    if (!catValues[catId]) catValues[catId] = [];
+    const v = { _id: r.id, value: f.Value||'', sortOrder: f.SortOrder||0, active: !!f.Active };
+    catValues[catId].push(v);
+    valueIndex[r.id] = { value: f.Value||'', catId, catKey: f.CategoryKey||'', catName: f.CategoryName||'' };
+  });
+  // Sort each category's values
+  Object.keys(catValues).forEach(cid => catValues[cid].sort((a,b) => a.sortOrder - b.sortOrder));
+  // Enrich valueIndex with catKey from categories
+  categories.forEach(cat => {
+    (catValues[cat._id]||[]).forEach(v => {
+      if (valueIndex[v._id]) valueIndex[v._id].catKey = cat.fieldKey;
+      if (valueIndex[v._id]) valueIndex[v._id].catName = cat.name;
+    });
+  });
+}
+
+async function loadOrgs() {
+  const [orgRecords, tagRecords] = await Promise.all([
+    atGet(T_ORGS),
+    atGet(T_ORGTAGS)
+  ]);
+  orgs = orgRecords.map(r => ({
+    _id: r.id,
+    name: r.fields.Name||'',
+    desc: r.fields.Description||'',
+    email: r.fields.Email||'',
+    website: r.fields.Website||'',
+    state: r.fields.State||'',
+    strengthsText: r.fields.StrengthsText||'',
+    needsText: r.fields.NeedsText||''
+  }));
+  orgTags = {};
+  tagRecords.forEach(r => {
+    const f = r.fields;
+    const oid = f.OrgID;
+    if (!orgTags[oid]) orgTags[oid] = [];
+    const vi = valueIndex[f.ValueID] || {};
+    orgTags[oid].push({
+      _tagId: r.id,
+      valueId: f.ValueID,
+      tagType: f.TagType||'',
+      value: vi.value||f.ValueID,
+      catKey: vi.catKey||f.TagType||'',
+      catName: vi.catName||''
+    });
+  });
+}
+
+async function loadPendingData() {
+  const [pRecords, pTagRecords] = await Promise.all([
+    atGet(T_PENDING),
+    atGet(T_ORGTAGS + '_Pending').catch(() => ({records:[]}))
+  ]);
+  // Note: pending tags use a separate call filtered by OrgID prefix if needed
+  // For simplicity pending orgs store comma-sep strings until approved
+  pending = pRecords.map(r => ({
+    _id: r.id,
+    name: r.fields.Name||'',
+    desc: r.fields.Description||'',
+    email: r.fields.Email||'',
+    website: r.fields.Website||'',
+    state: r.fields.State||'',
+    geo: r.fields.Geo||'',
+    work: r.fields.Work||'',
+    phase: r.fields.Phase||'',
+    voter: r.fields.Voter||'',
+    demo: r.fields.Demo||'',
+    partisan: r.fields.Partisan||'',
+    strengths: r.fields.Strengths||'',
+    strengthsText: r.fields.StrengthsText||'',
+    needs: r.fields.Needs||'',
+    needsText: r.fields.NeedsText||''
+  }));
+}
+
+// ── UI builders ────────────────────────────────────────────────
+function getCatByKey(key) {
+  return categories.find(c => c.fieldKey === key);
+}
+
+function getActiveValues(catId) {
+  return (catValues[catId]||[]).filter(v => v.active);
+}
+
+function getOrgTagsByType(orgId, tagType) {
+  return (orgTags[orgId]||[]).filter(t => t.catKey === tagType || t.tagType === tagType);
+}
+
+function rebuildUI() {
+  buildBrowseFilters();
+  buildSubmitCategories();
+  buildEditCategories();
+  buildMapCategorySelect();
+}
+
+function buildBrowseFilters() {
+  const row = document.getElementById('browse-filters');
+  // Keep the state filter, rebuild the rest
+  const stateFilter = document.getElementById('f-state-filter');
+
+  // Clear dynamic filters (all except state)
+  const dynamicFilters = row.querySelectorAll('.dynamic-filter');
+  dynamicFilters.forEach(f => f.remove());
+
+  // Build one filter per active category
+  categories.forEach(cat => {
+    const vals = getActiveValues(cat._id);
+    if (!vals.length) return;
+    const sel = document.createElement('select');
+    sel.id = 'f-cat-' + cat._id;
+    sel.className = 'dynamic-filter';
+    sel.onchange = renderCards;
+    sel.innerHTML = `<option value="">All ${cat.name.toLowerCase()}</option>` +
+      vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
+    row.insertBefore(sel, stateFilter);
+  });
+}
+
+function buildCheckboxGroup(containerId, catId, cssClass) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const vals = getActiveValues(catId);
+  el.innerHTML = vals.map(v =>
+    `<label><input type="checkbox" class="${cssClass}" value="${v._id}"> ${v.value}</label>`
+  ).join('');
+}
+
+function buildSubmitCategories() {
+  const container = document.getElementById('submit-categories');
+  if (!container) return;
+  // Exclude Strengths and Needs (handled separately) and single-select categories
+  const singleSelect = ['partisan','geo'];
+  let html = '';
+  categories.forEach(cat => {
+    if (cat.fieldKey === 'strength' || cat.fieldKey === 'need') return;
+    const vals = getActiveValues(cat._id);
+    if (!vals.length) return;
+    const isSingle = singleSelect.includes(cat.fieldKey);
+    const inputType = isSingle ? 'radio' : 'checkbox';
+    const cssClass = 'cb-' + cat._id;
+    html += `<div class="form-group">
+      <label>${cat.name}</label>
+      <div class="cb-columns" id="cb-cat-${cat._id}">
+        ${vals.map(v => `<label><input type="${inputType}" class="${cssClass}" name="cat-${cat._id}" value="${v._id}"> ${v.value}</label>`).join('')}
+      </div>
+      ${cat.fieldKey === 'demo' ? `<button type="button" class="select-all-btn" onclick="selectAllInCat('${cat._id}','${cssClass}')">Select all</button>` : ''}
+    </div>`;
+  });
+  container.innerHTML = html;
+
+  // Strengths and Needs
+  const strCat = categories.find(c => c.fieldKey === 'strength');
+  const needCat = categories.find(c => c.fieldKey === 'need');
+  if (strCat) buildCheckboxGroup('cb-str-container', strCat._id, 'cb-str');
+  if (needCat) buildCheckboxGroup('cb-need-container', needCat._id, 'cb-need');
+}
+
+function buildEditCategories() {
+  const container = document.getElementById('edit-categories');
+  if (!container) return;
+  const singleSelect = ['partisan','geo'];
+  let html = '';
+  categories.forEach(cat => {
+    if (cat.fieldKey === 'strength' || cat.fieldKey === 'need') return;
+    const vals = getActiveValues(cat._id);
+    if (!vals.length) return;
+    const isSingle = singleSelect.includes(cat.fieldKey);
+    const inputType = isSingle ? 'radio' : 'checkbox';
+    const cssClass = 'e-cat-' + cat._id;
+    html += `<div class="form-group">
+      <label>${cat.name}</label>
+      <div class="cb-columns" id="e-cat-${cat._id}">
+        ${vals.map(v => `<label><input type="${inputType}" class="${cssClass}" name="ecat-${cat._id}" value="${v._id}"> ${v.value}</label>`).join('')}
+      </div>
+      ${cat.fieldKey === 'demo' ? `<button type="button" class="select-all-btn" onclick="selectAllInCat('${cat._id}','${cssClass}')">Select all</button>` : ''}
+    </div>`;
+  });
+  container.innerHTML = html;
+
+  const strCat = categories.find(c => c.fieldKey === 'strength');
+  const needCat = categories.find(c => c.fieldKey === 'need');
+  if (strCat) buildCheckboxGroup('e-str-container', strCat._id, 'e-str');
+  if (needCat) buildCheckboxGroup('e-need-container', needCat._id, 'e-need');
+}
+
+function buildMapCategorySelect() {
+  const sel = document.getElementById('map-filter-cat');
+  if (!sel) return;
+  sel.innerHTML = categories.map(cat =>
+    `<option value="${cat._id}">${cat.name}</option>`
+  ).join('');
+  updateMapFilterValues();
+}
+
+// ── Browse ─────────────────────────────────────────────────────
 function showTab(t, btn) {
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-' + t).classList.add('active');
-  if (t === 'admin' && adminLoggedIn) { loadPending(); }
-  if (t === 'map') { updateMapFilterOptions(); }
+  if (t === 'admin' && adminLoggedIn) loadPending();
+  if (t === 'map') updateMapFilterValues();
 }
 
 function clearFilters() {
   document.getElementById('search').value = '';
-  ['f-geo','f-work','f-phase','f-demo','f-voter','f-state-filter','f-partisan','f-strength','f-need'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-state-filter').value = '';
+  document.querySelectorAll('.dynamic-filter').forEach(s => s.value = '');
   activeLetter = '';
   renderCards();
-}
-
-function matches(org, f) {
-  if (f.q) {
-    const blob = [org.name,org.desc,org.state,...org.strengths,...org.needs,org.strengthsText,org.needsText].join(' ').toLowerCase();
-    if (!blob.includes(f.q)) return false;
-  }
-  if (f.geo && org.geo !== f.geo) return false;
-  if (f.work && !org.work.includes(f.work)) return false;
-  if (f.phase && !org.phase.includes(f.phase)) return false;
-  if (f.demo && !org.demo.includes(f.demo)) return false;
-  if (f.voter && !org.voter.includes(f.voter)) return false;
-  if (f.stateFilter && !org.state.toLowerCase().includes(f.stateFilter.toLowerCase())) return false;
-  if (f.partisan && org.partisan !== f.partisan) return false;
-  if (f.strength && !org.strengths.includes(f.strength)) return false;
-  if (f.need && !org.needs.includes(f.need)) return false;
-  return true;
 }
 
 function toggleDesc() {
@@ -664,154 +603,263 @@ function toggleDesc() {
   renderCards();
 }
 
-function setLetter(letter) {
-  activeLetter = letter === '' ? '' : (activeLetter === letter ? '' : letter);
+function setLetter(l) {
+  activeLetter = l === '' ? '' : (activeLetter === l ? '' : l);
   renderCards();
 }
 
-function renderAlphaBar(filtered) {
-  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  const available = new Set(orgs.map(o => o.name[0].toUpperCase()));
-  const bar = document.getElementById('alpha-bar');
-  bar.innerHTML = letters.map(l => `
-    <button class="alpha-btn ${!available.has(l) ? 'disabled' : ''} ${activeLetter === l ? 'active' : ''}"
-      onclick="setLetter('${l}')">${l}</button>`).join('') +
-    `<button class="alpha-all-btn ${activeLetter === '' ? 'active' : ''}" onclick="setLetter('')">All</button>`;
+function getActiveFilters() {
+  const filters = {};
+  document.querySelectorAll('.dynamic-filter').forEach(sel => {
+    if (sel.value) {
+      const catId = sel.id.replace('f-cat-','');
+      filters[catId] = sel.value; // valueId
+    }
+  });
+  return filters;
+}
+
+function orgMatchesFilters(org, q, catFilters, stateFilter) {
+  const tags = orgTags[org._id] || [];
+  const tagValues = tags.map(t => t.value).join(' ').toLowerCase();
+  const blob = [org.name, org.desc, org.state, org.strengthsText, org.needsText, tagValues].join(' ').toLowerCase();
+
+  if (q && !blob.includes(q)) return false;
+  if (stateFilter && !org.state.toLowerCase().includes(stateFilter.toLowerCase())) return false;
+
+  for (const [catId, valueId] of Object.entries(catFilters)) {
+    if (!tags.some(t => t.valueId === valueId)) return false;
+  }
+  return true;
 }
 
 function renderCards() {
-  const f = {
-    q: document.getElementById('search').value.toLowerCase(),
-    geo: document.getElementById('f-geo').value,
-    work: document.getElementById('f-work').value,
-    phase: document.getElementById('f-phase').value,
-    demo: document.getElementById('f-demo').value,
-    voter: document.getElementById('f-voter').value,
-    stateFilter: document.getElementById('f-state-filter').value,
-    partisan: document.getElementById('f-partisan').value,
-    strength: document.getElementById('f-strength').value,
-    need: document.getElementById('f-need').value
-  };
-  let filtered = orgs.filter(o => matches(o, f));
+  const q = document.getElementById('search').value.toLowerCase();
+  const stateFilter = document.getElementById('f-state-filter').value;
+  const catFilters = getActiveFilters();
+
+  let filtered = orgs.filter(o => orgMatchesFilters(o, q, catFilters, stateFilter));
   if (activeLetter) filtered = filtered.filter(o => o.name[0].toUpperCase() === activeLetter);
-  filtered.sort((a, b) => a.name.localeCompare(b.name));
-  renderAlphaBar(filtered);
-  document.getElementById('results-count').textContent = filtered.length + ' organization' + (filtered.length !== 1 ? 's' : '') + ' found';
+  filtered.sort((a,b) => a.name.localeCompare(b.name));
+
+  renderAlphaBar();
+  document.getElementById('results-count').textContent =
+    filtered.length + ' organization' + (filtered.length !== 1 ? 's' : '') + ' found';
+
   const c = document.getElementById('cards-container');
-  if (!filtered.length) { c.innerHTML = '<div class="no-results">No organizations match your filters. Try broadening your search.</div>'; return; }
-  c.innerHTML = filtered.map((org, i) => `
-    <div class="card${showDesc ? '' : ' card-compact'}" onclick="openModal(${i})">
+  if (!filtered.length) { c.innerHTML = '<div class="no-results">No organizations match your filters.</div>'; return; }
+
+  c.innerHTML = filtered.map((org, i) => {
+    const tags = orgTags[org._id] || [];
+    // Group tags by category for display
+    const tagsByKey = {};
+    tags.forEach(t => {
+      if (!tagsByKey[t.catKey]) tagsByKey[t.catKey] = [];
+      tagsByKey[t.catKey].push(t.value);
+    });
+
+    const tagHtml = Object.entries(tagsByKey).map(([key, vals]) =>
+      vals.slice(0,3).map(v => `<span class="tag tag-${key}">${v}</span>`).join('')
+    ).join('');
+
+    return `<div class="card${showDesc ? '' : ' card-compact'}" onclick="openModal(${i})">
       <div class="card-name">${org.name}</div>
-      <div class="card-geo">${org.geo}${org.state ? ' · ' + org.state : ''}</div>
+      <div class="card-geo">${org.state || ''}</div>
       <div class="card-desc">${org.desc}</div>
-      <div class="tags">
-        ${org.work.map(t=>`<span class="tag tag-work">${t}</span>`).join('')}
-        ${org.phase.map(t=>`<span class="tag tag-phase">${t}</span>`).join('')}
-        ${org.voter.map(t=>`<span class="tag tag-voter">${t}</span>`).join('')}
-        ${org.demo.map(t=>`<span class="tag tag-demo">${t}</span>`).join('')}
-        ${org.partisan ? `<span class="tag ${org.partisan==='Partisan - left'?'tag-partisan-left':org.partisan==='Partisan - right'?'tag-partisan-right':'tag-partisan'}">${org.partisan}</span>` : ''}
-        ${org.strengths.slice(0,3).map(t=>`<span class="tag tag-strength">${t}</span>`).join('')}
-        ${org.needs.slice(0,2).map(t=>`<span class="tag tag-need">Need: ${t}</span>`).join('')}
-      </div>
-    </div>`).join('');
+      <div class="tags">${tagHtml}</div>
+    </div>`;
+  }).join('');
   window._filtered = filtered;
 }
 
+function renderAlphaBar() {
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const available = new Set(orgs.map(o => o.name[0]?.toUpperCase()));
+  const bar = document.getElementById('alpha-bar');
+  bar.innerHTML = letters.map(l =>
+    `<button class="alpha-btn ${!available.has(l)?'disabled':''} ${activeLetter===l?'active':''}" onclick="setLetter('${l}')">${l}</button>`
+  ).join('') + `<button class="alpha-all-btn ${activeLetter===''?'active':''}" onclick="setLetter('')">All</button>`;
+}
+
+// ── Org Modal ──────────────────────────────────────────────────
 function openModal(i) {
   const org = window._filtered[i];
   if (!org) return;
   document.getElementById('modal-name').textContent = org.name;
-  document.getElementById('modal-geo').textContent = org.geo + (org.state ? ' · ' + org.state : '');
+  document.getElementById('modal-geo').textContent = org.state || '';
   document.getElementById('modal-desc').textContent = org.desc;
-  document.getElementById('modal-strengths').innerHTML =
-    '<div class="tags" style="margin-bottom:6px">' + org.strengths.map(t=>`<span class="tag tag-strength">${t}</span>`).join('') + '</div>' +
-    (org.strengthsText ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-top:4px">${org.strengthsText}</p>` : '');
-  document.getElementById('modal-needs').innerHTML =
-    '<div class="tags" style="margin-bottom:6px">' + org.needs.map(t=>`<span class="tag tag-need">${t}</span>`).join('') + '</div>' +
-    (org.needsText ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-top:4px">${org.needsText}</p>` : '');
-  document.getElementById('modal-tags').innerHTML = [
-    ...org.work.map(t=>`<span class="tag tag-work">${t}</span>`),
-    ...org.phase.map(t=>`<span class="tag tag-phase">${t}</span>`),
-    ...org.voter.map(t=>`<span class="tag tag-voter">${t}</span>`),
-    ...org.demo.map(t=>`<span class="tag tag-demo">${t}</span>`),
-    org.partisan ? `<span class="tag ${org.partisan==='Partisan - left'?'tag-partisan-left':org.partisan==='Partisan - right'?'tag-partisan-right':'tag-partisan'}">${org.partisan}</span>` : ''
-  ].join('');
+
+  const tags = orgTags[org._id] || [];
+  // Group by category
+  const byCat = {};
+  tags.forEach(t => {
+    const key = t.catName || t.catKey;
+    if (!byCat[key]) byCat[key] = { key: t.catKey, values: [] };
+    byCat[key].values.push(t.value);
+  });
+
+  // Separate strengths/needs text
+  const strCat = categories.find(c => c.fieldKey === 'strength');
+  const needCat = categories.find(c => c.fieldKey === 'need');
+  let sectionsHtml = '';
+  Object.entries(byCat).forEach(([catName, data]) => {
+    const isStrength = strCat && data.key === strCat.fieldKey;
+    const isNeed = needCat && data.key === needCat.fieldKey;
+    sectionsHtml += `<div class="modal-section">
+      <h3>${catName}</h3>
+      <div class="tags">${data.values.map(v =>
+        `<span class="tag tag-${data.key}">${isNeed ? 'Need: ' : ''}${v}</span>`
+      ).join('')}</div>
+      ${isStrength && org.strengthsText ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-top:6px">${org.strengthsText}</p>` : ''}
+      ${isNeed && org.needsText ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-top:6px">${org.needsText}</p>` : ''}
+    </div>`;
+  });
+  document.getElementById('modal-tag-sections').innerHTML = sectionsHtml;
+
   let ch = '';
   if (org.email) ch += `<a href="mailto:${org.email}" class="contact-link">${org.email}</a><br>`;
   if (org.website) ch += `<a href="${org.website}" class="contact-link" target="_blank">${org.website}</a>`;
   document.getElementById('modal-contact').innerHTML = ch || '<span style="font-size:13px;color:#aaa">No contact info provided</span>';
   document.getElementById('modal').classList.add('open');
 }
-
 function closeModal(e) { if (e.target === document.getElementById('modal')) closeModalDirect(); }
 function closeModalDirect() { document.getElementById('modal').classList.remove('open'); }
-function getChecked(cls) { return [...document.querySelectorAll('.' + cls + ':checked')].map(c => c.value); }
+
+// ── Submit form ────────────────────────────────────────────────
+function getCheckedValues(cssClass) {
+  return [...document.querySelectorAll('.' + cssClass + ':checked')].map(c => c.value);
+}
+
+function selectAllInCat(catId, cssClass) {
+  document.querySelectorAll('.' + cssClass).forEach(cb => cb.checked = true);
+}
 
 async function submitGroup() {
   const name = document.getElementById('f-name').value.trim();
-  const email = document.getElementById('f-email').value.trim();
   const desc = document.getElementById('f-desc').value.trim();
-  const geo = document.getElementById('f-geo-s').value;
-  if (!name || !desc || !geo) { alert('Please fill in all required fields (marked with *).'); return; }
+  if (!name || !desc) { alert('Please fill in organization name and description.'); return; }
+
   const btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Submitting…';
+
   try {
-    await atCreate(TABLE_PENDING, {
-      Name:name, Email:email, Website:document.getElementById('f-website').value.trim(),
-      Description:desc, Geo:geo, State:document.getElementById('f-state').value.trim(),
-      Partisan: (document.querySelector('input[name="partisan"]:checked') || {}).value || '',
-      Work:getChecked('cb-work').join(','), Phase:getChecked('cb-phase').join(','),
-      Voter:getChecked('cb-voter').join(','), Demo:getChecked('cb-demo').join(','),
-      Strengths:getChecked('cb-str').join(','), StrengthsText:document.getElementById('f-strengths-text').value.trim(),
-      Needs:getChecked('cb-need').join(','), NeedsText:document.getElementById('f-needs-text').value.trim(),
-      SubmittedAt:new Date().toISOString()
+    // Collect all checked value IDs and their labels for pending storage
+    const tagData = {};
+    categories.forEach(cat => {
+      if (cat.fieldKey === 'strength' || cat.fieldKey === 'need') return;
+      const checked = getCheckedValues('cb-' + cat._id);
+      if (checked.length) tagData[cat.fieldKey] = checked.map(vid => (valueIndex[vid]||{}).value||vid).join(',');
     });
+
+    const fields = {
+      Name: name,
+      Email: document.getElementById('f-email').value.trim(),
+      Website: document.getElementById('f-website').value.trim(),
+      Description: desc,
+      State: document.getElementById('f-state').value.trim(),
+      Strengths: getCheckedValues('cb-str').map(vid => (valueIndex[vid]||{}).value||vid).join(','),
+      StrengthsText: document.getElementById('f-strengths-text').value.trim(),
+      Needs: getCheckedValues('cb-need').map(vid => (valueIndex[vid]||{}).value||vid).join(','),
+      NeedsText: document.getElementById('f-needs-text').value.trim(),
+      TagData: JSON.stringify(tagData),
+      SubmittedAt: new Date().toISOString()
+    };
+
+    await atCreate(T_PENDING, fields);
     document.getElementById('success-modal').classList.add('open');
-    ['f-name','f-email','f-desc','f-website','f-state','f-strengths-text','f-needs-text'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('f-geo-s').value = '';
-    document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+    cancelForm();
   } catch(e) {
-    alert('Submission failed — please try again. (' + e.message + ')');
+    alert('Submission failed: ' + e.message);
   }
   btn.disabled = false; btn.textContent = 'Submit for review';
 }
 
 function closeSuccessModal() {
   document.getElementById('success-modal').classList.remove('open');
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelector('.tab').classList.add('active');
-  document.getElementById('tab-browse').classList.add('active');
-}
-
-function selectAllCommunities(cls) {
-  document.querySelectorAll('.' + cls).forEach(cb => cb.checked = true);
+  cancelForm();
 }
 
 function cancelForm() {
-  ['f-name','f-email','f-desc','f-website','f-state','f-strengths-text','f-needs-text'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('f-geo-s').value = '';
-  document.querySelectorAll('input[type=checkbox], input[type=radio]').forEach(el => el.checked = false);
+  ['f-name','f-email','f-desc','f-website','f-state','f-strengths-text','f-needs-text'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.querySelectorAll('#tab-submit input[type=checkbox], #tab-submit input[type=radio]').forEach(el => el.checked = false);
   document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.querySelector('.tab').classList.add('active');
   document.getElementById('tab-browse').classList.add('active');
 }
 
-async function atUpdate(table, id, fields) {
-  const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fields })
-  });
-  if (!res.ok) throw new Error(`Server error ${res.status}`);
-  return res.json();
+// ── Network Map ────────────────────────────────────────────────
+let networkInstance = null;
+
+function updateMapFilterValues() {
+  const catSel = document.getElementById('map-filter-cat');
+  const valSel = document.getElementById('map-filter-val');
+  const catId = catSel.value;
+  const vals = getActiveValues(catId);
+  valSel.innerHTML = vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
+  renderMap();
 }
 
+function renderMap() {
+  const catId = document.getElementById('map-filter-cat').value;
+  const valueId = document.getElementById('map-filter-val').value;
+  if (!valueId || !orgs.length) return;
+
+  const matched = orgs.filter(o => (orgTags[o._id]||[]).some(t => t.valueId === valueId));
+  const unmatched = orgs.filter(o => !(orgTags[o._id]||[]).some(t => t.valueId === valueId));
+  const valueName = (valueIndex[valueId]||{}).value || valueId;
+
+  const nodes = new vis.DataSet([
+    ...matched.map(org => ({
+      id: org._id, title: org.name,
+      label: org.name.length > 22 ? org.name.substring(0,20)+'…' : org.name,
+      color: { background:'#e6f1fb', border:'#0c447c', highlight:{background:'#b5d4f4',border:'#0c447c'} },
+      font: { color:'#0c447c', size:13 }, shape:'ellipse', size:20
+    })),
+    ...unmatched.map(org => ({
+      id: org._id, title: org.name,
+      label: org.name.length > 22 ? org.name.substring(0,20)+'…' : org.name,
+      color: { background:'#f0f0f0', border:'#ccc', highlight:{background:'#e0e0db',border:'#aaa'} },
+      font: { color:'#aaa', size:11 }, shape:'ellipse', size:14
+    }))
+  ]);
+
+  const edges = new vis.DataSet();
+  for (let i = 0; i < matched.length; i++)
+    for (let j = i+1; j < matched.length; j++)
+      edges.add({from:matched[i]._id, to:matched[j]._id, color:{color:'#b5d4f4',highlight:'#0c447c'}, width:1.5});
+
+  document.getElementById('map-legend').textContent =
+    `${matched.length} organization${matched.length!==1?'s':''} share "${valueName}"`;
+
+  const container = document.getElementById('map-container');
+  if (networkInstance) { networkInstance.destroy(); networkInstance = null; }
+  networkInstance = new vis.Network(container, {nodes,edges}, {
+    physics: { solver:'forceAtlas2Based', forceAtlas2Based:{gravitationalConstant:-60,springLength:120}, stabilization:{iterations:150} },
+    interaction: { hover:true, tooltipDelay:100 },
+    nodes: { borderWidth:1.5 },
+    edges: { smooth:{type:'continuous'} }
+  });
+  networkInstance.on('click', params => {
+    if (params.nodes.length) {
+      const id = params.nodes[0];
+      const idx = (window._filtered||orgs).findIndex(o => o._id === id);
+      if (idx >= 0) {
+        if (!window._filtered) window._filtered = orgs;
+        openModal(idx);
+      }
+    }
+  });
+}
+
+// ── Admin ──────────────────────────────────────────────────────
 function showAdminSection(section) {
   ['pending','approved','lists'].forEach(s => {
-    document.getElementById('admin-section-' + s).style.display = s === section ? 'block' : 'none';
-    document.getElementById('admin-nav-' + s).classList.toggle('active', s === section);
+    document.getElementById('admin-section-' + s).style.display = s===section ? 'block' : 'none';
+    document.getElementById('admin-nav-' + s).classList.toggle('active', s===section);
   });
   if (section === 'approved') renderApproved();
   if (section === 'lists') renderListsAdmin();
@@ -830,87 +878,196 @@ async function loadPending() {
   const c = document.getElementById('pending-container');
   c.innerHTML = '<div class="loading">Loading…</div>';
   try {
-    const records = await atGet(TABLE_PENDING);
-    pending = records.map(recordToOrg);
+    const records = await atGet(T_PENDING);
+    pending = records.map(r => ({
+      _id: r.id,
+      name: r.fields.Name||'', desc: r.fields.Description||'',
+      email: r.fields.Email||'', website: r.fields.Website||'',
+      state: r.fields.State||'',
+      strengths: r.fields.Strengths||'', strengthsText: r.fields.StrengthsText||'',
+      needs: r.fields.Needs||'', needsText: r.fields.NeedsText||'',
+      tagData: r.fields.TagData ? JSON.parse(r.fields.TagData) : {}
+    }));
     renderPending();
   } catch(e) {
     c.innerHTML = `<div class="error-msg">Could not load pending submissions. (${e.message})</div>`;
   }
 }
 
-function renderApproved() {
-  const c = document.getElementById('approved-container');
-  if (!orgs.length) { c.innerHTML = '<p style="font-size:14px;color:#888">No approved organizations yet.</p>'; return; }
-  c.innerHTML = orgs.map((org, i) => `
+function renderPending() {
+  const c = document.getElementById('pending-container');
+  if (!pending.length) { c.innerHTML = '<p style="font-size:14px;color:#888">No pending submissions.</p>'; return; }
+  c.innerHTML = pending.map((org,i) => `
     <div class="admin-card">
       <div style="font-weight:500;font-size:15px">${org.name}</div>
-      <div style="font-size:12px;color:#888;margin:2px 0 6px">${org.geo}${org.state?' · '+org.state:''}</div>
+      <div style="font-size:12px;color:#888;margin:2px 0 6px">${org.state} · ${org.email}</div>
       <div style="font-size:13px;color:#555;line-height:1.5">${org.desc}</div>
+      <div class="tags" style="margin-top:8px">
+        ${Object.entries(org.tagData).map(([k,v]) => v.split(',').map(val => `<span class="tag tag-${k}">${val}</span>`).join('')).join('')}
+        ${org.strengths.split(',').filter(Boolean).map(v => `<span class="tag tag-strength">${v}</span>`).join('')}
+        ${org.needs.split(',').filter(Boolean).map(v => `<span class="tag tag-need">Need: ${v}</span>`).join('')}
+      </div>
       <div class="admin-actions">
-        <button class="btn-edit" onclick="openEditModal(${i})">Edit</button>
-        <button class="btn-delete" onclick="deleteOrg(${i})">Delete</button>
+        <button class="btn-approve" onclick="approvePending(${i})">Approve</button>
+        <button class="btn-reject" onclick="rejectPending(${i})">Reject</button>
       </div>
     </div>`).join('');
 }
 
-function openEditModal(i) {
-  const org = orgs[i];
-  document.getElementById('e-id').value = org._id;
+async function approvePending(i) {
+  const p = pending[i];
+  try {
+    // Create org record
+    const orgRes = await atCreate(T_ORGS, {
+      Name: p.name, Email: p.email, Website: p.website,
+      Description: p.desc, State: p.state,
+      StrengthsText: p.strengthsText, NeedsText: p.needsText,
+      SubmittedAt: new Date().toISOString()
+    });
+    const newOrgId = orgRes.records[0].id;
+
+    // Create OrgTag records for each tag
+    const tagPromises = [];
+    // Focus area tags from tagData
+    Object.entries(p.tagData).forEach(([fieldKey, valStr]) => {
+      const cat = categories.find(c => c.fieldKey === fieldKey);
+      if (!cat) return;
+      valStr.split(',').filter(Boolean).forEach(valName => {
+        const catVal = (catValues[cat._id]||[]).find(v => v.value === valName);
+        if (catVal) {
+          tagPromises.push(atCreate(T_ORGTAGS, {OrgID: newOrgId, ValueID: catVal._id, TagType: fieldKey}));
+        }
+      });
+    });
+    // Strength tags
+    const strCat = categories.find(c => c.fieldKey === 'strength');
+    if (strCat) {
+      p.strengths.split(',').filter(Boolean).forEach(valName => {
+        const catVal = (catValues[strCat._id]||[]).find(v => v.value === valName);
+        if (catVal) tagPromises.push(atCreate(T_ORGTAGS, {OrgID: newOrgId, ValueID: catVal._id, TagType: 'strength'}));
+      });
+    }
+    // Need tags
+    const needCat = categories.find(c => c.fieldKey === 'need');
+    if (needCat) {
+      p.needs.split(',').filter(Boolean).forEach(valName => {
+        const catVal = (catValues[needCat._id]||[]).find(v => v.value === valName);
+        if (catVal) tagPromises.push(atCreate(T_ORGTAGS, {OrgID: newOrgId, ValueID: catVal._id, TagType: 'need'}));
+      });
+    }
+    await Promise.all(tagPromises);
+    await atDelete(T_PENDING, p._id);
+    pending.splice(i,1);
+    await loadOrgs();
+    renderCards();
+    renderPending();
+  } catch(e) { alert('Error approving: ' + e.message); }
+}
+
+async function rejectPending(i) {
+  try {
+    await atDelete(T_PENDING, pending[i]._id);
+    pending.splice(i,1);
+    renderPending();
+  } catch(e) { alert('Error rejecting: ' + e.message); }
+}
+
+function renderApproved() {
+  const c = document.getElementById('approved-container');
+  if (!orgs.length) { c.innerHTML = '<p style="font-size:14px;color:#888">No approved organizations yet.</p>'; return; }
+  c.innerHTML = [...orgs].sort((a,b)=>a.name.localeCompare(b.name)).map((org,i) => `
+    <div class="admin-card">
+      <div style="font-weight:500;font-size:15px">${org.name}</div>
+      <div style="font-size:12px;color:#888;margin:2px 0 6px">${org.state}</div>
+      <div style="font-size:13px;color:#555;line-height:1.5">${org.desc}</div>
+      <div class="admin-actions">
+        <button class="btn-edit" onclick="openEditModal('${org._id}')">Edit</button>
+        <button class="btn-delete" onclick="deleteOrg('${org._id}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Edit org modal ─────────────────────────────────────────────
+function openEditModal(orgId) {
+  const org = orgs.find(o => o._id === orgId);
+  if (!org) return;
+  document.getElementById('e-id').value = orgId;
   document.getElementById('e-name').value = org.name;
   document.getElementById('e-email').value = org.email;
   document.getElementById('e-website').value = org.website;
   document.getElementById('e-desc').value = org.desc;
-  document.getElementById('e-geo').value = org.geo;
   document.getElementById('e-state').value = org.state;
   document.getElementById('e-strengths-text').value = org.strengthsText;
   document.getElementById('e-needs-text').value = org.needsText;
-  // partisan radio
-  document.querySelectorAll('input[name="e-partisan"]').forEach(r => r.checked = r.value === org.partisan);
-  // checkboxes
-  ['e-work','e-phase','e-voter','e-demo','e-str','e-need'].forEach(cls => {
-    document.querySelectorAll('.' + cls).forEach(cb => cb.checked = false);
+
+  // Pre-check tags
+  const tags = orgTags[orgId] || [];
+  const checkedValueIds = new Set(tags.map(t => t.valueId));
+
+  // Focus area categories
+  categories.forEach(cat => {
+    if (cat.fieldKey === 'strength' || cat.fieldKey === 'need') return;
+    document.querySelectorAll('.e-cat-' + cat._id).forEach(cb => {
+      cb.checked = checkedValueIds.has(cb.value);
+    });
   });
-  org.work.forEach(v => { const el = document.querySelector(`.e-work[value="${v}"]`); if(el) el.checked = true; });
-  org.phase.forEach(v => { const el = document.querySelector(`.e-phase[value="${v}"]`); if(el) el.checked = true; });
-  org.voter.forEach(v => { const el = document.querySelector(`.e-voter[value="${v}"]`); if(el) el.checked = true; });
-  org.demo.forEach(v => { const el = document.querySelector(`.e-demo[value="${v}"]`); if(el) el.checked = true; });
-  org.strengths.forEach(v => { const el = document.querySelector(`.e-str[value="${v}"]`); if(el) el.checked = true; });
-  org.needs.forEach(v => { const el = document.querySelector(`.e-need[value="${v}"]`); if(el) el.checked = true; });
+  // Strengths/Needs
+  document.querySelectorAll('.e-str').forEach(cb => cb.checked = checkedValueIds.has(cb.value));
+  document.querySelectorAll('.e-need').forEach(cb => cb.checked = checkedValueIds.has(cb.value));
+
   document.getElementById('edit-overlay').classList.add('open');
 }
 
-function closeEditModal(e) { if (e.target === document.getElementById('edit-overlay')) closeEditModalDirect(); }
+function closeEditModal(e) { if (e.target===document.getElementById('edit-overlay')) closeEditModalDirect(); }
 function closeEditModalDirect() { document.getElementById('edit-overlay').classList.remove('open'); }
 
-function getEditChecked(cls) { return [...document.querySelectorAll('.' + cls + ':checked')].map(c => c.value); }
-
 async function saveEdit() {
-  const id = document.getElementById('e-id').value;
+  const orgId = document.getElementById('e-id').value;
   const name = document.getElementById('e-name').value.trim();
   const desc = document.getElementById('e-desc').value.trim();
-  const geo = document.getElementById('e-geo').value;
-  if (!name || !desc || !geo) { alert('Please fill in all required fields.'); return; }
+  if (!name || !desc) { alert('Please fill in all required fields.'); return; }
+
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
-  const fields = {
-    Name: name,
-    Email: document.getElementById('e-email').value.trim(),
-    Website: document.getElementById('e-website').value.trim(),
-    Description: desc, Geo: geo,
-    State: document.getElementById('e-state').value.trim(),
-    Partisan: (document.querySelector('input[name="e-partisan"]:checked') || {}).value || '',
-    Work: getEditChecked('e-work').join(','),
-    Phase: getEditChecked('e-phase').join(','),
-    Voter: getEditChecked('e-voter').join(','),
-    Demo: getEditChecked('e-demo').join(','),
-    Strengths: getEditChecked('e-str').join(','),
-    StrengthsText: document.getElementById('e-strengths-text').value.trim(),
-    Needs: getEditChecked('e-need').join(','),
-    NeedsText: document.getElementById('e-needs-text').value.trim()
-  };
+
   try {
-    await atUpdate(TABLE_ORGS, id, fields);
-    orgs = (await atGet(TABLE_ORGS)).map(recordToOrg);
+    // Update org fields
+    await atUpdate(T_ORGS, orgId, {
+      Name: name,
+      Email: document.getElementById('e-email').value.trim(),
+      Website: document.getElementById('e-website').value.trim(),
+      Description: desc,
+      State: document.getElementById('e-state').value.trim(),
+      StrengthsText: document.getElementById('e-strengths-text').value.trim(),
+      NeedsText: document.getElementById('e-needs-text').value.trim()
+    });
+
+    // Collect new tag value IDs
+    const newValueIds = new Set();
+    categories.forEach(cat => {
+      if (cat.fieldKey === 'strength' || cat.fieldKey === 'need') return;
+      document.querySelectorAll('.e-cat-' + cat._id + ':checked').forEach(cb => newValueIds.add(cb.value));
+    });
+    document.querySelectorAll('.e-str:checked').forEach(cb => newValueIds.add(cb.value));
+    document.querySelectorAll('.e-need:checked').forEach(cb => newValueIds.add(cb.value));
+
+    // Existing tags
+    const existingTags = orgTags[orgId] || [];
+    const existingValueIds = new Set(existingTags.map(t => t.valueId));
+
+    // Delete removed tags
+    const toDelete = existingTags.filter(t => !newValueIds.has(t.valueId));
+    await Promise.all(toDelete.map(t => atDelete(T_ORGTAGS, t._tagId)));
+
+    // Add new tags
+    const toAdd = [...newValueIds].filter(vid => !existingValueIds.has(vid));
+    const cat = (vid) => categories.find(c => (catValues[c._id]||[]).some(v => v._id === vid));
+    await Promise.all(toAdd.map(vid => {
+      const c = cat(vid);
+      return atCreate(T_ORGTAGS, {OrgID: orgId, ValueID: vid, TagType: c ? c.fieldKey : ''});
+    }));
+
+    await loadOrgs();
     renderCards();
     renderApproved();
     closeEditModalDirect();
@@ -918,113 +1075,154 @@ async function saveEdit() {
   btn.disabled = false; btn.textContent = 'Save changes';
 }
 
-async function deleteOrg(i) {
-  const org = orgs[i];
-  if (!confirm(`Delete "${org.name}" from the directory? This cannot be undone.`)) return;
+async function deleteOrg(orgId) {
+  const org = orgs.find(o => o._id === orgId);
+  if (!confirm(`Delete "${org?.name}" from the directory? This cannot be undone.`)) return;
   try {
-    await atDelete(TABLE_ORGS, org._id);
-    orgs.splice(i, 1);
+    // Delete all tags for this org first
+    const tags = orgTags[orgId] || [];
+    await Promise.all(tags.map(t => atDelete(T_ORGTAGS, t._tagId)));
+    await atDelete(T_ORGS, orgId);
+    await loadOrgs();
     renderCards();
     renderApproved();
   } catch(e) { alert('Error deleting: ' + e.message); }
 }
 
-function renderPending() {
-  const c = document.getElementById('pending-container');
-  if (!pending.length) { c.innerHTML = '<p style="font-size:14px;color:#888">No pending submissions.</p>'; return; }
-  c.innerHTML = pending.map((org, i) => `
-    <div class="admin-card">
-      <div style="font-weight:500;font-size:15px">${org.name}</div>
-      <div style="font-size:12px;color:#888;margin:2px 0 6px">${org.geo}${org.state?' · '+org.state:''} · ${org.email}</div>
-      <div style="font-size:13px;color:#555;line-height:1.5">${org.desc}</div>
-      <div class="tags" style="margin-top:8px">
-        ${org.work.map(t=>`<span class="tag tag-work">${t}</span>`).join('')}
-        ${org.strengths.map(t=>`<span class="tag tag-strength">${t}</span>`).join('')}
-        ${org.needs.map(t=>`<span class="tag tag-need">Need: ${t}</span>`).join('')}
-      </div>
-      <div class="admin-actions">
-        <button class="btn-approve" onclick="approve(${i})">Approve</button>
-        <button class="btn-reject" onclick="reject(${i})">Reject</button>
-      </div>
-    </div>`).join('');
-}
-
-async function approve(i) {
-  const org = pending[i];
-  try {
-    await atCreate(TABLE_ORGS, orgToFields(org));
-    await atDelete(TABLE_PENDING, org._id);
-    pending.splice(i, 1);
-    orgs = (await atGet(TABLE_ORGS)).map(recordToOrg);
-    renderCards();
-    renderPending();
-    renderApproved();
-  } catch(e) { alert('Error approving: ' + e.message); }
-}
-
-async function reject(i) {
-  const org = pending[i];
-  try {
-    await atDelete(TABLE_PENDING, org._id);
-    pending.splice(i, 1);
-    renderPending();
-  } catch(e) { alert('Error rejecting: ' + e.message); }
-}
-
-// ── Lists Admin ─────────────────────────────────────────────────
-const LIST_CATEGORIES = ['Services','Election phases','Voter reg focus','Community focus','Strengths','Needs','Affiliations','Regions'];
-
-function renderListsAdmin() {
+// ── Lists/Category Admin ───────────────────────────────────────
+async function renderListsAdmin() {
   const c = document.getElementById('lists-container');
-  if (!c) return;
-  c.innerHTML = LIST_CATEGORIES.map(cat => {
-    const items = lists[cat] || [];
-    return `
-    <div class="list-category">
-      <div class="list-category-title">${cat}</div>
-      <div class="list-items" id="list-items-${cat.replace(/\s+/g,'-')}">
-        ${items.map(item => `
-          <div class="list-item" id="list-item-${item.id}">
-            ${item.value}
-            <button class="list-item-delete" onclick="deleteListItem('${item.id}','${cat}')" title="Remove">×</button>
-          </div>`).join('')}
-      </div>
-      <div class="list-add-row">
-        <input class="list-add-input" type="text" id="list-input-${cat.replace(/\s+/g,'-')}" placeholder="Add new option…" onkeydown="if(event.key==='Enter')addListItem('${cat}')">
-        <button class="list-add-btn" onclick="addListItem('${cat}')">Add</button>
-      </div>
-    </div>`;
-  }).join('');
+  c.innerHTML = '<div class="loading">Loading…</div>';
+  try {
+    // Reload schema to get latest including inactive
+    const [catRecords, valRecords] = await Promise.all([atGet(T_CATS), atGet(T_CATVALS)]);
+    const allCats = catRecords
+      .map(r => ({_id:r.id, name:r.fields.Name||'', fieldKey:r.fields.FieldKey||'', sortOrder:r.fields.SortOrder||0, active:!!r.fields.Active}))
+      .sort((a,b) => a.sortOrder - b.sortOrder);
+
+    const allVals = {};
+    valRecords.forEach(r => {
+      const cid = r.fields.CategoryID;
+      if (!allVals[cid]) allVals[cid] = [];
+      allVals[cid].push({_id:r.id, value:r.fields.Value||'', sortOrder:r.fields.SortOrder||0, active:!!r.fields.Active});
+    });
+    Object.values(allVals).forEach(arr => arr.sort((a,b) => a.sortOrder - b.sortOrder));
+
+    c.innerHTML = allCats.map(cat => {
+      const vals = allVals[cat._id] || [];
+      return `<div class="list-category" style="${cat.active?'':'opacity:0.6'}">
+        <div class="list-category-title">
+          <span>${cat.name}</span>
+          <span class="list-category-key">${cat.fieldKey}</span>
+          <button class="list-item-toggle" onclick="toggleCategory('${cat._id}',${cat.active})" title="${cat.active?'Hide category':'Show category'}">${cat.active?'●':'○'}</button>
+          <button class="list-item-rename" onclick="renameCategory('${cat._id}','${cat.name.replace(/'/g,"\\'")}')">rename</button>
+        </div>
+        <div class="list-items">
+          ${vals.map(v => `
+            <div class="list-item${v.active?'':' inactive'}">
+              ${v.value}
+              <button class="list-item-toggle" onclick="toggleValue('${v._id}',${v.active},'${cat._id}')" title="${v.active?'Hide':'Show'}">${v.active?'●':'○'}</button>
+              <button class="list-item-rename" onclick="renameValue('${v._id}','${v.value.replace(/'/g,"\\'")}','${cat._id}')">rename</button>
+            </div>`).join('')}
+        </div>
+        <div class="list-add-row">
+          <input class="list-add-input" type="text" id="val-input-${cat._id}" placeholder="Add new value…" onkeydown="if(event.key==='Enter')addValue('${cat._id}')">
+          <button class="list-add-btn" onclick="addValue('${cat._id}')">Add</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    c.innerHTML = `<div class="error-msg">Could not load lists. (${e.message})</div>`;
+  }
 }
 
-async function addListItem(cat) {
-  const inputId = 'list-input-' + cat.replace(/\s+/g,'-');
-  const input = document.getElementById(inputId);
+async function addCategory() {
+  const nameEl = document.getElementById('new-cat-name');
+  const keyEl = document.getElementById('new-cat-key');
+  const name = nameEl.value.trim();
+  const key = keyEl.value.trim().toLowerCase().replace(/\s+/g,'_');
+  if (!name || !key) { alert('Please enter both a category name and field key.'); return; }
+  const sortOrder = categories.length + 1;
+  try {
+    await atCreate(T_CATS, {Name:name, FieldKey:key, SortOrder:sortOrder, Active:true});
+    nameEl.value = ''; keyEl.value = '';
+    await loadSchema();
+    rebuildUI();
+    renderListsAdmin();
+  } catch(e) { alert('Error adding category: ' + e.message); }
+}
+
+async function toggleCategory(catId, currentActive) {
+  try {
+    await atUpdate(T_CATS, catId, {Active: !currentActive});
+    await loadSchema();
+    rebuildUI();
+    renderCards();
+    renderListsAdmin();
+  } catch(e) { alert('Error updating category: ' + e.message); }
+}
+
+async function renameCategory(catId, currentName) {
+  const newName = prompt('Rename category:', currentName);
+  if (!newName || newName === currentName) return;
+  try {
+    await atUpdate(T_CATS, catId, {Name: newName});
+    await loadSchema();
+    rebuildUI();
+    renderCards();
+    renderListsAdmin();
+  } catch(e) { alert('Error renaming: ' + e.message); }
+}
+
+async function addValue(catId) {
+  const input = document.getElementById('val-input-' + catId);
   const value = input.value.trim();
   if (!value) return;
-  const currentItems = lists[cat] || [];
-  const sortOrder = currentItems.length > 0 ? Math.max(...currentItems.map(i => i.sort)) + 1 : 1;
+  const cat = categories.find(c => c._id === catId) || {name:''};
+  const existing = catValues[catId] || [];
+  const sortOrder = existing.length ? Math.max(...existing.map(v => v.sortOrder)) + 1 : 1;
   try {
-    const res = await atCreate('Lists', { Category: cat, Value: value, SortOrder: sortOrder, Active: true });
-    const newId = res.records[0].id;
-    if (!lists[cat]) lists[cat] = [];
-    lists[cat].push({ id: newId, value, sort: sortOrder });
+    await atCreate(T_CATVALS, {
+      CategoryID: catId,
+      CategoryName: cat.name,
+      CategoryKey: cat.fieldKey,
+      Value: value,
+      SortOrder: sortOrder,
+      Active: true
+    });
     input.value = '';
-    rebuildDynamicUI();
+    await loadSchema();
+    rebuildUI();
     renderListsAdmin();
-    renderCards();
-  } catch(e) { alert('Error adding item: ' + e.message); }
+  } catch(e) { alert('Error adding value: ' + e.message); }
 }
 
-async function deleteListItem(id, cat) {
-  if (!confirm('Remove this option? Organizations that currently use it will keep it, but it will no longer appear as a choice.')) return;
+async function toggleValue(valId, currentActive, catId) {
   try {
-    await atDelete('Lists', id);
-    if (lists[cat]) lists[cat] = lists[cat].filter(i => i.id !== id);
-    rebuildDynamicUI();
-    renderListsAdmin();
+    await atUpdate(T_CATVALS, valId, {Active: !currentActive});
+    await loadSchema();
+    rebuildUI();
     renderCards();
-  } catch(e) { alert('Error removing item: ' + e.message); }
+    renderListsAdmin();
+  } catch(e) { alert('Error updating value: ' + e.message); }
+}
+
+async function renameValue(valId, currentValue, catId) {
+  const newValue = prompt('Rename value:', currentValue);
+  if (!newValue || newValue === currentValue) return;
+  try {
+    await atUpdate(T_CATVALS, valId, {Value: newValue});
+    // Update valueIndex immediately
+    if (valueIndex[valId]) valueIndex[valId].value = newValue;
+    // Update orgTags display values
+    Object.values(orgTags).forEach(tags => tags.forEach(t => {
+      if (t.valueId === valId) t.value = newValue;
+    }));
+    await loadSchema();
+    rebuildUI();
+    renderCards();
+    renderListsAdmin();
+  } catch(e) { alert('Error renaming value: ' + e.message); }
 }
 
 init();
