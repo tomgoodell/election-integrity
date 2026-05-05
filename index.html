@@ -98,6 +98,17 @@
   .btn-approve:hover { background: #9fe1cb; }
   .btn-reject { padding: 6px 16px; font-size: 13px; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; cursor: pointer; font-family: inherit; }
   .btn-reject:hover { background: #f5c4b3; }
+  .list-category { background: #fff; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 16px; }
+  .list-category-title { font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 10px; }
+  .list-items { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; min-height: 32px; }
+  .list-item { display: flex; align-items: center; gap: 6px; background: #f5f5f3; border: 1px solid #e0e0db; border-radius: 6px; padding: 4px 10px; font-size: 13px; color: #333; }
+  .list-item-delete { background: none; border: none; color: #bbb; cursor: pointer; font-size: 16px; padding: 0; line-height: 1; }
+  .list-item-delete:hover { color: #712b13; }
+  .list-add-row { display: flex; gap: 8px; margin-top: 4px; }
+  .list-add-input { flex: 1; font-size: 13px; padding: 6px 10px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; }
+  .list-add-input:focus { outline: none; border-color: #888; }
+  .list-add-btn { padding: 6px 14px; font-size: 13px; background: #1a1a1a; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-family: inherit; white-space: nowrap; }
+  .list-add-btn:hover { background: #333; }
   .view-controls { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
   .results-count { font-size: 13px; color: #888; }
   .toggle-btn { font-size: 13px; padding: 5px 12px; border: 1px solid #ddd; border-radius: 8px; background: none; color: #666; cursor: pointer; font-family: inherit; white-space: nowrap; }
@@ -197,84 +208,31 @@
     <span class="section-label">Focus areas</span>
     <div class="form-group">
       <label>Type of work</label>
-      <div class="cb-columns">
-        <label><input type="checkbox" class="cb-work" value="Legal"> Legal</label>
-        <label><input type="checkbox" class="cb-work" value="Advocacy"> Advocacy</label>
-        <label><input type="checkbox" class="cb-work" value="Technology"> Technology</label>
-        <label><input type="checkbox" class="cb-work" value="Research"> Research</label>
-        <label><input type="checkbox" class="cb-work" value="Training"> Training</label>
-        <label><input type="checkbox" class="cb-work" value="Litigation"> Litigation</label>
-        <label><input type="checkbox" class="cb-work" value="Voting process information"> Voting process information</label>
-      </div>
+      <div class="cb-columns" id="cb-work-container"></div>
     </div>
     <div class="form-group">
       <label>Election phases</label>
-      <div class="cb-columns">
-        <label><input type="checkbox" class="cb-phase" value="Voter registration"> Voter registration</label>
-        <label><input type="checkbox" class="cb-phase" value="Voting"> Voting</label>
-        <label><input type="checkbox" class="cb-phase" value="Get out the vote"> Get out the vote</label>
-        <label><input type="checkbox" class="cb-phase" value="Vote counting"> Vote counting</label>
-        <label><input type="checkbox" class="cb-phase" value="Certification"> Certification</label>
-        <label><input type="checkbox" class="cb-phase" value="Litigation"> Post-election litigation</label>
-      </div>
+      <div class="cb-columns" id="cb-phase-container"></div>
     </div>
     <div class="form-group">
       <label>Voter registration focus</label>
-      <div class="cb-columns">
-        <label><input type="checkbox" class="cb-voter" value="Roll monitoring"> Voter roll monitoring</label>
-        <label><input type="checkbox" class="cb-voter" value="Re-registration help"> Re-registration assistance</label>
-        <label><input type="checkbox" class="cb-voter" value="Vote rejection monitoring"> Vote rejection monitoring</label>
-        <label><input type="checkbox" class="cb-voter" value="Ballot cure"> Ballot cure programs</label>
-        <label><input type="checkbox" class="cb-voter" value="Understanding the voting process"> Understanding the voting process</label>
-      </div>
+      <div class="cb-columns" id="cb-voter-container"></div>
     </div>
     <div class="form-group">
       <label>Community focus</label>
-      <div class="cb-columns">
-        <label><input type="checkbox" class="cb-demo" value="Youth"> Youth</label>
-        <label><input type="checkbox" class="cb-demo" value="Seniors"> Seniors</label>
-        <label><input type="checkbox" class="cb-demo" value="Rural communities"> Rural communities</label>
-        <label><input type="checkbox" class="cb-demo" value="AAPI communities"> AAPI communities</label>
-        <label><input type="checkbox" class="cb-demo" value="Black communities"> Black communities</label>
-        <label><input type="checkbox" class="cb-demo" value="Latino communities"> Latino communities</label>
-        <label><input type="checkbox" class="cb-demo" value="Native communities"> Native communities</label>
-      </div>
+      <div class="cb-columns" id="cb-demo-container"></div>
       <button type="button" class="select-all-btn" onclick="selectAllCommunities('cb-demo')">Select all communities</button>
     </div>
     <hr class="section-divider">
     <span class="section-label">Strengths and needs</span>
     <div class="form-group">
       <label>Your organization's strengths</label>
-      <div class="cb-columns" style="margin-bottom:10px">
-        <label><input type="checkbox" class="cb-str" value="Legal expertise"> Legal expertise</label>
-        <label><input type="checkbox" class="cb-str" value="Data analysis"> Data analysis</label>
-        <label><input type="checkbox" class="cb-str" value="Community organizing"> Community organizing</label>
-        <label><input type="checkbox" class="cb-str" value="Litigation capacity"> Litigation capacity</label>
-        <label><input type="checkbox" class="cb-str" value="Training programs"> Training programs</label>
-        <label><input type="checkbox" class="cb-str" value="Technology tools"> Technology tools</label>
-        <label><input type="checkbox" class="cb-str" value="Multilingual outreach"> Multilingual outreach</label>
-        <label><input type="checkbox" class="cb-str" value="Outreach"> Outreach</label>
-        <label><input type="checkbox" class="cb-str" value="Media relations"> Media relations</label>
-        <label><input type="checkbox" class="cb-str" value="Funding"> Funding</label>
-        <label><input type="checkbox" class="cb-str" value="Research capacity"> Research capacity</label>
-      </div>
+      <div class="cb-columns" id="cb-str-container" style="margin-bottom:10px"></div>
       <textarea id="f-strengths-text" placeholder="Additional details about your strengths (optional)"></textarea>
     </div>
     <div class="form-group">
       <label>What your organization needs</label>
-      <div class="cb-columns" style="margin-bottom:10px">
-        <label><input type="checkbox" class="cb-need" value="Legal expertise"> Legal expertise</label>
-        <label><input type="checkbox" class="cb-need" value="Data analysis"> Data analysis</label>
-        <label><input type="checkbox" class="cb-need" value="Community organizing"> Community organizing</label>
-        <label><input type="checkbox" class="cb-need" value="Litigation capacity"> Litigation capacity</label>
-        <label><input type="checkbox" class="cb-need" value="Training programs"> Training programs</label>
-        <label><input type="checkbox" class="cb-need" value="Technology tools"> Technology tools</label>
-        <label><input type="checkbox" class="cb-need" value="Multilingual outreach"> Multilingual outreach</label>
-        <label><input type="checkbox" class="cb-need" value="Media relations"> Media relations</label>
-        <label><input type="checkbox" class="cb-need" value="Funding"> Funding</label>
-        <label><input type="checkbox" class="cb-need" value="Research capacity"> Research capacity</label>
-        <label><input type="checkbox" class="cb-need" value="Volunteers"> Volunteers</label>
-      </div>
+      <div class="cb-columns" id="cb-need-container" style="margin-bottom:10px"></div>
       <textarea id="f-needs-text" placeholder="Additional details about what you need (optional)"></textarea>
     </div>
     <hr class="section-divider">
@@ -298,6 +256,9 @@
       <p class="admin-section-title">Approved organizations</p>
       <p class="admin-section-sub">Edit or remove any approved listing.</p>
       <div id="approved-container"><div class="loading">Loading…</div></div>
+      <p class="admin-section-title">Manage lists</p>
+      <p class="admin-section-sub">Add, remove, or reorder options for each category. Changes take effect immediately across the directory.</p>
+      <div id="lists-container"><div class="loading">Loading…</div></div>
     </div>
   </div>
 </div>
@@ -350,82 +311,29 @@
     <div class="form-group"><label>State / region</label><input type="text" id="e-state"></div>
     <div class="form-group">
       <label>Type of work</label>
-      <div class="cb-columns">
-        <label><input type="checkbox" class="e-work" value="Legal"> Legal</label>
-        <label><input type="checkbox" class="e-work" value="Advocacy"> Advocacy</label>
-        <label><input type="checkbox" class="e-work" value="Technology"> Technology</label>
-        <label><input type="checkbox" class="e-work" value="Research"> Research</label>
-        <label><input type="checkbox" class="e-work" value="Training"> Training</label>
-        <label><input type="checkbox" class="e-work" value="Litigation"> Litigation</label>
-        <label><input type="checkbox" class="e-work" value="Voting process information"> Voting process information</label>
-      </div>
+      <div class="cb-columns" id="e-work-container"></div>
     </div>
     <div class="form-group">
       <label>Election phases</label>
-      <div class="cb-columns">
-        <label><input type="checkbox" class="e-phase" value="Voter registration"> Voter registration</label>
-        <label><input type="checkbox" class="e-phase" value="Voting"> Voting</label>
-        <label><input type="checkbox" class="e-phase" value="Get out the vote"> Get out the vote</label>
-        <label><input type="checkbox" class="e-phase" value="Vote counting"> Vote counting</label>
-        <label><input type="checkbox" class="e-phase" value="Certification"> Certification</label>
-        <label><input type="checkbox" class="e-phase" value="Litigation"> Post-election litigation</label>
-      </div>
+      <div class="cb-columns" id="e-phase-container"></div>
     </div>
     <div class="form-group">
       <label>Voter registration focus</label>
-      <div class="cb-columns">
-        <label><input type="checkbox" class="e-voter" value="Roll monitoring"> Voter roll monitoring</label>
-        <label><input type="checkbox" class="e-voter" value="Re-registration help"> Re-registration assistance</label>
-        <label><input type="checkbox" class="e-voter" value="Vote rejection monitoring"> Vote rejection monitoring</label>
-        <label><input type="checkbox" class="e-voter" value="Ballot cure"> Ballot cure programs</label>
-        <label><input type="checkbox" class="e-voter" value="Understanding the voting process"> Understanding the voting process</label>
-      </div>
+      <div class="cb-columns" id="e-voter-container"></div>
     </div>
     <div class="form-group">
       <label>Community focus</label>
-      <div class="cb-columns">
-        <label><input type="checkbox" class="e-demo" value="Youth"> Youth</label>
-        <label><input type="checkbox" class="e-demo" value="Seniors"> Seniors</label>
-        <label><input type="checkbox" class="e-demo" value="Rural communities"> Rural communities</label>
-        <label><input type="checkbox" class="e-demo" value="AAPI communities"> AAPI communities</label>
-        <label><input type="checkbox" class="e-demo" value="Black communities"> Black communities</label>
-        <label><input type="checkbox" class="e-demo" value="Latino communities"> Latino communities</label>
-        <label><input type="checkbox" class="e-demo" value="Native communities"> Native communities</label>
-      </div>
+      <div class="cb-columns" id="e-demo-container"></div>
       <button type="button" class="select-all-btn" onclick="selectAllCommunities('e-demo')">Select all communities</button>
     </div>
     <div class="form-group">
       <label>Strengths</label>
-      <div class="cb-columns" style="margin-bottom:8px">
-        <label><input type="checkbox" class="e-str" value="Legal expertise"> Legal expertise</label>
-        <label><input type="checkbox" class="e-str" value="Data analysis"> Data analysis</label>
-        <label><input type="checkbox" class="e-str" value="Community organizing"> Community organizing</label>
-        <label><input type="checkbox" class="e-str" value="Litigation capacity"> Litigation capacity</label>
-        <label><input type="checkbox" class="e-str" value="Training programs"> Training programs</label>
-        <label><input type="checkbox" class="e-str" value="Technology tools"> Technology tools</label>
-        <label><input type="checkbox" class="e-str" value="Multilingual outreach"> Multilingual outreach</label>
-        <label><input type="checkbox" class="e-str" value="Outreach"> Outreach</label>
-        <label><input type="checkbox" class="e-str" value="Media relations"> Media relations</label>
-        <label><input type="checkbox" class="e-str" value="Funding"> Funding</label>
-        <label><input type="checkbox" class="e-str" value="Research capacity"> Research capacity</label>
-      </div>
+      <div class="cb-columns" id="e-str-container" style="margin-bottom:8px"></div>
       <textarea id="e-strengths-text" placeholder="Additional details (optional)"></textarea>
     </div>
     <div class="form-group">
       <label>Needs</label>
-      <div class="cb-columns" style="margin-bottom:8px">
-        <label><input type="checkbox" class="e-need" value="Legal expertise"> Legal expertise</label>
-        <label><input type="checkbox" class="e-need" value="Data analysis"> Data analysis</label>
-        <label><input type="checkbox" class="e-need" value="Community organizing"> Community organizing</label>
-        <label><input type="checkbox" class="e-need" value="Litigation capacity"> Litigation capacity</label>
-        <label><input type="checkbox" class="e-need" value="Training programs"> Training programs</label>
-        <label><input type="checkbox" class="e-need" value="Technology tools"> Technology tools</label>
-        <label><input type="checkbox" class="e-need" value="Multilingual outreach"> Multilingual outreach</label>
-        <label><input type="checkbox" class="e-need" value="Media relations"> Media relations</label>
-        <label><input type="checkbox" class="e-need" value="Funding"> Funding</label>
-        <label><input type="checkbox" class="e-need" value="Research capacity"> Research capacity</label>
-        <label><input type="checkbox" class="e-need" value="Volunteers"> Volunteers</label>
-      </div>
+      <div class="cb-columns" id="e-need-container" style="margin-bottom:8px"></div>
       <textarea id="e-needs-text" placeholder="Additional details (optional)"></textarea>
     </div>
     <button class="save-btn" id="save-btn" onclick="saveEdit()">Save changes</button>
@@ -507,26 +415,28 @@ function orgToFields(org) {
   };
 }
 
-let orgs = [], pending = [], adminLoggedIn = false, showDesc = false, activeLetter = '';
+let orgs = [], pending = [], lists = {}, adminLoggedIn = false, showDesc = false, activeLetter = '';
 
 // ── Network Map ─────────────────────────────────────────────────
-const MAP_OPTIONS = {
-  strength: { label: 'Shared strength',        values: ['Legal expertise','Data analysis','Community organizing','Litigation capacity','Training programs','Technology tools','Multilingual outreach','Outreach','Media relations','Funding','Research capacity'] },
-  need:     { label: 'Shared need',             values: ['Legal expertise','Data analysis','Community organizing','Litigation capacity','Training programs','Technology tools','Multilingual outreach','Media relations','Funding','Research capacity','Volunteers'] },
-  work:     { label: 'Shared service type',     values: ['Legal','Advocacy','Technology','Research','Training','Litigation','Voting process information'] },
-  phase:    { label: 'Shared election phase',   values: ['Voter registration','Voting','Get out the vote','Vote counting','Certification','Litigation'] },
-  voter:    { label: 'Shared voter reg focus',  values: ['Roll monitoring','Re-registration help','Vote rejection monitoring','Ballot cure','Understanding the voting process'] },
-  demo:     { label: 'Shared community focus',  values: ['Youth','Seniors','Rural communities','AAPI communities','Black communities','Latino communities','Native communities'] },
-  partisan: { label: 'Shared affiliation',      values: ['Non-partisan','Partisan - left','Partisan - right'] },
-  geo:      { label: 'Shared region',           values: ['Local','State','National','International'] }
-};
+function getMapOptions() {
+  return {
+    strength: { label: 'Shared strength',        values: getListValues('Strengths') },
+    need:     { label: 'Shared need',             values: getListValues('Needs') },
+    work:     { label: 'Shared service type',     values: getListValues('Services') },
+    phase:    { label: 'Shared election phase',   values: getListValues('Election phases') },
+    voter:    { label: 'Shared voter reg focus',  values: getListValues('Voter reg focus') },
+    demo:     { label: 'Shared community focus',  values: getListValues('Community focus') },
+    partisan: { label: 'Shared affiliation',      values: getListValues('Affiliations') },
+    geo:      { label: 'Shared region',           values: getListValues('Regions') }
+  };
+}
 
 let networkInstance = null;
 
 function updateMapFilterOptions() {
   const type = document.getElementById('map-filter-type').value;
   const sel = document.getElementById('map-filter-value');
-  const opts = MAP_OPTIONS[type].values;
+  const opts = getMapOptions()[type]?.values || [];
   sel.innerHTML = opts.map(v => `<option value="${v}">${v}</option>`).join('');
   renderMap();
 }
@@ -535,6 +445,7 @@ function renderMap() {
   const type = document.getElementById('map-filter-type').value;
   const value = document.getElementById('map-filter-value').value;
   if (!value || !orgs.length) return;
+  const mapOptions = getMapOptions();
 
   const getAttr = (org) => {
     if (type === 'strength') return org.strengths;
@@ -610,8 +521,75 @@ function renderMap() {
   });
 }
 
+async function loadLists() {
+  try {
+    const records = await atGet('Lists');
+    lists = {};
+    records
+      .filter(r => r.fields.Active)
+      .sort((a,b) => (a.fields.SortOrder||0) - (b.fields.SortOrder||0))
+      .forEach(r => {
+        const cat = r.fields.Category;
+        if (!lists[cat]) lists[cat] = [];
+        lists[cat].push({ id: r.id, value: r.fields.Value, sort: r.fields.SortOrder||0 });
+      });
+  } catch(e) {
+    console.error('Could not load lists:', e.message);
+  }
+}
+
+function getListValues(category) {
+  return (lists[category] || []).map(l => l.value);
+}
+
+function buildCheckboxes(containerId, category, cssClass) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const values = getListValues(category);
+  el.innerHTML = values.map(v =>
+    `<label><input type="checkbox" class="${cssClass}" value="${v}"> ${v}</label>`
+  ).join('');
+}
+
+function buildFilterSelect(selectId, defaultLabel, category) {
+  const el = document.getElementById(selectId);
+  if (!el) return;
+  const values = getListValues(category);
+  const current = el.value;
+  el.innerHTML = `<option value="">${defaultLabel}</option>` +
+    values.map(v => `<option${v===current?' selected':''}>${v}</option>`).join('');
+}
+
+function rebuildDynamicUI() {
+  // Browse filters
+  buildFilterSelect('f-work', 'All services', 'Services');
+  buildFilterSelect('f-phase', 'All election phases', 'Election phases');
+  buildFilterSelect('f-voter', 'All voter reg focus', 'Voter reg focus');
+  buildFilterSelect('f-demo', 'All communities', 'Community focus');
+  buildFilterSelect('f-partisan', 'All affiliations', 'Affiliations');
+  buildFilterSelect('f-geo', 'All regions', 'Regions');
+  buildFilterSelect('f-strength', 'Has strength: any', 'Strengths');
+  buildFilterSelect('f-need', 'Has need: any', 'Needs');
+  // Submit form checkboxes
+  buildCheckboxes('cb-work-container', 'Services', 'cb-work');
+  buildCheckboxes('cb-phase-container', 'Election phases', 'cb-phase');
+  buildCheckboxes('cb-voter-container', 'Voter reg focus', 'cb-voter');
+  buildCheckboxes('cb-demo-container', 'Community focus', 'cb-demo');
+  buildCheckboxes('cb-str-container', 'Strengths', 'cb-str');
+  buildCheckboxes('cb-need-container', 'Needs', 'cb-need');
+  // Edit modal checkboxes
+  buildCheckboxes('e-work-container', 'Services', 'e-work');
+  buildCheckboxes('e-phase-container', 'Election phases', 'e-phase');
+  buildCheckboxes('e-voter-container', 'Voter reg focus', 'e-voter');
+  buildCheckboxes('e-demo-container', 'Community focus', 'e-demo');
+  buildCheckboxes('e-str-container', 'Strengths', 'e-str');
+  buildCheckboxes('e-need-container', 'Needs', 'e-need');
+}
+
 async function init() {
   try {
+    await loadLists();
+    rebuildDynamicUI();
     const records = await atGet(TABLE_ORGS);
     if (records.length === 0) {
       for (const s of SEED) await atCreate(TABLE_ORGS, s);
@@ -633,7 +611,7 @@ function showTab(t, btn) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('tab-' + t).classList.add('active');
-  if (t === 'admin' && adminLoggedIn) loadPending();
+  if (t === 'admin' && adminLoggedIn) { loadPending(); renderApproved(); renderListsAdmin(); }
   if (t === 'map') { updateMapFilterOptions(); }
 }
 
@@ -818,6 +796,7 @@ function adminLogin() {
     document.getElementById('admin-panel').style.display = 'block';
     loadPending();
     renderApproved();
+    renderListsAdmin();
   } else { alert('Incorrect password.'); }
 }
 
@@ -964,6 +943,62 @@ async function reject(i) {
     pending.splice(i, 1);
     renderPending();
   } catch(e) { alert('Error rejecting: ' + e.message); }
+}
+
+// ── Lists Admin ─────────────────────────────────────────────────
+const LIST_CATEGORIES = ['Services','Election phases','Voter reg focus','Community focus','Strengths','Needs','Affiliations','Regions'];
+
+function renderListsAdmin() {
+  const c = document.getElementById('lists-container');
+  if (!c) return;
+  c.innerHTML = LIST_CATEGORIES.map(cat => {
+    const items = lists[cat] || [];
+    return `
+    <div class="list-category">
+      <div class="list-category-title">${cat}</div>
+      <div class="list-items" id="list-items-${cat.replace(/\s+/g,'-')}">
+        ${items.map(item => `
+          <div class="list-item" id="list-item-${item.id}">
+            ${item.value}
+            <button class="list-item-delete" onclick="deleteListItem('${item.id}','${cat}')" title="Remove">×</button>
+          </div>`).join('')}
+      </div>
+      <div class="list-add-row">
+        <input class="list-add-input" type="text" id="list-input-${cat.replace(/\s+/g,'-')}" placeholder="Add new option…" onkeydown="if(event.key==='Enter')addListItem('${cat}')">
+        <button class="list-add-btn" onclick="addListItem('${cat}')">Add</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function addListItem(cat) {
+  const inputId = 'list-input-' + cat.replace(/\s+/g,'-');
+  const input = document.getElementById(inputId);
+  const value = input.value.trim();
+  if (!value) return;
+  const currentItems = lists[cat] || [];
+  const sortOrder = currentItems.length > 0 ? Math.max(...currentItems.map(i => i.sort)) + 1 : 1;
+  try {
+    const res = await atCreate('Lists', { Category: cat, Value: value, SortOrder: sortOrder, Active: true });
+    const newId = res.records[0].id;
+    if (!lists[cat]) lists[cat] = [];
+    lists[cat].push({ id: newId, value, sort: sortOrder });
+    input.value = '';
+    rebuildDynamicUI();
+    renderListsAdmin();
+    renderCards();
+  } catch(e) { alert('Error adding item: ' + e.message); }
+}
+
+async function deleteListItem(id, cat) {
+  if (!confirm('Remove this option? Organizations that currently use it will keep it, but it will no longer appear as a choice.')) return;
+  try {
+    await atDelete('Lists', id);
+    if (lists[cat]) lists[cat] = lists[cat].filter(i => i.id !== id);
+    rebuildDynamicUI();
+    renderListsAdmin();
+    renderCards();
+  } catch(e) { alert('Error removing item: ' + e.message); }
 }
 
 init();
