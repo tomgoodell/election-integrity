@@ -216,7 +216,6 @@
         <label><input type="checkbox" class="cb-demo" value="Native communities"> Native communities</label>
       </div>
       <button type="button" class="select-all-btn" onclick="selectAllCommunities('cb-demo')">Select all communities</button>
-      </div>
     </div>
     <hr class="section-divider">
     <span class="section-label">Strengths and needs</span>
@@ -370,7 +369,6 @@
         <label><input type="checkbox" class="e-demo" value="Native communities"> Native communities</label>
       </div>
       <button type="button" class="select-all-btn" onclick="selectAllCommunities('e-demo')">Select all communities</button>
-      </div>
     </div>
     <div class="form-group">
       <label>Strengths</label>
@@ -665,6 +663,8 @@ function cancelForm() {
   document.querySelector('.tab').classList.add('active');
   document.getElementById('tab-browse').classList.add('active');
 }
+
+async function atUpdate(table, id, fields) {
   const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
