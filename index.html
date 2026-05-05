@@ -69,6 +69,10 @@
   .submit-btn { padding: 11px 24px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; font-family: inherit; }
   .submit-btn:hover { background: #333; }
   .submit-btn:disabled { background: #999; cursor: not-allowed; }
+  .cancel-btn { margin-top: 10px; padding: 10px 24px; background: none; color: #666; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; cursor: pointer; width: 100%; font-family: inherit; }
+  .cancel-btn:hover { background: #f5f5f3; }
+  .select-all-btn { margin-top: 6px; padding: 5px 12px; font-size: 13px; background: none; color: #555; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; font-family: inherit; }
+  .select-all-btn:hover { background: #f5f5f3; }
   .success-msg { display: none; background: #e1f5ee; color: #085041; border: 1px solid #9fe1cb; border-radius: 8px; padding: 1rem 1.25rem; font-size: 14px; line-height: 1.6; margin-top: 1rem; }
   .success-msg.show { display: block; }
   .btn-edit { padding: 6px 16px; font-size: 13px; background: #f5f5f3; color: #333; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; font-family: inherit; }
@@ -101,7 +105,9 @@
   .alpha-btn { width: 28px; height: 28px; font-size: 12px; font-weight: 500; border: 1px solid #e0e0db; border-radius: 6px; background: none; color: #888; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
   .alpha-btn:hover { background: #f5f5f3; color: #1a1a1a; border-color: #ccc; }
   .alpha-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
-  .alpha-btn.disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+  .alpha-all-btn { height: 28px; padding: 0 10px; font-size: 12px; font-weight: 500; border: 1px solid #1a1a1a; border-radius: 6px; background: none; color: #1a1a1a; cursor: pointer; font-family: inherit; margin-left: 6px; transition: all 0.1s; }
+  .alpha-all-btn:hover { background: #f5f5f3; }
+  .alpha-all-btn.active { background: #1a1a1a; color: #fff; }
   .card-compact { padding: 0.7rem 1.25rem; }
   .card-compact .card-desc { display: none; }
   .card-compact .card-name { margin-bottom: 2px; }
@@ -130,10 +136,12 @@
       <select id="f-geo" onchange="renderCards()"><option value="">All regions</option><option>Local</option><option>State</option><option>National</option><option>International</option></select>
       <select id="f-work" onchange="renderCards()"><option value="">All services</option><option>Legal</option><option>Advocacy</option><option>Technology</option><option>Research</option><option>Training</option><option>Litigation</option><option>Voting process information</option></select>
       <select id="f-phase" onchange="renderCards()"><option value="">All election phases</option><option>Voter registration</option><option>Voting</option><option>Get out the vote</option><option>Vote counting</option><option>Certification</option><option>Litigation</option></select>
-      <select id="f-demo" onchange="renderCards()"><option value="">All communities</option><option>Youth</option><option>Seniors</option><option>Rural communities</option><option>AAPI communities</option><option>Black communities</option><option>Latino communities</option><option>Native communities</option><option>All communities</option></select>
+      <select id="f-demo" onchange="renderCards()"><option value="">All communities</option><option>Youth</option><option>Seniors</option><option>Rural communities</option><option>AAPI communities</option><option>Black communities</option><option>Latino communities</option><option>Native communities</option></select>
       <select id="f-voter" onchange="renderCards()"><option value="">All voter reg focus</option><option>Roll monitoring</option><option>Re-registration help</option><option>Vote rejection monitoring</option><option>Ballot cure</option><option>Understanding the voting process</option></select>
       <select id="f-partisan" onchange="renderCards()"><option value="">All affiliations</option><option>Non-partisan</option><option>Partisan - left</option><option>Partisan - right</option></select>
       <select id="f-state-filter" onchange="renderCards()"><option value="">All states</option><option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option></select>
+      <select id="f-strength" onchange="renderCards()"><option value="">Has strength: any</option><option>Legal expertise</option><option>Data analysis</option><option>Community organizing</option><option>Litigation capacity</option><option>Training programs</option><option>Technology tools</option><option>Multilingual outreach</option><option>Outreach</option><option>Media relations</option><option>Funding</option><option>Research capacity</option></select>
+      <select id="f-need" onchange="renderCards()"><option value="">Has need: any</option><option>Legal expertise</option><option>Data analysis</option><option>Community organizing</option><option>Litigation capacity</option><option>Training programs</option><option>Technology tools</option><option>Multilingual outreach</option><option>Media relations</option><option>Funding</option><option>Research capacity</option><option>Volunteers</option></select>
     </div>
     <div class="view-controls">
       <div class="results-count" id="results-count"></div>
@@ -206,7 +214,8 @@
         <label><input type="checkbox" class="cb-demo" value="Black communities"> Black communities</label>
         <label><input type="checkbox" class="cb-demo" value="Latino communities"> Latino communities</label>
         <label><input type="checkbox" class="cb-demo" value="Native communities"> Native communities</label>
-        <label><input type="checkbox" class="cb-demo" value="All communities"> All communities</label>
+      </div>
+      <button type="button" class="select-all-btn" onclick="selectAllCommunities('cb-demo')">Select all communities</button>
       </div>
     </div>
     <hr class="section-divider">
@@ -247,7 +256,7 @@
     </div>
     <hr class="section-divider">
     <button class="submit-btn" id="submit-btn" onclick="submitGroup()">Submit for review</button>
-    <div class="success-msg" id="submit-success">Your submission has been received. An administrator will review it and the listing will go live once approved. Thank you!</div>
+    <button class="cancel-btn" onclick="cancelForm()">Cancel</button>
   </div>
 
   <!-- ADMIN -->
@@ -267,6 +276,16 @@
       <p class="admin-section-sub">Edit or remove any approved listing.</p>
       <div id="approved-container"><div class="loading">Loading…</div></div>
     </div>
+  </div>
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="success-modal" onclick="">
+  <div class="modal" style="max-width:420px;text-align:center">
+    <div style="font-size:32px;margin-bottom:12px">✓</div>
+    <h2 style="font-size:18px;margin-bottom:8px;padding-right:0">Submission received</h2>
+    <p style="font-size:14px;color:#555;line-height:1.6;margin-bottom:1.5rem">Your organization has been submitted for review. An administrator will approve it and the listing will go live shortly. Thank you!</p>
+    <button class="submit-btn" style="max-width:160px;margin:0 auto" onclick="closeSuccessModal()">OK</button>
   </div>
 </div>
 
@@ -349,7 +368,8 @@
         <label><input type="checkbox" class="e-demo" value="Black communities"> Black communities</label>
         <label><input type="checkbox" class="e-demo" value="Latino communities"> Latino communities</label>
         <label><input type="checkbox" class="e-demo" value="Native communities"> Native communities</label>
-        <label><input type="checkbox" class="e-demo" value="All communities"> All communities</label>
+      </div>
+      <button type="button" class="select-all-btn" onclick="selectAllCommunities('e-demo')">Select all communities</button>
       </div>
     </div>
     <div class="form-group">
@@ -484,7 +504,7 @@ function showTab(t, btn) {
 
 function clearFilters() {
   document.getElementById('search').value = '';
-  ['f-geo','f-work','f-phase','f-demo','f-voter','f-state-filter','f-partisan'].forEach(id => document.getElementById(id).value = '');
+  ['f-geo','f-work','f-phase','f-demo','f-voter','f-state-filter','f-partisan','f-strength','f-need'].forEach(id => document.getElementById(id).value = '');
   activeLetter = '';
   renderCards();
 }
@@ -501,6 +521,8 @@ function matches(org, f) {
   if (f.voter && !org.voter.includes(f.voter)) return false;
   if (f.stateFilter && !org.state.toLowerCase().includes(f.stateFilter.toLowerCase())) return false;
   if (f.partisan && org.partisan !== f.partisan) return false;
+  if (f.strength && !org.strengths.includes(f.strength)) return false;
+  if (f.need && !org.needs.includes(f.need)) return false;
   return true;
 }
 
@@ -511,7 +533,7 @@ function toggleDesc() {
 }
 
 function setLetter(letter) {
-  activeLetter = activeLetter === letter ? '' : letter;
+  activeLetter = letter === '' ? '' : (activeLetter === letter ? '' : letter);
   renderCards();
 }
 
@@ -521,7 +543,8 @@ function renderAlphaBar(filtered) {
   const bar = document.getElementById('alpha-bar');
   bar.innerHTML = letters.map(l => `
     <button class="alpha-btn ${!available.has(l) ? 'disabled' : ''} ${activeLetter === l ? 'active' : ''}"
-      onclick="setLetter('${l}')">${l}</button>`).join('');
+      onclick="setLetter('${l}')">${l}</button>`).join('') +
+    `<button class="alpha-all-btn ${activeLetter === '' ? 'active' : ''}" onclick="setLetter('')">All</button>`;
 }
 
 function renderCards() {
@@ -533,7 +556,9 @@ function renderCards() {
     demo: document.getElementById('f-demo').value,
     voter: document.getElementById('f-voter').value,
     stateFilter: document.getElementById('f-state-filter').value,
-    partisan: document.getElementById('f-partisan').value
+    partisan: document.getElementById('f-partisan').value,
+    strength: document.getElementById('f-strength').value,
+    need: document.getElementById('f-need').value
   };
   let filtered = orgs.filter(o => matches(o, f));
   if (activeLetter) filtered = filtered.filter(o => o.name[0].toUpperCase() === activeLetter);
@@ -609,7 +634,7 @@ async function submitGroup() {
       Needs:getChecked('cb-need').join(','), NeedsText:document.getElementById('f-needs-text').value.trim(),
       SubmittedAt:new Date().toISOString()
     });
-    document.getElementById('submit-success').classList.add('show');
+    document.getElementById('success-modal').classList.add('open');
     ['f-name','f-email','f-desc','f-website','f-state','f-strengths-text','f-needs-text'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('f-geo-s').value = '';
     document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
@@ -619,7 +644,27 @@ async function submitGroup() {
   btn.disabled = false; btn.textContent = 'Submit for review';
 }
 
-async function atUpdate(table, id, fields) {
+function closeSuccessModal() {
+  document.getElementById('success-modal').classList.remove('open');
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelector('.tab').classList.add('active');
+  document.getElementById('tab-browse').classList.add('active');
+}
+
+function selectAllCommunities(cls) {
+  document.querySelectorAll('.' + cls).forEach(cb => cb.checked = true);
+}
+
+function cancelForm() {
+  ['f-name','f-email','f-desc','f-website','f-state','f-strengths-text','f-needs-text'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-geo-s').value = '';
+  document.querySelectorAll('input[type=checkbox], input[type=radio]').forEach(el => el.checked = false);
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelector('.tab').classList.add('active');
+  document.getElementById('tab-browse').classList.add('active');
+}
   const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
