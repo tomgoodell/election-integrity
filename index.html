@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Election Integrity Resource Directory</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; background: #f5f5f3; min-height: 100vh; }
+  .page { max-width: 780px; margin: 2rem auto; background: #fff; border-radius: 12px; border: 1px solid #e0e0db; overflow: hidden; }
+  .header { padding: 1.75rem 1.5rem 1.25rem; border-bottom: 1px solid #e0e0db; }
+  .header h1 { font-size: 22px; font-weight: 500; margin-bottom: 6px; }
+  .header p { font-size: 14px; color: #666; line-height: 1.6; }
+  .tabs { display: flex; border-bottom: 1px solid #e0e0db; padding: 0 1.5rem; background: #fff; }
+  .tab { padding: 10px 18px; font-size: 14px; cursor: pointer; border: none; border-bottom: 2px solid transparent; color: #888; background: none; transition: color 0.15s; font-family: inherit; }
+  .tab.active { color: #1a1a1a; border-bottom-color: #1a1a1a; font-weight: 500; }
+  .tab:hover:not(.active) { color: #1a1a1a; }
+  .view { padding: 1.5rem; display: none; }
+  .view.active { display: block; }
+  .search-row { display: flex; gap: 8px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .search-row input { flex: 1; min-width: 200px; padding: 8px 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; color: #1a1a1a; }
+  .search-row input:focus { outline: none; border-color: #888; }
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .filter-row select { font-size: 13px; padding: 6px 10px; border: 1px solid #ddd; border-radius: 8px; background: #f5f5f3; color: #1a1a1a; cursor: pointer; font-family: inherit; }
+  .clear-btn { font-size: 13px; padding: 6px 14px; border: 1px solid #ddd; border-radius: 8px; background: none; color: #666; cursor: pointer; font-family: inherit; }
+  .clear-btn:hover { background: #f5f5f3; }
+  .results-count { font-size: 13px; color: #888; margin-bottom: 1rem; }
+  .card { background: #fff; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 12px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+  .card:hover { border-color: #aaa; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .card-name { font-size: 16px; font-weight: 500; margin-bottom: 2px; }
+  .card-geo { font-size: 12px; color: #888; margin-bottom: 8px; }
+  .card-desc { font-size: 13px; color: #555; line-height: 1.55; margin-bottom: 10px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tag { font-size: 11px; padding: 3px 9px; border-radius: 20px; }
+  .tag-work  { background: #eeedfe; color: #3c3489; }
+  .tag-phase { background: #e1f5ee; color: #085041; }
+  .tag-demo  { background: #faeeda; color: #633806; }
+  .tag-voter { background: #faece7; color: #712b13; }
+  .tag-partisan { background: #f0f0f0; color: #444; border: 1px solid #ccc; }
+  .tag-partisan-left { background: #e8f0fe; color: #1a4fa0; border: 1px solid #b5cdf5; }
+  .tag-partisan-right { background: #fde8e8; color: #a01a1a; border: 1px solid #f5b5b5; }
+  .tag-need  { background: #eaf3de; color: #27500a; border: 1px solid #c0dd97; }
+  .tag-strength { background: #e6f1fb; color: #0c447c; border: 1px solid #b5d4f4; }
+  .no-results { text-align: center; padding: 2.5rem; color: #888; font-size: 14px; }
+  .loading { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
+  .error-msg { background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; padding: 1rem; font-size: 14px; margin-bottom: 1rem; line-height: 1.5; }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: #fff; border-radius: 12px; border: 1px solid #e0e0db; padding: 1.75rem; width: 100%; max-width: 540px; margin: auto; position: relative; }
+  .modal h2 { font-size: 20px; font-weight: 500; margin-bottom: 4px; padding-right: 60px; }
+  .modal-geo { font-size: 13px; color: #888; margin-bottom: 1.25rem; }
+  .modal-section { margin-bottom: 1.25rem; }
+  .modal-section h3 { font-size: 11px; font-weight: 500; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .modal-close { position: absolute; top: 1.75rem; right: 1.75rem; background: none; border: 1px solid #ddd; border-radius: 8px; padding: 4px 14px; font-size: 13px; cursor: pointer; color: #666; font-family: inherit; }
+  .modal-close:hover { background: #f5f5f3; }
+  .contact-link { display: inline-block; margin-top: 4px; font-size: 14px; color: #185fa5; text-decoration: none; }
+  .contact-link:hover { text-decoration: underline; }
+  .form-intro { font-size: 14px; color: #666; margin-bottom: 1.5rem; line-height: 1.6; }
+  .section-label { font-size: 11px; font-weight: 500; color: #888; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; display: block; }
+  .section-divider { border: none; border-top: 1px solid #e0e0db; margin: 1.75rem 0; }
+  .form-group { margin-bottom: 1.1rem; }
+  .form-group label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: #555; }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; font-size: 14px; padding: 9px 12px; border: 1px solid #ccc; border-radius: 8px; background: #fff; color: #1a1a1a; font-family: inherit; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: #888; }
+  .form-group textarea { min-height: 76px; resize: vertical; line-height: 1.5; }
+  .cb-columns { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-bottom: 10px; }
+  .cb-columns label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1a1a1a; cursor: pointer; line-height: 1.4; }
+  .cb-columns input[type=checkbox] { flex-shrink: 0; width: 15px; height: 15px; cursor: pointer; accent-color: #1a1a1a; }
+  .submit-btn { padding: 11px 24px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; font-family: inherit; }
+  .submit-btn:hover { background: #333; }
+  .submit-btn:disabled { background: #999; cursor: not-allowed; }
+  .success-msg { display: none; background: #e1f5ee; color: #085041; border: 1px solid #9fe1cb; border-radius: 8px; padding: 1rem 1.25rem; font-size: 14px; line-height: 1.6; margin-top: 1rem; }
+  .success-msg.show { display: block; }
+  .btn-edit { padding: 6px 16px; font-size: 13px; background: #f5f5f3; color: #333; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; font-family: inherit; }
+  .btn-edit:hover { background: #e8e8e5; }
+  .btn-delete { padding: 6px 16px; font-size: 13px; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; cursor: pointer; font-family: inherit; }
+  .btn-delete:hover { background: #f5c4b3; }
+  .admin-section-title { font-size: 16px; font-weight: 500; margin: 1.5rem 0 0.25rem; }
+  .admin-section-title:first-child { margin-top: 0; }
+  .admin-section-sub { font-size: 13px; color: #888; margin-bottom: 1rem; }
+  .edit-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
+  .edit-overlay.open { display: flex; }
+  .edit-modal { background: #fff; border-radius: 12px; border: 1px solid #e0e0db; padding: 1.75rem; width: 100%; max-width: 600px; margin: auto; position: relative; }
+  .edit-modal h2 { font-size: 18px; font-weight: 500; margin-bottom: 1.25rem; padding-right: 60px; }
+  .edit-close { position: absolute; top: 1.75rem; right: 1.75rem; background: none; border: 1px solid #ddd; border-radius: 8px; padding: 4px 14px; font-size: 13px; cursor: pointer; color: #666; font-family: inherit; }
+  .edit-close:hover { background: #f5f5f3; }
+  .save-btn { padding: 10px 24px; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; width: 100%; font-family: inherit; margin-top: 0.5rem; }
+  .save-btn:hover { background: #333; }
+  .save-btn:disabled { background: #999; cursor: not-allowed; }
+  .admin-card { background: #f9f9f7; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 12px; }
+  .admin-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .btn-approve { padding: 6px 16px; font-size: 13px; background: #e1f5ee; color: #085041; border: 1px solid #9fe1cb; border-radius: 8px; cursor: pointer; font-family: inherit; }
+  .btn-approve:hover { background: #9fe1cb; }
+  .btn-reject { padding: 6px 16px; font-size: 13px; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; cursor: pointer; font-family: inherit; }
+  .btn-reject:hover { background: #f5c4b3; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>Election integrity resource directory</h1>
+    <p>Find organizations by what they offer and what they need — then reach out to build partnerships.</p>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('browse',this)">Browse groups</button>
+    <button class="tab" onclick="showTab('submit',this)">List your group</button>
+    <button class="tab" onclick="showTab('admin',this)">Admin</button>
+  </div>
+
+  <!-- BROWSE -->
+  <div id="tab-browse" class="view active">
+    <div class="search-row">
+      <input type="text" id="search" placeholder="Search by name, strength, or need..." oninput="renderCards()">
+      <button class="clear-btn" onclick="clearFilters()">Clear filters</button>
+    </div>
+    <div class="filter-row">
+      <select id="f-geo" onchange="renderCards()"><option value="">All regions</option><option>Local</option><option>State</option><option>National</option><option>International</option></select>
+      <select id="f-work" onchange="renderCards()"><option value="">All services</option><option>Legal</option><option>Advocacy</option><option>Technology</option><option>Research</option><option>Training</option><option>Litigation</option><option>Voting process information</option></select>
+      <select id="f-phase" onchange="renderCards()"><option value="">All election phases</option><option>Voter registration</option><option>Voting</option><option>Get out the vote</option><option>Vote counting</option><option>Certification</option><option>Litigation</option></select>
+      <select id="f-demo" onchange="renderCards()"><option value="">All communities</option><option>Youth</option><option>Seniors</option><option>Rural communities</option><option>AAPI communities</option><option>Black communities</option><option>Latino communities</option><option>Native communities</option><option>All communities</option></select>
+      <select id="f-voter" onchange="renderCards()"><option value="">All voter reg focus</option><option>Roll monitoring</option><option>Re-registration help</option><option>Vote rejection monitoring</option><option>Ballot cure</option><option>Understanding the voting process</option></select>
+      <select id="f-partisan" onchange="renderCards()"><option value="">All affiliations</option><option>Non-partisan</option><option>Partisan - left</option><option>Partisan - right</option></select>
+      <select id="f-state-filter" onchange="renderCards()"><option value="">All states</option><option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option></select>
+    </div>
+    <div class="results-count" id="results-count"></div>
+    <div id="cards-container"><div class="loading">Loading organizations…</div></div>
+  </div>
+
+  <!-- SUBMIT -->
+  <div id="tab-submit" class="view">
+    <p class="form-intro">Fill out the form below to list your organization. Your submission will be reviewed by an administrator before appearing in the directory.</p>
+    <span class="section-label">Basic information</span>
+    <div class="form-group"><label>Organization name *</label><input type="text" id="f-name" placeholder="Full legal or common name"></div>
+    <div class="form-group"><label>Contact email</label><input type="text" id="f-email" placeholder="contact@yourorg.org"></div>
+    <div class="form-group"><label>Website</label><input type="text" id="f-website" placeholder="https://..."></div>
+    <div class="form-group">
+      <label>Partisan affiliation</label>
+      <div class="cb-columns">
+        <label><input type="radio" name="partisan" value="Non-partisan"> Non-partisan</label>
+        <label><input type="radio" name="partisan" value="Partisan - left"> Partisan — left</label>
+        <label><input type="radio" name="partisan" value="Partisan - right"> Partisan — right</label>
+      </div>
+    </div>
+    <div class="form-group"><label>Brief description *</label><textarea id="f-desc" placeholder="1–3 sentences about your organization's mission"></textarea></div>
+    <div class="form-group"><label>Geographic scope *</label><select id="f-geo-s"><option value="">Select...</option><option>Local</option><option>State</option><option>National</option><option>International</option></select></div>
+    <div class="form-group"><label>State / region (if applicable)</label><input type="text" id="f-state" placeholder="e.g. Minnesota, Midwest"></div>
+    <hr class="section-divider">
+    <span class="section-label">Focus areas</span>
+    <div class="form-group">
+      <label>Type of work</label>
+      <div class="cb-columns">
+        <label><input type="checkbox" class="cb-work" value="Legal"> Legal</label>
+        <label><input type="checkbox" class="cb-work" value="Advocacy"> Advocacy</label>
+        <label><input type="checkbox" class="cb-work" value="Technology"> Technology</label>
+        <label><input type="checkbox" class="cb-work" value="Research"> Research</label>
+        <label><input type="checkbox" class="cb-work" value="Training"> Training</label>
+        <label><input type="checkbox" class="cb-work" value="Litigation"> Litigation</label>
+        <label><input type="checkbox" class="cb-work" value="Voting process information"> Voting process information</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Election phases</label>
+      <div class="cb-columns">
+        <label><input type="checkbox" class="cb-phase" value="Voter registration"> Voter registration</label>
+        <label><input type="checkbox" class="cb-phase" value="Voting"> Voting</label>
+        <label><input type="checkbox" class="cb-phase" value="Get out the vote"> Get out the vote</label>
+        <label><input type="checkbox" class="cb-phase" value="Vote counting"> Vote counting</label>
+        <label><input type="checkbox" class="cb-phase" value="Certification"> Certification</label>
+        <label><input type="checkbox" class="cb-phase" value="Litigation"> Post-election litigation</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Voter registration focus</label>
+      <div class="cb-columns">
+        <label><input type="checkbox" class="cb-voter" value="Roll monitoring"> Voter roll monitoring</label>
+        <label><input type="checkbox" class="cb-voter" value="Re-registration help"> Re-registration assistance</label>
+        <label><input type="checkbox" class="cb-voter" value="Vote rejection monitoring"> Vote rejection monitoring</label>
+        <label><input type="checkbox" class="cb-voter" value="Ballot cure"> Ballot cure programs</label>
+        <label><input type="checkbox" class="cb-voter" value="Understanding the voting process"> Understanding the voting process</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Community focus</label>
+      <div class="cb-columns">
+        <label><input type="checkbox" class="cb-demo" value="Youth"> Youth</label>
+        <label><input type="checkbox" class="cb-demo" value="Seniors"> Seniors</label>
+        <label><input type="checkbox" class="cb-demo" value="Rural communities"> Rural communities</label>
+        <label><input type="checkbox" class="cb-demo" value="AAPI communities"> AAPI communities</label>
+        <label><input type="checkbox" class="cb-demo" value="Black communities"> Black communities</label>
+        <label><input type="checkbox" class="cb-demo" value="Latino communities"> Latino communities</label>
+        <label><input type="checkbox" class="cb-demo" value="Native communities"> Native communities</label>
+        <label><input type="checkbox" class="cb-demo" value="All communities"> All communities</label>
+      </div>
+    </div>
+    <hr class="section-divider">
+    <span class="section-label">Strengths and needs</span>
+    <div class="form-group">
+      <label>Your organization's strengths</label>
+      <div class="cb-columns" style="margin-bottom:10px">
+        <label><input type="checkbox" class="cb-str" value="Legal expertise"> Legal expertise</label>
+        <label><input type="checkbox" class="cb-str" value="Data analysis"> Data analysis</label>
+        <label><input type="checkbox" class="cb-str" value="Community organizing"> Community organizing</label>
+        <label><input type="checkbox" class="cb-str" value="Litigation capacity"> Litigation capacity</label>
+        <label><input type="checkbox" class="cb-str" value="Training programs"> Training programs</label>
+        <label><input type="checkbox" class="cb-str" value="Technology tools"> Technology tools</label>
+        <label><input type="checkbox" class="cb-str" value="Multilingual outreach"> Multilingual outreach</label>
+        <label><input type="checkbox" class="cb-str" value="Outreach"> Outreach</label>
+        <label><input type="checkbox" class="cb-str" value="Media relations"> Media relations</label>
+        <label><input type="checkbox" class="cb-str" value="Funding"> Funding</label>
+        <label><input type="checkbox" class="cb-str" value="Research capacity"> Research capacity</label>
+      </div>
+      <textarea id="f-strengths-text" placeholder="Additional details about your strengths (optional)"></textarea>
+    </div>
+    <div class="form-group">
+      <label>What your organization needs</label>
+      <div class="cb-columns" style="margin-bottom:10px">
+        <label><input type="checkbox" class="cb-need" value="Legal expertise"> Legal expertise</label>
+        <label><input type="checkbox" class="cb-need" value="Data analysis"> Data analysis</label>
+        <label><input type="checkbox" class="cb-need" value="Community organizing"> Community organizing</label>
+        <label><input type="checkbox" class="cb-need" value="Litigation capacity"> Litigation capacity</label>
+        <label><input type="checkbox" class="cb-need" value="Training programs"> Training programs</label>
+        <label><input type="checkbox" class="cb-need" value="Technology tools"> Technology tools</label>
+        <label><input type="checkbox" class="cb-need" value="Multilingual outreach"> Multilingual outreach</label>
+        <label><input type="checkbox" class="cb-need" value="Media relations"> Media relations</label>
+        <label><input type="checkbox" class="cb-need" value="Funding"> Funding</label>
+        <label><input type="checkbox" class="cb-need" value="Research capacity"> Research capacity</label>
+        <label><input type="checkbox" class="cb-need" value="Volunteers"> Volunteers</label>
+      </div>
+      <textarea id="f-needs-text" placeholder="Additional details about what you need (optional)"></textarea>
+    </div>
+    <hr class="section-divider">
+    <button class="submit-btn" id="submit-btn" onclick="submitGroup()">Submit for review</button>
+    <div class="success-msg" id="submit-success">Your submission has been received. An administrator will review it and the listing will go live once approved. Thank you!</div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="tab-admin" class="view">
+    <div id="admin-login-view">
+      <div class="admin-login">
+        <p style="font-size:14px;color:#666;margin-bottom:1rem">Enter the admin password to review pending submissions.</p>
+        <div class="form-group"><label>Password</label><input type="password" id="admin-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()"></div>
+        <button class="submit-btn" onclick="adminLogin()">Sign in</button>
+      </div>
+    </div>
+    <div id="admin-panel" style="display:none">
+      <p class="admin-section-title">Pending submissions</p>
+      <p class="admin-section-sub">Approve or reject each submission. Approved groups appear immediately in the directory.</p>
+      <div id="pending-container"><div class="loading">Loading…</div></div>
+      <p class="admin-section-title">Approved organizations</p>
+      <p class="admin-section-sub">Edit or remove any approved listing.</p>
+      <div id="approved-container"><div class="loading">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModalDirect()">Close</button>
+    <h2 id="modal-name"></h2>
+    <p class="modal-geo" id="modal-geo"></p>
+    <div class="modal-section"><h3>About</h3><p id="modal-desc" style="font-size:14px;line-height:1.6;color:#333"></p></div>
+    <div class="modal-section"><h3>Strengths</h3><div id="modal-strengths"></div></div>
+    <div class="modal-section"><h3>Needs</h3><div id="modal-needs"></div></div>
+    <div class="modal-section"><h3>Focus areas</h3><div id="modal-tags" class="tags"></div></div>
+    <div class="modal-section"><h3>Contact</h3><div id="modal-contact"></div></div>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="edit-overlay" id="edit-overlay" onclick="closeEditModal(event)">
+  <div class="edit-modal">
+    <button class="edit-close" onclick="closeEditModalDirect()">Close</button>
+    <h2>Edit organization</h2>
+    <input type="hidden" id="e-id">
+    <div class="form-group"><label>Organization name *</label><input type="text" id="e-name"></div>
+    <div class="form-group"><label>Contact email</label><input type="text" id="e-email"></div>
+    <div class="form-group"><label>Website</label><input type="text" id="e-website"></div>
+    <div class="form-group">
+      <label>Partisan affiliation</label>
+      <div class="cb-columns">
+        <label><input type="radio" name="e-partisan" value="Non-partisan"> Non-partisan</label>
+        <label><input type="radio" name="e-partisan" value="Partisan - left"> Partisan — left</label>
+        <label><input type="radio" name="e-partisan" value="Partisan - right"> Partisan — right</label>
+      </div>
+    </div>
+    <div class="form-group"><label>Brief description *</label><textarea id="e-desc"></textarea></div>
+    <div class="form-group"><label>Geographic scope *</label>
+      <select id="e-geo"><option value="">Select...</option><option>Local</option><option>State</option><option>National</option><option>International</option></select>
+    </div>
+    <div class="form-group"><label>State / region</label><input type="text" id="e-state"></div>
+    <div class="form-group">
+      <label>Type of work</label>
+      <div class="cb-columns">
+        <label><input type="checkbox" class="e-work" value="Legal"> Legal</label>
+        <label><input type="checkbox" class="e-work" value="Advocacy"> Advocacy</label>
+        <label><input type="checkbox" class="e-work" value="Technology"> Technology</label>
+        <label><input type="checkbox" class="e-work" value="Research"> Research</label>
+        <label><input type="checkbox" class="e-work" value="Training"> Training</label>
+        <label><input type="checkbox" class="e-work" value="Litigation"> Litigation</label>
+        <label><input type="checkbox" class="e-work" value="Voting process information"> Voting process information</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Election phases</label>
+      <div class="cb-columns">
+        <label><input type="checkbox" class="e-phase" value="Voter registration"> Voter registration</label>
+        <label><input type="checkbox" class="e-phase" value="Voting"> Voting</label>
+        <label><input type="checkbox" class="e-phase" value="Get out the vote"> Get out the vote</label>
+        <label><input type="checkbox" class="e-phase" value="Vote counting"> Vote counting</label>
+        <label><input type="checkbox" class="e-phase" value="Certification"> Certification</label>
+        <label><input type="checkbox" class="e-phase" value="Litigation"> Post-election litigation</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Voter registration focus</label>
+      <div class="cb-columns">
+        <label><input type="checkbox" class="e-voter" value="Roll monitoring"> Voter roll monitoring</label>
+        <label><input type="checkbox" class="e-voter" value="Re-registration help"> Re-registration assistance</label>
+        <label><input type="checkbox" class="e-voter" value="Vote rejection monitoring"> Vote rejection monitoring</label>
+        <label><input type="checkbox" class="e-voter" value="Ballot cure"> Ballot cure programs</label>
+        <label><input type="checkbox" class="e-voter" value="Understanding the voting process"> Understanding the voting process</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Community focus</label>
+      <div class="cb-columns">
+        <label><input type="checkbox" class="e-demo" value="Youth"> Youth</label>
+        <label><input type="checkbox" class="e-demo" value="Seniors"> Seniors</label>
+        <label><input type="checkbox" class="e-demo" value="Rural communities"> Rural communities</label>
+        <label><input type="checkbox" class="e-demo" value="AAPI communities"> AAPI communities</label>
+        <label><input type="checkbox" class="e-demo" value="Black communities"> Black communities</label>
+        <label><input type="checkbox" class="e-demo" value="Latino communities"> Latino communities</label>
+        <label><input type="checkbox" class="e-demo" value="Native communities"> Native communities</label>
+        <label><input type="checkbox" class="e-demo" value="All communities"> All communities</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Strengths</label>
+      <div class="cb-columns" style="margin-bottom:8px">
+        <label><input type="checkbox" class="e-str" value="Legal expertise"> Legal expertise</label>
+        <label><input type="checkbox" class="e-str" value="Data analysis"> Data analysis</label>
+        <label><input type="checkbox" class="e-str" value="Community organizing"> Community organizing</label>
+        <label><input type="checkbox" class="e-str" value="Litigation capacity"> Litigation capacity</label>
+        <label><input type="checkbox" class="e-str" value="Training programs"> Training programs</label>
+        <label><input type="checkbox" class="e-str" value="Technology tools"> Technology tools</label>
+        <label><input type="checkbox" class="e-str" value="Multilingual outreach"> Multilingual outreach</label>
+        <label><input type="checkbox" class="e-str" value="Outreach"> Outreach</label>
+        <label><input type="checkbox" class="e-str" value="Media relations"> Media relations</label>
+        <label><input type="checkbox" class="e-str" value="Funding"> Funding</label>
+        <label><input type="checkbox" class="e-str" value="Research capacity"> Research capacity</label>
+      </div>
+      <textarea id="e-strengths-text" placeholder="Additional details (optional)"></textarea>
+    </div>
+    <div class="form-group">
+      <label>Needs</label>
+      <div class="cb-columns" style="margin-bottom:8px">
+        <label><input type="checkbox" class="e-need" value="Legal expertise"> Legal expertise</label>
+        <label><input type="checkbox" class="e-need" value="Data analysis"> Data analysis</label>
+        <label><input type="checkbox" class="e-need" value="Community organizing"> Community organizing</label>
+        <label><input type="checkbox" class="e-need" value="Litigation capacity"> Litigation capacity</label>
+        <label><input type="checkbox" class="e-need" value="Training programs"> Training programs</label>
+        <label><input type="checkbox" class="e-need" value="Technology tools"> Technology tools</label>
+        <label><input type="checkbox" class="e-need" value="Multilingual outreach"> Multilingual outreach</label>
+        <label><input type="checkbox" class="e-need" value="Media relations"> Media relations</label>
+        <label><input type="checkbox" class="e-need" value="Funding"> Funding</label>
+        <label><input type="checkbox" class="e-need" value="Research capacity"> Research capacity</label>
+        <label><input type="checkbox" class="e-need" value="Volunteers"> Volunteers</label>
+      </div>
+      <textarea id="e-needs-text" placeholder="Additional details (optional)"></textarea>
+    </div>
+    <button class="save-btn" id="save-btn" onclick="saveEdit()">Save changes</button>
+  </div>
+</div>
+
+<script>
+const TABLE_ORGS     = 'Organizations';
+const TABLE_PENDING  = 'Pending';
+const ADMIN_PASSWORD = 'VerilyNow74';
+const API = '/.netlify/functions/airtable';
+
+async function atGet(table) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`);
+  if (!res.ok) throw new Error(`Server error ${res.status}`);
+  const data = await res.json();
+  return data.records;
+}
+
+async function atCreate(table, fields) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ records: [{ fields }] })
+  });
+  if (!res.ok) throw new Error(`Server error ${res.status}`);
+  return res.json();
+}
+
+async function atDelete(table, id) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {
+    method: 'DELETE'
+  });
+  if (!res.ok) throw new Error(`Server error ${res.status}`);
+  return res.json();
+}
+  {Name:"Verified Voting Foundation",Email:"info@verifiedvoting.org",Website:"https://verifiedvoting.org",Description:"Advocates for the use of voter-verified paper ballots and accurate post-election audits to ensure elections are secure and accurate.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Research,Technology",Phase:"Voting,Vote counting,Certification",Demo:"",Voter:"",Strengths:"Research capacity,Media relations,Technology tools",StrengthsText:"Leading experts in voting technology standards and audit methodologies.",Needs:"Community organizing,Funding",NeedsText:"",SubmittedAt:new Date().toISOString()},
+  {Name:"Election Protection Coalition",Email:"info@866ourvote.org",Website:"https://866ourvote.org",Description:"A nonpartisan voter protection coalition that operates the largest election protection hotline in the country on Election Day.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Legal,Training",Phase:"Voting,Voter registration",Demo:"Black communities,Latino communities",Voter:"Re-registration help",Strengths:"Legal expertise,Community organizing,Multilingual outreach,Training programs",StrengthsText:"Runs a large volunteer network of lawyers and poll workers.",Needs:"Technology tools,Data analysis",NeedsText:"Need better data tools to track and respond to polling place issues in real time.",SubmittedAt:new Date().toISOString()},
+  {Name:"Midwest Election Observers Network",Email:"contact@mideobs.example.org",Website:"",Description:"Trains and deploys nonpartisan election observers across Midwestern states to monitor polling places and canvassing boards.",Geo:"State",State:"Minnesota, Wisconsin, Michigan, Ohio",Partisan:"Non-partisan",Work:"Training,Research",Phase:"Voting,Vote counting,Certification",Demo:"Rural communities",Voter:"Vote rejection monitoring",Strengths:"Training programs,Community organizing,Research capacity",StrengthsText:"Deep relationships with county election officials and experienced observer trainers.",Needs:"Legal expertise,Litigation capacity,Funding",NeedsText:"Need legal support when observers are denied access or results are contested.",SubmittedAt:new Date().toISOString()},
+  {Name:"Voter Roll Watch",Email:"data@vrwatch.example.org",Website:"",Description:"Monitors voter registration rolls across multiple states to identify and document improper purges, and helps affected voters get re-registered.",Geo:"State",State:"Arizona, Georgia, Pennsylvania, Wisconsin",Partisan:"Non-partisan",Work:"Research,Advocacy,Legal",Phase:"Voter registration",Demo:"",Voter:"Roll monitoring,Re-registration help,Vote rejection monitoring,Ballot cure",Strengths:"Data analysis,Research capacity,Legal expertise",StrengthsText:"Maintains a database of purge activity going back to 2012 and partners with academic researchers.",Needs:"Community organizing,Multilingual outreach,Funding",NeedsText:"Need on-the-ground partners who can reach affected voters directly.",SubmittedAt:new Date().toISOString()},
+  {Name:"Native Vote Alliance",Email:"info@nativevote.example.org",Website:"",Description:"Works to remove barriers to voting for Native American and Alaska Native communities, including distance, ID requirements, and language access.",Geo:"State",State:"Montana, South Dakota, Alaska, New Mexico",Partisan:"Non-partisan",Work:"Advocacy,Legal,Training",Phase:"Voter registration,Voting",Demo:"Native communities,Rural communities",Voter:"Re-registration help,Roll monitoring",Strengths:"Community organizing,Multilingual outreach,Legal expertise",StrengthsText:"Deep trust within Native communities and experience with federal voting rights law.",Needs:"Technology tools,Data analysis,Media relations",NeedsText:"Need tools to document and publicize barriers voters face.",SubmittedAt:new Date().toISOString()},
+  {Name:"League of Women Voters",Email:"lwv@lwv.org",Website:"https://lwv.org",Description:"A nonpartisan organization that encourages informed and active participation in government, works to increase understanding of major public policy issues, and influences public policy through education and advocacy.",Geo:"National",State:"",Partisan:"Non-partisan",Work:"Advocacy,Training,Research",Phase:"Voter registration,Voting",Demo:"Youth,Seniors",Voter:"Re-registration help,Roll monitoring",Strengths:"Community organizing,Outreach,Training programs,Research capacity,Media relations",StrengthsText:"One of the oldest and most trusted nonpartisan civic organizations in the country, with chapters in all 50 states.",Needs:"Technology tools,Data analysis,Volunteers",NeedsText:"",SubmittedAt:new Date().toISOString()}
+];
+
+function recordToOrg(r) {
+  const f = r.fields;
+  const split = v => v ? v.split(',').map(s=>s.trim()).filter(Boolean) : [];
+  return {
+    _id: r.id,
+    name: f.Name||'', email: f.Email||'', website: f.Website||'',
+    desc: f.Description||'', geo: f.Geo||'', state: f.State||'',
+    partisan: f.Partisan||'',
+    work: split(f.Work), phase: split(f.Phase), demo: split(f.Demo), voter: split(f.Voter),
+    strengths: split(f.Strengths), strengthsText: f.StrengthsText||'',
+    needs: split(f.Needs), needsText: f.NeedsText||''
+  };
+}
+
+function orgToFields(org) {
+  return {
+    Name:org.name, Email:org.email, Website:org.website, Description:org.desc,
+    Geo:org.geo, State:org.state, Partisan:org.partisan||'', Work:org.work.join(','), Phase:org.phase.join(','),
+    Demo:org.demo.join(','), Voter:org.voter.join(','),
+    Strengths:org.strengths.join(','), StrengthsText:org.strengthsText,
+    Needs:org.needs.join(','), NeedsText:org.needsText, SubmittedAt:new Date().toISOString()
+  };
+}
+
+let orgs = [], pending = [], adminLoggedIn = false;
+
+async function init() {
+  try {
+    const records = await atGet(TABLE_ORGS);
+    if (records.length === 0) {
+      for (const s of SEED) await atCreate(TABLE_ORGS, s);
+      const seeded = await atGet(TABLE_ORGS);
+      orgs = seeded.map(recordToOrg);
+    } else {
+      orgs = records.map(recordToOrg);
+    }
+  } catch(e) {
+    document.getElementById('cards-container').innerHTML =
+      `<div class="error-msg">Could not connect to the database. Please check your internet connection and try refreshing.<br><small>${e.message}</small></div>`;
+    return;
+  }
+  renderCards();
+}
+
+function showTab(t, btn) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + t).classList.add('active');
+  if (t === 'admin' && adminLoggedIn) loadPending();
+}
+
+function clearFilters() {
+  document.getElementById('search').value = '';
+  ['f-geo','f-work','f-phase','f-demo','f-voter','f-state-filter','f-partisan'].forEach(id => document.getElementById(id).value = '');
+  renderCards();
+}
+
+function matches(org, f) {
+  if (f.q) {
+    const blob = [org.name,org.desc,org.state,...org.strengths,...org.needs,org.strengthsText,org.needsText].join(' ').toLowerCase();
+    if (!blob.includes(f.q)) return false;
+  }
+  if (f.geo && org.geo !== f.geo) return false;
+  if (f.work && !org.work.includes(f.work)) return false;
+  if (f.phase && !org.phase.includes(f.phase)) return false;
+  if (f.demo && !org.demo.includes(f.demo)) return false;
+  if (f.voter && !org.voter.includes(f.voter)) return false;
+  if (f.stateFilter && !org.state.toLowerCase().includes(f.stateFilter.toLowerCase())) return false;
+  return true;
+}
+
+function renderCards() {
+  const f = {
+    q: document.getElementById('search').value.toLowerCase(),
+    geo: document.getElementById('f-geo').value,
+    work: document.getElementById('f-work').value,
+    phase: document.getElementById('f-phase').value,
+    demo: document.getElementById('f-demo').value,
+    voter: document.getElementById('f-voter').value,
+    stateFilter: document.getElementById('f-state-filter').value,
+    partisan: document.getElementById('f-partisan').value
+  };
+  const filtered = orgs.filter(o => matches(o, f));
+  document.getElementById('results-count').textContent = filtered.length + ' organization' + (filtered.length !== 1 ? 's' : '') + ' found';
+  const c = document.getElementById('cards-container');
+  if (!filtered.length) { c.innerHTML = '<div class="no-results">No organizations match your filters. Try broadening your search.</div>'; return; }
+  c.innerHTML = filtered.map((org, i) => `
+    <div class="card" onclick="openModal(${i})">
+      <div class="card-name">${org.name}</div>
+      <div class="card-geo">${org.geo}${org.state ? ' · ' + org.state : ''}</div>
+      <div class="card-desc">${org.desc}</div>
+      <div class="tags">
+        ${org.work.map(t=>`<span class="tag tag-work">${t}</span>`).join('')}
+        ${org.phase.map(t=>`<span class="tag tag-phase">${t}</span>`).join('')}
+        ${org.voter.map(t=>`<span class="tag tag-voter">${t}</span>`).join('')}
+        ${org.demo.map(t=>`<span class="tag tag-demo">${t}</span>`).join('')}
+        ${org.partisan ? `<span class="tag ${org.partisan==='Partisan - left'?'tag-partisan-left':org.partisan==='Partisan - right'?'tag-partisan-right':'tag-partisan'}">${org.partisan}</span>` : ''}
+        ${org.strengths.slice(0,3).map(t=>`<span class="tag tag-strength">${t}</span>`).join('')}
+        ${org.needs.slice(0,2).map(t=>`<span class="tag tag-need">Need: ${t}</span>`).join('')}
+      </div>
+    </div>`).join('');
+  // store filtered list for modal lookup by index
+  window._filtered = filtered;
+}
+
+function openModal(i) {
+  const org = window._filtered[i];
+  if (!org) return;
+  document.getElementById('modal-name').textContent = org.name;
+  document.getElementById('modal-geo').textContent = org.geo + (org.state ? ' · ' + org.state : '');
+  document.getElementById('modal-desc').textContent = org.desc;
+  document.getElementById('modal-strengths').innerHTML =
+    '<div class="tags" style="margin-bottom:6px">' + org.strengths.map(t=>`<span class="tag tag-strength">${t}</span>`).join('') + '</div>' +
+    (org.strengthsText ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-top:4px">${org.strengthsText}</p>` : '');
+  document.getElementById('modal-needs').innerHTML =
+    '<div class="tags" style="margin-bottom:6px">' + org.needs.map(t=>`<span class="tag tag-need">${t}</span>`).join('') + '</div>' +
+    (org.needsText ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-top:4px">${org.needsText}</p>` : '');
+  document.getElementById('modal-tags').innerHTML = [
+    ...org.work.map(t=>`<span class="tag tag-work">${t}</span>`),
+    ...org.phase.map(t=>`<span class="tag tag-phase">${t}</span>`),
+    ...org.voter.map(t=>`<span class="tag tag-voter">${t}</span>`),
+    ...org.demo.map(t=>`<span class="tag tag-demo">${t}</span>`),
+    org.partisan ? `<span class="tag ${org.partisan==='Partisan - left'?'tag-partisan-left':org.partisan==='Partisan - right'?'tag-partisan-right':'tag-partisan'}">${org.partisan}</span>` : ''
+  ].join('');
+  let ch = '';
+  if (org.email) ch += `<a href="mailto:${org.email}" class="contact-link">${org.email}</a><br>`;
+  if (org.website) ch += `<a href="${org.website}" class="contact-link" target="_blank">${org.website}</a>`;
+  document.getElementById('modal-contact').innerHTML = ch || '<span style="font-size:13px;color:#aaa">No contact info provided</span>';
+  document.getElementById('modal').classList.add('open');
+}
+
+function closeModal(e) { if (e.target === document.getElementById('modal')) closeModalDirect(); }
+function closeModalDirect() { document.getElementById('modal').classList.remove('open'); }
+function getChecked(cls) { return [...document.querySelectorAll('.' + cls + ':checked')].map(c => c.value); }
+
+async function submitGroup() {
+  const name = document.getElementById('f-name').value.trim();
+  const email = document.getElementById('f-email').value.trim();
+  const desc = document.getElementById('f-desc').value.trim();
+  const geo = document.getElementById('f-geo-s').value;
+  if (!name || !desc || !geo) { alert('Please fill in all required fields (marked with *).'); return; }
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting…';
+  try {
+    await atCreate(TABLE_PENDING, {
+      Name:name, Email:email, Website:document.getElementById('f-website').value.trim(),
+      Description:desc, Geo:geo, State:document.getElementById('f-state').value.trim(),
+      Partisan: (document.querySelector('input[name="partisan"]:checked') || {}).value || '',
+      Work:getChecked('cb-work').join(','), Phase:getChecked('cb-phase').join(','),
+      Voter:getChecked('cb-voter').join(','), Demo:getChecked('cb-demo').join(','),
+      Strengths:getChecked('cb-str').join(','), StrengthsText:document.getElementById('f-strengths-text').value.trim(),
+      Needs:getChecked('cb-need').join(','), NeedsText:document.getElementById('f-needs-text').value.trim(),
+      SubmittedAt:new Date().toISOString()
+    });
+    document.getElementById('submit-success').classList.add('show');
+    ['f-name','f-email','f-desc','f-website','f-state','f-strengths-text','f-needs-text'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-geo-s').value = '';
+    document.querySelectorAll('input[type=checkbox]').forEach(cb => cb.checked = false);
+  } catch(e) {
+    alert('Submission failed — please try again. (' + e.message + ')');
+  }
+  btn.disabled = false; btn.textContent = 'Submit for review';
+}
+
+async function atUpdate(table, id, fields) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fields })
+  });
+  if (!res.ok) throw new Error(`Server error ${res.status}`);
+  return res.json();
+}
+
+function adminLogin() {
+  if (document.getElementById('admin-pw').value === ADMIN_PASSWORD) {
+    adminLoggedIn = true;
+    document.getElementById('admin-login-view').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    loadPending();
+    renderApproved();
+  } else { alert('Incorrect password.'); }
+}
+
+async function loadPending() {
+  const c = document.getElementById('pending-container');
+  c.innerHTML = '<div class="loading">Loading…</div>';
+  try {
+    const records = await atGet(TABLE_PENDING);
+    pending = records.map(recordToOrg);
+    renderPending();
+  } catch(e) {
+    c.innerHTML = `<div class="error-msg">Could not load pending submissions. (${e.message})</div>`;
+  }
+}
+
+function renderApproved() {
+  const c = document.getElementById('approved-container');
+  if (!orgs.length) { c.innerHTML = '<p style="font-size:14px;color:#888">No approved organizations yet.</p>'; return; }
+  c.innerHTML = orgs.map((org, i) => `
+    <div class="admin-card">
+      <div style="font-weight:500;font-size:15px">${org.name}</div>
+      <div style="font-size:12px;color:#888;margin:2px 0 6px">${org.geo}${org.state?' · '+org.state:''}</div>
+      <div style="font-size:13px;color:#555;line-height:1.5">${org.desc}</div>
+      <div class="admin-actions">
+        <button class="btn-edit" onclick="openEditModal(${i})">Edit</button>
+        <button class="btn-delete" onclick="deleteOrg(${i})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+function openEditModal(i) {
+  const org = orgs[i];
+  document.getElementById('e-id').value = org._id;
+  document.getElementById('e-name').value = org.name;
+  document.getElementById('e-email').value = org.email;
+  document.getElementById('e-website').value = org.website;
+  document.getElementById('e-desc').value = org.desc;
+  document.getElementById('e-geo').value = org.geo;
+  document.getElementById('e-state').value = org.state;
+  document.getElementById('e-strengths-text').value = org.strengthsText;
+  document.getElementById('e-needs-text').value = org.needsText;
+  // partisan radio
+  document.querySelectorAll('input[name="e-partisan"]').forEach(r => r.checked = r.value === org.partisan);
+  // checkboxes
+  ['e-work','e-phase','e-voter','e-demo','e-str','e-need'].forEach(cls => {
+    document.querySelectorAll('.' + cls).forEach(cb => cb.checked = false);
+  });
+  org.work.forEach(v => { const el = document.querySelector(`.e-work[value="${v}"]`); if(el) el.checked = true; });
+  org.phase.forEach(v => { const el = document.querySelector(`.e-phase[value="${v}"]`); if(el) el.checked = true; });
+  org.voter.forEach(v => { const el = document.querySelector(`.e-voter[value="${v}"]`); if(el) el.checked = true; });
+  org.demo.forEach(v => { const el = document.querySelector(`.e-demo[value="${v}"]`); if(el) el.checked = true; });
+  org.strengths.forEach(v => { const el = document.querySelector(`.e-str[value="${v}"]`); if(el) el.checked = true; });
+  org.needs.forEach(v => { const el = document.querySelector(`.e-need[value="${v}"]`); if(el) el.checked = true; });
+  document.getElementById('edit-overlay').classList.add('open');
+}
+
+function closeEditModal(e) { if (e.target === document.getElementById('edit-overlay')) closeEditModalDirect(); }
+function closeEditModalDirect() { document.getElementById('edit-overlay').classList.remove('open'); }
+
+function getEditChecked(cls) { return [...document.querySelectorAll('.' + cls + ':checked')].map(c => c.value); }
+
+async function saveEdit() {
+  const id = document.getElementById('e-id').value;
+  const name = document.getElementById('e-name').value.trim();
+  const desc = document.getElementById('e-desc').value.trim();
+  const geo = document.getElementById('e-geo').value;
+  if (!name || !desc || !geo) { alert('Please fill in all required fields.'); return; }
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  const fields = {
+    Name: name,
+    Email: document.getElementById('e-email').value.trim(),
+    Website: document.getElementById('e-website').value.trim(),
+    Description: desc, Geo: geo,
+    State: document.getElementById('e-state').value.trim(),
+    Partisan: (document.querySelector('input[name="e-partisan"]:checked') || {}).value || '',
+    Work: getEditChecked('e-work').join(','),
+    Phase: getEditChecked('e-phase').join(','),
+    Voter: getEditChecked('e-voter').join(','),
+    Demo: getEditChecked('e-demo').join(','),
+    Strengths: getEditChecked('e-str').join(','),
+    StrengthsText: document.getElementById('e-strengths-text').value.trim(),
+    Needs: getEditChecked('e-need').join(','),
+    NeedsText: document.getElementById('e-needs-text').value.trim()
+  };
+  try {
+    await atUpdate(TABLE_ORGS, id, fields);
+    orgs = (await atGet(TABLE_ORGS)).map(recordToOrg);
+    renderCards();
+    renderApproved();
+    closeEditModalDirect();
+  } catch(e) { alert('Error saving: ' + e.message); }
+  btn.disabled = false; btn.textContent = 'Save changes';
+}
+
+async function deleteOrg(i) {
+  const org = orgs[i];
+  if (!confirm(`Delete "${org.name}" from the directory? This cannot be undone.`)) return;
+  try {
+    await atDelete(TABLE_ORGS, org._id);
+    orgs.splice(i, 1);
+    renderCards();
+    renderApproved();
+  } catch(e) { alert('Error deleting: ' + e.message); }
+}
+
+function renderPending() {
+  const c = document.getElementById('pending-container');
+  if (!pending.length) { c.innerHTML = '<p style="font-size:14px;color:#888">No pending submissions.</p>'; return; }
+  c.innerHTML = pending.map((org, i) => `
+    <div class="admin-card">
+      <div style="font-weight:500;font-size:15px">${org.name}</div>
+      <div style="font-size:12px;color:#888;margin:2px 0 6px">${org.geo}${org.state?' · '+org.state:''} · ${org.email}</div>
+      <div style="font-size:13px;color:#555;line-height:1.5">${org.desc}</div>
+      <div class="tags" style="margin-top:8px">
+        ${org.work.map(t=>`<span class="tag tag-work">${t}</span>`).join('')}
+        ${org.strengths.map(t=>`<span class="tag tag-strength">${t}</span>`).join('')}
+        ${org.needs.map(t=>`<span class="tag tag-need">Need: ${t}</span>`).join('')}
+      </div>
+      <div class="admin-actions">
+        <button class="btn-approve" onclick="approve(${i})">Approve</button>
+        <button class="btn-reject" onclick="reject(${i})">Reject</button>
+      </div>
+    </div>`).join('');
+}
+
+async function approve(i) {
+  const org = pending[i];
+  try {
+    await atCreate(TABLE_ORGS, orgToFields(org));
+    await atDelete(TABLE_PENDING, org._id);
+    pending.splice(i, 1);
+    orgs = (await atGet(TABLE_ORGS)).map(recordToOrg);
+    renderCards();
+    renderPending();
+    renderApproved();
+  } catch(e) { alert('Error approving: ' + e.message); }
+}
+
+async function reject(i) {
+  const org = pending[i];
+  try {
+    await atDelete(TABLE_PENDING, org._id);
+    pending.splice(i, 1);
+    renderPending();
+  } catch(e) { alert('Error rejecting: ' + e.message); }
+}
+
+init();
+</script>
+</body>
+</html>
