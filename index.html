@@ -119,6 +119,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .map-filter-remove:hover { color:#712b13; }
 .map-legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:#555; }
 .map-legend-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; border:1.5px solid rgba(0,0,0,0.15); }
+#map-container:fullscreen { width:100vw !important; height:100vh !important; border-radius:0 !important; border:none !important; background:#fafaf8 !important; }
+#map-container:-webkit-full-screen { width:100vw !important; height:100vh !important; border-radius:0 !important; }
+#map-container:-moz-full-screen { width:100vw !important; height:100vh !important; border-radius:0 !important; }
 /* Lists management */
 .list-category { background: #fff; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 16px; }
 .list-category-title { font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
@@ -225,7 +228,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
       <button id="map-add-filter-btn" onclick="addMapFilter()" style="font-size:13px;padding:6px 14px;border:1px dashed #aaa;border-radius:8px;background:none;color:#666;cursor:pointer;font-family:inherit">+ Add another filter</button>
     </div>
 
-    <div id="map-legend-row" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:1rem;font-size:12px;align-items:center"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+      <div id="map-legend-row" style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px;align-items:center"></div>
+      <button onclick="toggleMapFullscreen()" id="map-fullscreen-btn" style="font-size:12px;padding:5px 12px;border:1px solid #ddd;border-radius:8px;background:none;color:#666;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0">⛶ Full screen</button>
+    </div>
 
     <div id="map-container" style="width:100%;height:650px;border:1px solid #e0e0db;border-radius:10px;background:#fafaf8;overflow:hidden"></div>
   </div>
@@ -858,13 +864,19 @@ function addMapFilter() {
   row.id = 'map-filter-row-' + filterId;
   row.innerHTML =
     '<span class="map-filter-label" style="color:' + color.border + '">' + color.label + '</span>' +
-    '<select class="map-filter-select" id="map-cat-' + filterId + '" onchange="onMapCatChange(' + filterId + ')">' +
-      buildCatOptions(defaultCatId) +
-    '</select>' +
-    '<select class="map-filter-select" id="map-val-' + filterId + '" onchange="onMapValChange(' + filterId + ')">' +
-      buildValOptions(defaultCatId, '') +
-    '</select>' +
-    (colorIdx > 0 ? '<button class="map-filter-remove" onclick="removeMapFilter(' + filterId + ')" title="Remove filter">×</button>' : '');
+    '<div style="display:flex;flex-direction:column;gap:2px">' +
+      '<span style="font-size:11px;color:#aaa;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Category</span>' +
+      '<select class="map-filter-select" id="map-cat-' + filterId + '" onchange="onMapCatChange(' + filterId + ')">' +
+        buildCatOptions(defaultCatId) +
+      '</select>' +
+    '</div>' +
+    '<div style="display:flex;flex-direction:column;gap:2px">' +
+      '<span style="font-size:11px;color:#aaa;font-weight:500;text-transform:uppercase;letter-spacing:0.05em">Value</span>' +
+      '<select class="map-filter-select" id="map-val-' + filterId + '" onchange="onMapValChange(' + filterId + ')">' +
+        buildValOptions(defaultCatId, '') +
+      '</select>' +
+    '</div>' +
+    (colorIdx > 0 ? '<button class="map-filter-remove" onclick="removeMapFilter(' + filterId + ')" title="Remove filter" style="margin-top:18px">×</button>' : '');
 
   document.getElementById('map-filters').appendChild(row);
 
@@ -1408,6 +1420,33 @@ async function renameValue(valId, currentValue, catId) {
     renderListsAdmin();
   } catch(e) { alert('Error renaming value: ' + e.message); }
 }
+
+function toggleMapFullscreen() {
+  const container = document.getElementById('map-container');
+  const btn = document.getElementById('map-fullscreen-btn');
+  const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement;
+
+  if (!isFullscreen) {
+    const req = container.requestFullscreen || container.webkitRequestFullscreen || container.mozRequestFullScreen;
+    if (req) req.call(container);
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen;
+    if (exit) exit.call(document);
+  }
+}
+
+document.addEventListener('fullscreenchange', function() {
+  const btn = document.getElementById('map-fullscreen-btn');
+  if (!btn) return;
+  if (document.fullscreenElement) {
+    btn.textContent = '✕ Exit full screen';
+    // Resize network to fill new dimensions
+    if (networkInstance) setTimeout(function() { networkInstance.fit(); }, 100);
+  } else {
+    btn.textContent = '⛶ Full screen';
+    if (networkInstance) setTimeout(function() { networkInstance.fit(); }, 100);
+  }
+});
 
 init();
 </script>
