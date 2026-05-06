@@ -111,6 +111,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .btn-edit:hover { background: #e8e8e5; }
 .btn-delete { padding: 6px 16px; font-size: 13px; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; cursor: pointer; font-family: inherit; }
 .btn-delete:hover { background: #f5c4b3; }
+/* Map filters */
+.map-filter-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
+.map-filter-label { font-size:12px; font-weight:500; color:#888; text-transform:uppercase; letter-spacing:0.05em; min-width:60px; }
+.map-filter-select { font-size:13px; padding:6px 10px; border:1px solid #ddd; border-radius:8px; background:#f5f5f3; color:#1a1a1a; font-family:inherit; }
+.map-filter-remove { background:none; border:none; color:#bbb; cursor:pointer; font-size:18px; padding:0 4px; line-height:1; }
+.map-filter-remove:hover { color:#712b13; }
+.map-legend-item { display:flex; align-items:center; gap:5px; font-size:12px; color:#555; }
+.map-legend-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; border:1.5px solid rgba(0,0,0,0.15); }
 /* Lists management */
 .list-category { background: #fff; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 16px; }
 .list-category-title { font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
@@ -207,12 +215,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 
   <!-- MAP -->
   <div id="tab-map" class="view">
-    <p style="font-size:14px;color:#666;margin-bottom:1rem;line-height:1.6">Select a shared attribute to see which organizations are connected by it. Click any node to view that organization's profile.</p>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;align-items:center">
-      <select id="map-filter-cat" onchange="updateMapFilterValues()" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#f5f5f3;color:#1a1a1a;font-family:inherit"></select>
-      <select id="map-filter-val" onchange="renderMap()" style="font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#f5f5f3;color:#1a1a1a;font-family:inherit"></select>
-      <span id="map-legend" style="font-size:12px;color:#888;margin-left:4px"></span>
+    <p style="font-size:14px;color:#666;margin-bottom:1.25rem;line-height:1.6">Select shared attributes to see which organizations are connected. Click any node to view that organization's profile.</p>
+
+    <div id="map-filters">
+      <!-- Filter rows injected here -->
     </div>
+
+    <div style="margin-bottom:1rem">
+      <button id="map-add-filter-btn" onclick="addMapFilter()" style="font-size:13px;padding:6px 14px;border:1px dashed #aaa;border-radius:8px;background:none;color:#666;cursor:pointer;font-family:inherit">+ Add another filter</button>
+    </div>
+
+    <div id="map-legend-row" style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:1rem;font-size:12px;align-items:center"></div>
+
     <div id="map-container" style="width:100%;height:650px;border:1px solid #e0e0db;border-radius:10px;background:#fafaf8;overflow:hidden"></div>
   </div>
 
@@ -574,12 +588,7 @@ function buildEditCategories() {
 }
 
 function buildMapCategorySelect() {
-  const sel = document.getElementById('map-filter-cat');
-  if (!sel) return;
-  sel.innerHTML = categories.map(cat =>
-    `<option value="${cat._id}">${cat.name}</option>`
-  ).join('');
-  updateMapFilterValues();
+  // Map filters are initialized when the tab is first shown
 }
 
 // ── Browse ─────────────────────────────────────────────────────
@@ -589,7 +598,7 @@ function showTab(t, btn) {
   btn.classList.add('active');
   document.getElementById('tab-' + t).classList.add('active');
   if (t === 'admin' && adminLoggedIn) loadPending();
-  if (t === 'map') updateMapFilterValues();
+  if (t === 'map') { if (!mapFilters.length) initMapFilters(); else renderMap(); }
 }
 
 function clearFilters() {
@@ -798,67 +807,235 @@ function cancelForm() {
 
 // ── Network Map ────────────────────────────────────────────────
 let networkInstance = null;
+let mapFilters = []; // [{id, catId, valueId}]
+let mapFilterCount = 0;
 
-function updateMapFilterValues() {
-  const catSel = document.getElementById('map-filter-cat');
-  const valSel = document.getElementById('map-filter-val');
-  const catId = catSel.value;
+// Colors for up to 3 filters + combinations
+const FILTER_COLORS = [
+  { bg:'#e6f1fb', border:'#0c447c', label:'Filter 1' },
+  { bg:'#e1f5ee', border:'#085041', label:'Filter 2' },
+  { bg:'#faeeda', border:'#633806', label:'Filter 3' }
+];
+const BOTH_COLOR    = { bg:'#fff3cd', border:'#856404' };
+const ALL3_COLOR    = { bg:'#f8d7da', border:'#842029' };
+const UNMATCHED     = { bg:'#f0f0f0', border:'#ccc' };
+
+function initMapFilters() {
+  mapFilters = [];
+  mapFilterCount = 0;
+  document.getElementById('map-filters').innerHTML = '';
+  addMapFilter();
+}
+
+function buildCatOptions(selectedCatId) {
+  const stateOpt = '<option value="__state__">State</option>';
+  const catOpts = categories.map(c =>
+    '<option value="' + c._id + '"' + (c._id === selectedCatId ? ' selected' : '') + '>' + c.name + '</option>'
+  ).join('');
+  return stateOpt + catOpts;
+}
+
+function buildValOptions(catId, selectedValId) {
+  if (catId === '__state__') {
+    const states = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
+    return states.map(s => '<option value="__state__:' + s + '"' + (('__state__:' + s) === selectedValId ? ' selected' : '') + '>' + s + '</option>').join('');
+  }
   const vals = getActiveValues(catId);
-  valSel.innerHTML = vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
+  return vals.map(v => '<option value="' + v._id + '"' + (v._id === selectedValId ? ' selected' : '') + '>' + v.value + '</option>').join('');
+}
+
+function addMapFilter() {
+  if (mapFilters.length >= 3) return;
+  const filterId = ++mapFilterCount;
+  const colorIdx = mapFilters.length;
+  const color = FILTER_COLORS[colorIdx];
+  const defaultCatId = categories.length ? categories[0]._id : '';
+
+  mapFilters.push({ id: filterId, catId: defaultCatId, valueId: '' });
+
+  const row = document.createElement('div');
+  row.className = 'map-filter-row';
+  row.id = 'map-filter-row-' + filterId;
+  row.innerHTML =
+    '<span class="map-filter-label" style="color:' + color.border + '">' + color.label + '</span>' +
+    '<select class="map-filter-select" id="map-cat-' + filterId + '" onchange="onMapCatChange(' + filterId + ')">' +
+      buildCatOptions(defaultCatId) +
+    '</select>' +
+    '<select class="map-filter-select" id="map-val-' + filterId + '" onchange="onMapValChange(' + filterId + ')">' +
+      buildValOptions(defaultCatId, '') +
+    '</select>' +
+    (colorIdx > 0 ? '<button class="map-filter-remove" onclick="removeMapFilter(' + filterId + ')" title="Remove filter">×</button>' : '');
+
+  document.getElementById('map-filters').appendChild(row);
+
+  // Set initial value to first option
+  const valSel = document.getElementById('map-val-' + filterId);
+  if (valSel.options.length) {
+    mapFilters[mapFilters.length - 1].valueId = valSel.options[0].value;
+  }
+
+  // Hide add button if at max
+  if (mapFilters.length >= 3) document.getElementById('map-add-filter-btn').style.display = 'none';
+
   renderMap();
 }
 
-function renderMap() {
-  const catId = document.getElementById('map-filter-cat').value;
-  const valueId = document.getElementById('map-filter-val').value;
-  if (!valueId || !orgs.length) return;
+function removeMapFilter(filterId) {
+  mapFilters = mapFilters.filter(f => f.id !== filterId);
+  document.getElementById('map-filter-row-' + filterId).remove();
+  document.getElementById('map-add-filter-btn').style.display = '';
 
-  const matched = orgs.filter(o => (orgTags[o._id]||[]).some(t => t.valueId === valueId));
-  const unmatched = orgs.filter(o => !(orgTags[o._id]||[]).some(t => t.valueId === valueId));
-  const valueName = (valueIndex[valueId]||{}).value || valueId;
-
-  const nodes = new vis.DataSet([
-    ...matched.map(org => ({
-      id: org._id, title: org.name,
-      label: org.name.length > 22 ? org.name.substring(0,20)+'…' : org.name,
-      color: { background:'#e6f1fb', border:'#0c447c', highlight:{background:'#b5d4f4',border:'#0c447c'} },
-      font: { color:'#0c447c', size:13 }, shape:'ellipse', size:20
-    })),
-    ...unmatched.map(org => ({
-      id: org._id, title: org.name,
-      label: org.name.length > 22 ? org.name.substring(0,20)+'…' : org.name,
-      color: { background:'#f0f0f0', border:'#ccc', highlight:{background:'#e0e0db',border:'#aaa'} },
-      font: { color:'#aaa', size:11 }, shape:'ellipse', size:14
-    }))
-  ]);
-
-  const edges = new vis.DataSet();
-  for (let i = 0; i < matched.length; i++)
-    for (let j = i+1; j < matched.length; j++)
-      edges.add({from:matched[i]._id, to:matched[j]._id, color:{color:'#b5d4f4',highlight:'#0c447c'}, width:1.5});
-
-  document.getElementById('map-legend').textContent =
-    `${matched.length} organization${matched.length!==1?'s':''} share "${valueName}"`;
-
-  const container = document.getElementById('map-container');
-  if (networkInstance) { networkInstance.destroy(); networkInstance = null; }
-  networkInstance = new vis.Network(container, {nodes,edges}, {
-    physics: { solver:'forceAtlas2Based', forceAtlas2Based:{gravitationalConstant:-60,springLength:120}, stabilization:{iterations:150} },
-    interaction: { hover:true, tooltipDelay:100 },
-    nodes: { borderWidth:1.5 },
-    edges: { smooth:{type:'continuous'} }
+  // Re-label remaining filters
+  const rows = document.querySelectorAll('.map-filter-row');
+  rows.forEach(function(row, i) {
+    const label = row.querySelector('.map-filter-label');
+    if (label) {
+      label.textContent = FILTER_COLORS[i].label;
+      label.style.color = FILTER_COLORS[i].border;
+    }
   });
-  networkInstance.on('click', params => {
-    if (params.nodes.length) {
-      const id = params.nodes[0];
-      const idx = (window._filtered||orgs).findIndex(o => o._id === id);
-      if (idx >= 0) {
-        if (!window._filtered) window._filtered = orgs;
-        openModal(idx);
+  renderMap();
+}
+
+function onMapCatChange(filterId) {
+  const catSel = document.getElementById('map-cat-' + filterId);
+  const valSel = document.getElementById('map-val-' + filterId);
+  const catId  = catSel.value;
+  valSel.innerHTML = buildValOptions(catId, '');
+  const f = mapFilters.find(function(f) { return f.id === filterId; });
+  if (f) {
+    f.catId   = catId;
+    f.valueId = valSel.options.length ? valSel.options[0].value : '';
+  }
+  renderMap();
+}
+
+function onMapValChange(filterId) {
+  const valSel = document.getElementById('map-val-' + filterId);
+  const f = mapFilters.find(function(f) { return f.id === filterId; });
+  if (f) f.valueId = valSel.value;
+  renderMap();
+}
+
+function orgMatchesFilter(org, filter) {
+  if (!filter.valueId) return false;
+  if (filter.valueId.startsWith('__state__:')) {
+    const state = filter.valueId.split(':')[1];
+    return org.state && org.state.toLowerCase().includes(state.toLowerCase());
+  }
+  return (orgTags[org._id]||[]).some(function(t) { return t.valueId === filter.valueId; });
+}
+
+function getFilterValueName(filter) {
+  if (!filter.valueId) return '';
+  if (filter.valueId.startsWith('__state__:')) return filter.valueId.split(':')[1];
+  return (valueIndex[filter.valueId]||{}).value || filter.valueId;
+}
+
+function renderMap() {
+  const activeFilters = mapFilters.filter(function(f) { return f.valueId; });
+  if (!activeFilters.length || !orgs.length) return;
+
+  // Determine which filters each org matches
+  const orgMatchSets = {};
+  orgs.forEach(function(org) {
+    const matches = activeFilters.map(function(f) { return orgMatchesFilter(org, f); });
+    orgMatchSets[org._id] = matches;
+  });
+
+  // Build nodes
+  const nodeData = orgs.map(function(org) {
+    const matches = orgMatchSets[org._id];
+    const matchCount = matches.filter(Boolean).length;
+    const label = org.name.length > 22 ? org.name.substring(0,20) + '...' : org.name;
+
+    let bg, border, fontColor, size;
+    if (matchCount === 0) {
+      bg = UNMATCHED.bg; border = UNMATCHED.border; fontColor = '#aaa'; size = 14;
+    } else if (activeFilters.length === 1 || matchCount === 1) {
+      const idx = matches.indexOf(true);
+      bg = FILTER_COLORS[idx].bg; border = FILTER_COLORS[idx].border; fontColor = border; size = 20;
+    } else if (matchCount === 2 && activeFilters.length === 2) {
+      bg = BOTH_COLOR.bg; border = BOTH_COLOR.border; fontColor = border; size = 24;
+    } else if (matchCount === 2) {
+      const idx = matches.indexOf(true);
+      bg = FILTER_COLORS[idx].bg; border = FILTER_COLORS[idx].border; fontColor = border; size = 20;
+    } else {
+      bg = ALL3_COLOR.bg; border = ALL3_COLOR.border; fontColor = border; size = 26;
+    }
+
+    return {
+      id: org._id, title: org.name, label: label,
+      color: { background:bg, border:border, highlight:{background:bg,border:border} },
+      font: { color:fontColor, size: matchCount > 0 ? 13 : 11 },
+      shape: 'ellipse', size: size
+    };
+  });
+
+  // Build edges — one set per filter, connecting orgs that share it
+  const edgeData = [];
+  const edgeSet = new Set();
+  activeFilters.forEach(function(filter, fi) {
+    const matched = orgs.filter(function(o) { return orgMatchSets[o._id][fi]; });
+    const edgeColor = FILTER_COLORS[fi].border;
+    for (let i = 0; i < matched.length; i++) {
+      for (let j = i+1; j < matched.length; j++) {
+        const key = matched[i]._id + '-' + matched[j]._id + '-' + fi;
+        if (!edgeSet.has(key)) {
+          edgeSet.add(key);
+          edgeData.push({
+            from: matched[i]._id, to: matched[j]._id,
+            color: { color: edgeColor + '99', highlight: edgeColor },
+            width: 1.5
+          });
+        }
       }
     }
   });
+
+  // Build legend
+  const legendRow = document.getElementById('map-legend-row');
+  let legendHtml = '';
+  activeFilters.forEach(function(filter, fi) {
+    const name = getFilterValueName(filter);
+    const c = FILTER_COLORS[fi];
+    const count = orgs.filter(function(o) { return orgMatchSets[o._id][fi]; }).length;
+    legendHtml += '<span class="map-legend-item"><span class="map-legend-dot" style="background:' + c.bg + ';border-color:' + c.border + '"></span>' + name + ' (' + count + ')</span>';
+  });
+  if (activeFilters.length === 2) {
+    const bothCount = orgs.filter(function(o) { return orgMatchSets[o._id][0] && orgMatchSets[o._id][1]; }).length;
+    if (bothCount > 0) {
+      legendHtml += '<span class="map-legend-item"><span class="map-legend-dot" style="background:' + BOTH_COLOR.bg + ';border-color:' + BOTH_COLOR.border + '"></span>Both (' + bothCount + ')</span>';
+    }
+  } else if (activeFilters.length === 3) {
+    const allCount = orgs.filter(function(o) { return orgMatchSets[o._id].every(Boolean); }).length;
+    if (allCount > 0) {
+      legendHtml += '<span class="map-legend-item"><span class="map-legend-dot" style="background:' + ALL3_COLOR.bg + ';border-color:' + ALL3_COLOR.border + '"></span>All three (' + allCount + ')</span>';
+    }
+  }
+  legendRow.innerHTML = legendHtml;
+
+  const container = document.getElementById('map-container');
+  if (networkInstance) { networkInstance.destroy(); networkInstance = null; }
+  networkInstance = new vis.Network(container,
+    { nodes: new vis.DataSet(nodeData), edges: new vis.DataSet(edgeData) },
+    {
+      physics: { solver:'forceAtlas2Based', forceAtlas2Based:{gravitationalConstant:-60,springLength:120}, stabilization:{iterations:150} },
+      interaction: { hover:true, tooltipDelay:100 },
+      nodes: { borderWidth:1.5 },
+      edges: { smooth:{type:'continuous'} }
+    }
+  );
+  networkInstance.on('click', function(params) {
+    if (params.nodes.length) {
+      const id = params.nodes[0];
+      window._filtered = orgs;
+      const idx = orgs.findIndex(function(o) { return o._id === id; });
+      if (idx >= 0) openModal(idx);
+    }
+  });
 }
+
 
 // ── Admin ──────────────────────────────────────────────────────
 function showAdminSection(section) {
