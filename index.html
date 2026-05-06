@@ -122,6 +122,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 #map-container:fullscreen { width:100vw !important; height:100vh !important; border-radius:0 !important; border:none !important; background:#fafaf8 !important; }
 #map-container:-webkit-full-screen { width:100vw !important; height:100vh !important; border-radius:0 !important; }
 #map-container:-moz-full-screen { width:100vw !important; height:100vh !important; border-radius:0 !important; }
+#map-container .modal-overlay { position:fixed; z-index:9999; }
+#map-container .modal-overlay.open { display:flex; }
 /* Lists management */
 .list-category { background: #fff; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 16px; }
 .list-category-title { font-size: 14px; font-weight: 500; color: #1a1a1a; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
@@ -233,7 +235,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
       <button onclick="toggleMapFullscreen()" id="map-fullscreen-btn" style="font-size:12px;padding:5px 12px;border:1px solid #ddd;border-radius:8px;background:none;color:#666;cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0">⛶ Full screen</button>
     </div>
 
-    <div id="map-container" style="width:100%;height:650px;border:1px solid #e0e0db;border-radius:10px;background:#fafaf8;overflow:hidden"></div>
+    <div id="map-container" style="width:100%;height:650px;border:1px solid #e0e0db;border-radius:10px;background:#fafaf8;overflow:hidden;position:relative">
+      <div id="map-fs-hint" style="display:none;position:absolute;bottom:16px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.55);color:#fff;font-size:13px;padding:7px 16px;border-radius:20px;z-index:10;pointer-events:none;white-space:nowrap">Press Esc to exit full screen</div>
+    </div>
   </div>
 
   <!-- ADMIN -->
@@ -813,8 +817,9 @@ function cancelForm() {
 
 // ── Network Map ────────────────────────────────────────────────
 let networkInstance = null;
-let mapFilters = []; // [{id, catId, valueId}]
+let mapFilters = [];
 let mapFilterCount = 0;
+let mapIsolate = null; // null = show all, 'fi-0', 'fi-1', 'fi-2', 'both', 'all3'
 
 // Colors for up to 3 filters + combinations
 const FILTER_COLORS = [
@@ -848,6 +853,11 @@ function buildValOptions(catId, selectedValId) {
   }
   const vals = getActiveValues(catId);
   return vals.map(v => '<option value="' + v._id + '"' + (v._id === selectedValId ? ' selected' : '') + '>' + v.value + '</option>').join('');
+}
+
+function setMapIsolate(key) {
+  mapIsolate = (mapIsolate === key) ? null : key; // toggle off if already active
+  renderMap();
 }
 
 function addMapFilter() {
@@ -910,6 +920,7 @@ function removeMapFilter(filterId) {
 }
 
 function onMapCatChange(filterId) {
+  mapIsolate = null;
   const catSel = document.getElementById('map-cat-' + filterId);
   const valSel = document.getElementById('map-val-' + filterId);
   const catId  = catSel.value;
@@ -923,6 +934,7 @@ function onMapCatChange(filterId) {
 }
 
 function onMapValChange(filterId) {
+  mapIsolate = null;
   const valSel = document.getElementById('map-val-' + filterId);
   const f = mapFilters.find(function(f) { return f.id === filterId; });
   if (f) f.valueId = valSel.value;
@@ -1008,24 +1020,59 @@ function renderMap() {
   // Build legend
   const legendRow = document.getElementById('map-legend-row');
   let legendHtml = '';
+
+  function legendItem(bg, border, label, isolateKey) {
+    const isActive = mapIsolate === isolateKey;
+    const style = 'cursor:pointer;padding:4px 8px;border-radius:20px;border:1.5px solid ' + (isActive ? border : 'transparent') + ';background:' + (isActive ? bg : 'none') + ';transition:all 0.15s;';
+    return '<span class="map-legend-item" style="' + style + '" onclick="setMapIsolate(\'' + isolateKey + '\')" title="Click to isolate">' +
+      '<span class="map-legend-dot" style="background:' + bg + ';border-color:' + border + '"></span>' +
+      label + '</span>';
+  }
+
   activeFilters.forEach(function(filter, fi) {
     const name = getFilterValueName(filter);
     const c = FILTER_COLORS[fi];
     const count = orgs.filter(function(o) { return orgMatchSets[o._id][fi]; }).length;
-    legendHtml += '<span class="map-legend-item"><span class="map-legend-dot" style="background:' + c.bg + ';border-color:' + c.border + '"></span>' + name + ' (' + count + ')</span>';
+    legendHtml += legendItem(c.bg, c.border, name + ' (' + count + ')', 'fi-' + fi);
   });
+
   if (activeFilters.length === 2) {
     const bothCount = orgs.filter(function(o) { return orgMatchSets[o._id][0] && orgMatchSets[o._id][1]; }).length;
-    if (bothCount > 0) {
-      legendHtml += '<span class="map-legend-item"><span class="map-legend-dot" style="background:' + BOTH_COLOR.bg + ';border-color:' + BOTH_COLOR.border + '"></span>Both (' + bothCount + ')</span>';
-    }
+    if (bothCount > 0) legendHtml += legendItem(BOTH_COLOR.bg, BOTH_COLOR.border, 'Both (' + bothCount + ')', 'both');
   } else if (activeFilters.length === 3) {
     const allCount = orgs.filter(function(o) { return orgMatchSets[o._id].every(Boolean); }).length;
-    if (allCount > 0) {
-      legendHtml += '<span class="map-legend-item"><span class="map-legend-dot" style="background:' + ALL3_COLOR.bg + ';border-color:' + ALL3_COLOR.border + '"></span>All three (' + allCount + ')</span>';
-    }
+    if (allCount > 0) legendHtml += legendItem(ALL3_COLOR.bg, ALL3_COLOR.border, 'All three (' + allCount + ')', 'all3');
   }
+
+  if (mapIsolate !== null) {
+    legendHtml += '<span style="font-size:11px;color:#aaa;margin-left:4px;cursor:pointer;text-decoration:underline" onclick="setMapIsolate(null)">Show all</span>';
+  }
+
   legendRow.innerHTML = legendHtml;
+
+  // Apply isolation to nodes
+  if (mapIsolate !== null) {
+    nodeData.forEach(function(node) {
+      const matches = orgMatchSets[node.id];
+      if (!matches) return;
+      let visible = false;
+      if (mapIsolate === 'both')  visible = matches[0] && matches[1];
+      else if (mapIsolate === 'all3') visible = matches.every(Boolean);
+      else {
+        const fi = parseInt(mapIsolate.replace('fi-', ''));
+        visible = matches[fi] === true;
+        // For single-filter isolation, exclude orgs that also match other filters
+        if (visible && activeFilters.length > 1) {
+          visible = matches.filter(Boolean).length === 1 && matches[fi];
+        }
+      }
+      if (!visible) {
+        node.color = { background:'#f8f8f8', border:'#eee', highlight:{background:'#f8f8f8',border:'#eee'} };
+        node.font = { color:'#ddd', size:10 };
+        node.size = 10;
+      }
+    });
+  }
 
   const container = document.getElementById('map-container');
   if (networkInstance) { networkInstance.destroy(); networkInstance = null; }
@@ -1437,13 +1484,22 @@ function toggleMapFullscreen() {
 
 document.addEventListener('fullscreenchange', function() {
   const btn = document.getElementById('map-fullscreen-btn');
+  const hint = document.getElementById('map-fs-hint');
   if (!btn) return;
   if (document.fullscreenElement) {
     btn.textContent = '✕ Exit full screen';
-    // Resize network to fill new dimensions
+    if (hint) hint.style.display = 'block';
+    // Move modals inside fullscreen element so they appear on top
+    const container = document.getElementById('map-container');
+    const orgModal  = document.getElementById('modal');
+    if (orgModal) container.appendChild(orgModal);
     if (networkInstance) setTimeout(function() { networkInstance.fit(); }, 100);
   } else {
     btn.textContent = '⛶ Full screen';
+    if (hint) hint.style.display = 'none';
+    // Move modal back to body
+    const orgModal = document.getElementById('modal');
+    if (orgModal) document.body.appendChild(orgModal);
     if (networkInstance) setTimeout(function() { networkInstance.fit(); }, 100);
   }
 });
