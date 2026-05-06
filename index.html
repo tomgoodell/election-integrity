@@ -1076,7 +1076,7 @@ function addMapFilter() {
         buildValOptions(defaultCatId, '') +
       '</select>' +
     '</div>' +
-    (colorIdx > 0 ? '<button class="map-filter-remove" onclick="removeMapFilter(' + filterId + ')" title="Remove filter" style="margin-top:18px">×</button>' : '');
+    '<button class="map-filter-remove" id="map-remove-' + filterId + '" onclick="removeMapFilter(' + filterId + ')" title="Remove filter" style="margin-top:18px;display:none">×</button>';
 
   document.getElementById('map-filters').appendChild(row);
 
@@ -1086,9 +1086,14 @@ function addMapFilter() {
     mapFilters[mapFilters.length - 1].valueId = valSel.options[0].value;
   }
 
+  // Show remove buttons on ALL rows when there are 2+ filters
+  updateRemoveButtons();
+
   // Hide add button if at max
   if (mapFilters.length >= 3) document.getElementById('map-add-filter-btn').style.display = 'none';
 
+  mapIsolate = null;
+  mapIsolateUserReset = false;
   renderMap();
 }
 
@@ -1097,7 +1102,7 @@ function removeMapFilter(filterId) {
   document.getElementById('map-filter-row-' + filterId).remove();
   document.getElementById('map-add-filter-btn').style.display = '';
 
-  // Re-label remaining filters
+  // Relabel remaining filters with correct colors
   const rows = document.querySelectorAll('.map-filter-row');
   rows.forEach(function(row, i) {
     const label = row.querySelector('.map-filter-label');
@@ -1106,6 +1111,10 @@ function removeMapFilter(filterId) {
       label.style.color = FILTER_COLORS[i].border;
     }
   });
+
+  updateRemoveButtons();
+  mapIsolate = null;
+  mapIsolateUserReset = false;
   renderMap();
 }
 
