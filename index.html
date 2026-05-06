@@ -180,6 +180,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <span class="section-label">Basic information</span>
     <div class="form-group"><label>Organization name *</label><input type="text" id="f-name" placeholder="Full legal or common name"></div>
     <div class="form-group"><label>Contact email</label><input type="text" id="f-email" placeholder="contact@yourorg.org"></div>
+    <div class="form-group"><label>Phone number</label><input type="text" id="f-phone" placeholder="e.g. 612-555-1234"></div>
     <div class="form-group"><label>Website</label><input type="text" id="f-website" placeholder="https://..."></div>
     <div class="form-group"><label>Brief description *</label><textarea id="f-desc" placeholder="1–3 sentences about your organization's mission"></textarea></div>
     <div class="form-group"><label>State / region (if applicable)</label><input type="text" id="f-state" placeholder="e.g. Minnesota, Midwest"></div>
@@ -287,6 +288,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <input type="hidden" id="e-id">
     <div class="form-group"><label>Organization name *</label><input type="text" id="e-name"></div>
     <div class="form-group"><label>Contact email</label><input type="text" id="e-email"></div>
+    <div class="form-group"><label>Phone number</label><input type="text" id="e-phone"></div>
     <div class="form-group"><label>Website</label><input type="text" id="e-website"></div>
     <div class="form-group"><label>Brief description *</label><textarea id="e-desc"></textarea></div>
     <div class="form-group"><label>State / region</label><input type="text" id="e-state"></div>
@@ -411,6 +413,7 @@ async function loadOrgs() {
     name: r.fields.Name||'',
     desc: r.fields.Description||'',
     email: r.fields.Email||'',
+    phone: r.fields.Phone||'',
     website: r.fields.Website||'',
     state: r.fields.State||'',
     strengthsText: r.fields.StrengthsText||'',
@@ -717,6 +720,7 @@ function openModal(i) {
   document.getElementById('modal-tag-sections').innerHTML = sectionsHtml;
 
   let ch = '';
+  if (org.phone) ch += `<a href="tel:${org.phone}" class="contact-link">${org.phone}</a><br>`;
   if (org.email) ch += `<a href="mailto:${org.email}" class="contact-link">${org.email}</a><br>`;
   if (org.website) ch += `<a href="${org.website}" class="contact-link" target="_blank">${org.website}</a>`;
   document.getElementById('modal-contact').innerHTML = ch || '<span style="font-size:13px;color:#aaa">No contact info provided</span>';
@@ -754,6 +758,7 @@ async function submitGroup() {
     const fields = {
       Name: name,
       Email: document.getElementById('f-email').value.trim(),
+      Phone: document.getElementById('f-phone').value.trim(),
       Website: document.getElementById('f-website').value.trim(),
       Description: desc,
       State: document.getElementById('f-state').value.trim(),
@@ -780,7 +785,7 @@ function closeSuccessModal() {
 }
 
 function cancelForm() {
-  ['f-name','f-email','f-desc','f-website','f-state','f-strengths-text','f-needs-text'].forEach(id => {
+  ['f-name','f-email','f-phone','f-desc','f-website','f-state','f-strengths-text','f-needs-text'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -882,7 +887,7 @@ async function loadPending() {
     pending = records.map(r => ({
       _id: r.id,
       name: r.fields.Name||'', desc: r.fields.Description||'',
-      email: r.fields.Email||'', website: r.fields.Website||'',
+      email: r.fields.Email||'', phone: r.fields.Phone||'', website: r.fields.Website||'',
       state: r.fields.State||'',
       strengths: r.fields.Strengths||'', strengthsText: r.fields.StrengthsText||'',
       needs: r.fields.Needs||'', needsText: r.fields.NeedsText||'',
@@ -919,7 +924,7 @@ async function approvePending(i) {
   try {
     // Create org record
     const orgRes = await atCreate(T_ORGS, {
-      Name: p.name, Email: p.email, Website: p.website,
+      Name: p.name, Email: p.email, Phone: p.phone, Website: p.website,
       Description: p.desc, State: p.state,
       StrengthsText: p.strengthsText, NeedsText: p.needsText,
       SubmittedAt: new Date().toISOString()
@@ -994,6 +999,7 @@ function openEditModal(orgId) {
   document.getElementById('e-id').value = orgId;
   document.getElementById('e-name').value = org.name;
   document.getElementById('e-email').value = org.email;
+  document.getElementById('e-phone').value = org.phone;
   document.getElementById('e-website').value = org.website;
   document.getElementById('e-desc').value = org.desc;
   document.getElementById('e-state').value = org.state;
@@ -1035,6 +1041,7 @@ async function saveEdit() {
     await atUpdate(T_ORGS, orgId, {
       Name: name,
       Email: document.getElementById('e-email').value.trim(),
+      Phone: document.getElementById('e-phone').value.trim(),
       Website: document.getElementById('e-website').value.trim(),
       Description: desc,
       State: document.getElementById('e-state').value.trim(),
