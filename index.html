@@ -1215,7 +1215,13 @@ function renderMap() {
   activeFilters.forEach(function(filter, fi) {
     const name = getFilterValueName(filter);
     const c = FILTER_COLORS[fi];
-    const count = orgs.filter(function(o) { return orgMatchSets[o._id][fi]; }).length;
+    // Count orgs that match THIS filter only (exclusively), not ones that also match others
+    const count = activeFilters.length === 1
+      ? orgs.filter(function(o) { return orgMatchSets[o._id][fi]; }).length
+      : orgs.filter(function(o) {
+          const m = orgMatchSets[o._id];
+          return m[fi] && m.filter(Boolean).length === 1;
+        }).length;
     legendHtml += legendItem(c.bg, c.border, name + ' (' + count + ')', 'fi-' + fi);
   });
 
