@@ -1018,8 +1018,32 @@ const UNMATCHED     = { bg:'#f0f0f0', border:'#ccc' };
 function initMapFilters() {
   mapFilters = [];
   mapFilterCount = 0;
+  mapIsolate = null;
+  mapIsolateUserReset = false;
   document.getElementById('map-filters').innerHTML = '';
   addMapFilter();
+
+  // Default Filter 1 to Region → National
+  const regionCat = categories.find(function(c) { return c.fieldKey === 'geo'; });
+  if (regionCat) {
+    const catSel = document.getElementById('map-cat-' + mapFilters[0].id);
+    if (catSel) {
+      catSel.value = regionCat._id;
+      onMapCatChange(mapFilters[0].id);
+      // Then set value to National
+      const valSel = document.getElementById('map-val-' + mapFilters[0].id);
+      if (valSel) {
+        for (let i = 0; i < valSel.options.length; i++) {
+          if (valSel.options[i].text === 'National') {
+            valSel.selectedIndex = i;
+            mapFilters[0].valueId = valSel.options[i].value;
+            break;
+          }
+        }
+      }
+    }
+  }
+  renderMap();
 }
 
 function buildCatOptions(selectedCatId) {
@@ -1095,6 +1119,13 @@ function addMapFilter() {
   mapIsolate = null;
   mapIsolateUserReset = false;
   renderMap();
+}
+
+function updateRemoveButtons() {
+  mapFilters.forEach(function(f) {
+    const btn = document.getElementById('map-remove-' + f.id);
+    if (btn) btn.style.display = mapFilters.length > 1 ? 'inline-block' : 'none';
+  });
 }
 
 function removeMapFilter(filterId) {
