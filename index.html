@@ -1215,13 +1215,8 @@ function renderMap() {
   activeFilters.forEach(function(filter, fi) {
     const name = getFilterValueName(filter);
     const c = FILTER_COLORS[fi];
-    // Count orgs that match THIS filter only (exclusively), not ones that also match others
-    const count = activeFilters.length === 1
-      ? orgs.filter(function(o) { return orgMatchSets[o._id][fi]; }).length
-      : orgs.filter(function(o) {
-          const m = orgMatchSets[o._id];
-          return m[fi] && m.filter(Boolean).length === 1;
-        }).length;
+    // Total orgs matching this filter (including those that also match other filters)
+    const count = orgs.filter(function(o) { return orgMatchSets[o._id][fi]; }).length;
     legendHtml += legendItem(c.bg, c.border, name + ' (' + count + ')', 'fi-' + fi);
   });
 
@@ -1244,17 +1239,19 @@ function renderMap() {
     nodeData.forEach(function(node) {
       const matches = orgMatchSets[node.id];
       if (!matches) return;
+      const matchCount = matches.filter(Boolean).length;
       let visible = false;
+
       if (mapIsolate === 'both')  visible = matches[0] && matches[1];
       else if (mapIsolate === 'all3') visible = matches.every(Boolean);
       else {
         const fi = parseInt(mapIsolate.replace('fi-', ''));
+        // Show all orgs matching this filter — including those that also match others
         visible = matches[fi] === true;
-        // For single-filter isolation, exclude orgs that also match other filters
-        if (visible && activeFilters.length > 1) {
-          visible = matches.filter(Boolean).length === 1 && matches[fi];
-        }
+        // Keep "both" nodes in their gold color — don't override to single-filter color
+        // (node color was already set correctly in the nodeData build above)
       }
+
       if (!visible) {
         node.color = { background:'#f8f8f8', border:'#eee', highlight:{background:'#f8f8f8',border:'#eee'} };
         node.font = { color:'#ddd', size:10 };
