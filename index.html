@@ -1281,11 +1281,9 @@ function renderMap() {
         visible = matches.every(Boolean);
       } else {
         const fi = parseInt(mapIsolate.replace('fi-', ''));
-        const matchesThis = matches[fi] === true;
-        const matchesAll  = matches.every(Boolean);
-        // Show orgs that match this filter AND orgs that match all filters
-        // Hide orgs that match a different filter but not this one
-        visible = matchesThis || matchesAll;
+        // Show only orgs that match this specific filter (regardless of other matches)
+        // but hide orgs that match ONLY other filters and not this one
+        visible = matches[fi] === true;
       }
 
       if (!visible) {
