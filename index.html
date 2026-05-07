@@ -229,12 +229,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <!-- Category checkboxes built dynamically -->
     <div id="submit-categories"></div>
     <hr class="section-divider">
-    <span class="section-label">Strengths and needs</span>
-    <div class="form-group">
-      <label>Your organization's strengths</label>
-      <div class="cb-columns" id="cb-str-container" style="margin-bottom:10px"></div>
-      <textarea id="f-strengths-text" placeholder="Additional details about your strengths (optional)"></textarea>
-    </div>
+    <span class="section-label">Needs</span>
     <div class="form-group">
       <label>What your organization needs</label>
       <div class="cb-columns" id="cb-need-container" style="margin-bottom:10px"></div>
@@ -345,11 +340,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <div class="form-group"><label>State / region</label><input type="text" id="e-state"></div>
     <div id="edit-categories"></div>
     <div class="form-group">
-      <label>Strengths</label>
-      <div class="cb-columns" id="e-str-container" style="margin-bottom:8px"></div>
-      <textarea id="e-strengths-text" placeholder="Additional details (optional)"></textarea>
-    </div>
-    <div class="form-group">
       <label>Needs</label>
       <div class="cb-columns" id="e-need-container" style="margin-bottom:8px"></div>
       <textarea id="e-needs-text" placeholder="Additional details (optional)"></textarea>
@@ -453,7 +443,7 @@ async function atDelete(table, id) {
 // adminLoggedIn — boolean, controls admin panel visibility
 // showDesc    — boolean, toggles description visibility on cards
 // activeLetter — string, current alpha bar filter ('A'–'Z' or '')
-let orgs        = [];   // [{_id, name, desc, email, website, state, strengthsText, needsText}]
+let orgs        = [];   // [{_id, name, desc, email, website, state, needsText}]
 let orgTags     = {};   // {orgId: [{valueId, tagType, value, catKey}]}
 let pending     = [];
 let pendingTags = {};   // {orgId: [...]}
@@ -535,7 +525,7 @@ async function loadOrgs() {
     phone: r.fields.Phone||'',
     website: r.fields.Website||'',
     state: r.fields.State||'',
-    strengthsText: r.fields.StrengthsText||'',
+    strengthsText: '',
     needsText: r.fields.NeedsText||''
   }));
   orgTags = {};
@@ -575,8 +565,6 @@ async function loadPendingData() {
     voter: r.fields.Voter||'',
     demo: r.fields.Demo||'',
     partisan: r.fields.Partisan||'',
-    strengths: r.fields.Strengths||'',
-    strengthsText: r.fields.StrengthsText||'',
     needs: r.fields.Needs||'',
     needsText: r.fields.NeedsText||''
   }));
@@ -670,10 +658,8 @@ function buildSubmitCategories() {
   });
   container.innerHTML = html;
 
-  // Strengths and Needs
-  const strCat = categories.find(c => c.fieldKey === 'strength');
+  // Needs
   const needCat = categories.find(c => c.fieldKey === 'need');
-  if (strCat) buildCheckboxGroup('cb-str-container', strCat._id, 'cb-str');
   if (needCat) buildCheckboxGroup('cb-need-container', needCat._id, 'cb-need');
 }
 
@@ -699,9 +685,7 @@ function buildEditCategories() {
   });
   container.innerHTML = html;
 
-  const strCat = categories.find(c => c.fieldKey === 'strength');
   const needCat = categories.find(c => c.fieldKey === 'need');
-  if (strCat) buildCheckboxGroup('e-str-container', strCat._id, 'e-str');
   if (needCat) buildCheckboxGroup('e-need-container', needCat._id, 'e-need');
 }
 
@@ -767,7 +751,7 @@ function getActiveFilters() {
 function orgMatchesFilters(org, q, catFilters, stateFilter) {
   const tags = orgTags[org._id] || [];
   const tagValues = tags.map(t => t.value).join(' ').toLowerCase();
-  const blob = [org.name, org.desc, org.state, org.strengthsText, org.needsText, tagValues].join(' ').toLowerCase();
+  const blob = [org.name, org.desc, org.state, org.needsText, tagValues].join(' ').toLowerCase();
 
   if (q && !blob.includes(q)) return false;
   if (stateFilter && !org.state.toLowerCase().includes(stateFilter.toLowerCase())) return false;
@@ -854,19 +838,16 @@ function openModal(i) {
     byCat[key].values.push(t.value);
   });
 
-  // Separate strengths/needs text
-  const strCat = categories.find(c => c.fieldKey === 'strength');
+  // Needs text
   const needCat = categories.find(c => c.fieldKey === 'need');
   let sectionsHtml = '';
   Object.entries(byCat).forEach(([catName, data]) => {
-    const isStrength = strCat && data.key === strCat.fieldKey;
     const isNeed = needCat && data.key === needCat.fieldKey;
     sectionsHtml += `<div class="modal-section">
       <h3>${catName}</h3>
       <div class="tags">${data.values.map(v =>
         `<span class="tag tag-${data.key}">${isNeed ? 'Need: ' : ''}${v}</span>`
       ).join('')}</div>
-      ${isStrength && org.strengthsText ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-top:6px">${org.strengthsText}</p>` : ''}
       ${isNeed && org.needsText ? `<p style="font-size:13px;color:#555;line-height:1.5;margin-top:6px">${org.needsText}</p>` : ''}
     </div>`;
   });
@@ -932,8 +913,6 @@ async function submitGroup() {
       Website: document.getElementById('f-website').value.trim(),
       Description: desc,
       State: document.getElementById('f-state').value.trim(),
-      Strengths: getCheckedValues('cb-str').map(vid => (valueIndex[vid]||{}).value||vid).join(','),
-      StrengthsText: document.getElementById('f-strengths-text').value.trim(),
       Needs: getCheckedValues('cb-need').map(vid => (valueIndex[vid]||{}).value||vid).join(','),
       NeedsText: document.getElementById('f-needs-text').value.trim(),
       TagData: JSON.stringify(tagData),
@@ -955,7 +934,7 @@ function closeSuccessModal() {
 }
 
 function cancelForm() {
-  ['f-name','f-email','f-phone','f-desc','f-website','f-state','f-strengths-text','f-needs-text'].forEach(id => {
+  ['f-name','f-email','f-phone','f-desc','f-website','f-state','f-needs-text'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1384,7 +1363,6 @@ async function loadPending() {
       name: r.fields.Name||'', desc: r.fields.Description||'',
       email: r.fields.Email||'', phone: r.fields.Phone||'', website: r.fields.Website||'',
       state: r.fields.State||'',
-      strengths: r.fields.Strengths||'', strengthsText: r.fields.StrengthsText||'',
       needs: r.fields.Needs||'', needsText: r.fields.NeedsText||'',
       tagData: r.fields.TagData ? JSON.parse(r.fields.TagData) : {}
     }));
@@ -1404,7 +1382,6 @@ function renderPending() {
       <div style="font-size:13px;color:#555;line-height:1.5">${org.desc}</div>
       <div class="tags" style="margin-top:8px">
         ${Object.entries(org.tagData).map(([k,v]) => v.split(',').map(val => `<span class="tag tag-${k}">${val}</span>`).join('')).join('')}
-        ${org.strengths.split(',').filter(Boolean).map(v => `<span class="tag tag-strength">${v}</span>`).join('')}
         ${org.needs.split(',').filter(Boolean).map(v => `<span class="tag tag-need">Need: ${v}</span>`).join('')}
       </div>
       <div class="admin-actions">
@@ -1421,7 +1398,7 @@ async function approvePending(i) {
     const orgRes = await atCreate(T_ORGS, {
       Name: p.name, Email: p.email, Phone: p.phone, Website: p.website,
       Description: p.desc, State: p.state,
-      StrengthsText: p.strengthsText, NeedsText: p.needsText,
+      NeedsText: p.needsText,
       SubmittedAt: new Date().toISOString()
     });
     const newOrgId = orgRes.records[0].id;
@@ -1439,14 +1416,6 @@ async function approvePending(i) {
         }
       });
     });
-    // Strength tags
-    const strCat = categories.find(c => c.fieldKey === 'strength');
-    if (strCat) {
-      p.strengths.split(',').filter(Boolean).forEach(valName => {
-        const catVal = (catValues[strCat._id]||[]).find(v => v.value === valName);
-        if (catVal) tagPromises.push(atCreate(T_ORGTAGS, {OrgID: newOrgId, ValueID: catVal._id, TagType: 'strength'}));
-      });
-    }
     // Need tags
     const needCat = categories.find(c => c.fieldKey === 'need');
     if (needCat) {
@@ -1511,7 +1480,7 @@ function openEditModal(orgId) {
   document.getElementById('e-website').value = org.website;
   document.getElementById('e-desc').value = org.desc;
   document.getElementById('e-state').value = org.state;
-  document.getElementById('e-strengths-text').value = org.strengthsText;
+  document.getElementById('e-needs-text').value = org.needsText;
   document.getElementById('e-needs-text').value = org.needsText;
 
   // Pre-check tags
@@ -1526,7 +1495,6 @@ function openEditModal(orgId) {
     });
   });
   // Strengths/Needs
-  document.querySelectorAll('.e-str').forEach(cb => cb.checked = checkedValueIds.has(cb.value));
   document.querySelectorAll('.e-need').forEach(cb => cb.checked = checkedValueIds.has(cb.value));
 
   document.getElementById('edit-overlay').classList.add('open');
@@ -1553,7 +1521,6 @@ async function saveEdit() {
       Website: document.getElementById('e-website').value.trim(),
       Description: desc,
       State: document.getElementById('e-state').value.trim(),
-      StrengthsText: document.getElementById('e-strengths-text').value.trim(),
       NeedsText: document.getElementById('e-needs-text').value.trim()
     });
 
@@ -1563,7 +1530,6 @@ async function saveEdit() {
       if (cat.fieldKey === 'strength' || cat.fieldKey === 'need') return;
       document.querySelectorAll('.e-cat-' + cat._id + ':checked').forEach(cb => newValueIds.add(cb.value));
     });
-    document.querySelectorAll('.e-str:checked').forEach(cb => newValueIds.add(cb.value));
     document.querySelectorAll('.e-need:checked').forEach(cb => newValueIds.add(cb.value));
 
     // Existing tags
