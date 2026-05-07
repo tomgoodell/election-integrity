@@ -1278,8 +1278,10 @@ function renderMap() {
 
   legendRow.innerHTML = legendHtml;
 
-  // Apply isolation to nodes
+  // Apply isolation to nodes — also recolor visible nodes to match the isolated filter
   if (mapIsolate !== null) {
+    const isolateFi = mapIsolate.startsWith('fi-') ? parseInt(mapIsolate.replace('fi-', '')) : -1;
+
     nodeData.forEach(function(node) {
       const matches = orgMatchSets[node.id];
       if (!matches) return;
@@ -1290,16 +1292,22 @@ function renderMap() {
       } else if (mapIsolate === 'all3') {
         visible = matches.every(Boolean);
       } else {
-        const fi = parseInt(mapIsolate.replace('fi-', ''));
-        // Show only orgs that match this specific filter (regardless of other matches)
-        // but hide orgs that match ONLY other filters and not this one
-        visible = matches[fi] === true;
+        visible = matches[isolateFi] === true;
       }
 
       if (!visible) {
         node.color = { background:'#f8f8f8', border:'#eee', highlight:{background:'#f8f8f8',border:'#eee'} };
         node.font = { color:'#ddd', size:10 };
         node.size = 10;
+      } else if (isolateFi >= 0) {
+        // Recolor visible nodes to the isolated filter's color
+        // Exception: orgs matching ALL filters keep their red "all three" color
+        const matchesAll = matches.every(Boolean);
+        if (!matchesAll) {
+          const c = FILTER_COLORS[isolateFi];
+          node.color = { background:c.bg, border:c.border, highlight:{background:c.bg,border:c.border} };
+          node.font = { color:c.border, size:13 };
+        }
       }
     });
   }
