@@ -1192,17 +1192,27 @@ function renderMap() {
 
     let bg, border, fontColor, size;
     if (matchCount === 0) {
+      // Matches no filter — gray
       bg = UNMATCHED.bg; border = UNMATCHED.border; fontColor = '#aaa'; size = 14;
-    } else if (activeFilters.length === 1 || matchCount === 1) {
-      const idx = matches.indexOf(true);
-      bg = FILTER_COLORS[idx].bg; border = FILTER_COLORS[idx].border; fontColor = border; size = 20;
-    } else if (matchCount === 2 && activeFilters.length === 2) {
-      bg = BOTH_COLOR.bg; border = BOTH_COLOR.border; fontColor = border; size = 24;
-    } else if (matchCount === 2) {
+    } else if (matchCount === activeFilters.length) {
+      // Matches ALL active filters
+      if (activeFilters.length === 1) {
+        bg = FILTER_COLORS[0].bg; border = FILTER_COLORS[0].border; fontColor = border; size = 20;
+      } else if (activeFilters.length === 2) {
+        bg = BOTH_COLOR.bg; border = BOTH_COLOR.border; fontColor = border; size = 24;
+      } else {
+        bg = ALL3_COLOR.bg; border = ALL3_COLOR.border; fontColor = border; size = 26;
+      }
+    } else if (matchCount === 1) {
+      // Matches exactly one filter — use that filter's color
       const idx = matches.indexOf(true);
       bg = FILTER_COLORS[idx].bg; border = FILTER_COLORS[idx].border; fontColor = border; size = 20;
     } else {
-      bg = ALL3_COLOR.bg; border = ALL3_COLOR.border; fontColor = border; size = 26;
+      // matchCount === 2 with 3 active filters — use the color of the LAST matching filter
+      // This makes Filter 3 (orange) win over Filter 1/2 for visual clarity
+      let lastIdx = -1;
+      matches.forEach(function(m, i) { if (m) lastIdx = i; });
+      bg = FILTER_COLORS[lastIdx].bg; border = FILTER_COLORS[lastIdx].border; fontColor = border; size = 22;
     }
 
     return {
