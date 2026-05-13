@@ -158,6 +158,35 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .cat-add-row { display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; }
 .cat-add-row input { flex: 1; min-width: 140px; font-size: 13px; padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; }
 .cat-add-row input:focus { outline: none; border-color: #888; }
+/* Filter tooltips */
+.filter-wrap { position: relative; display: inline-block; }
+.filter-wrap .filter-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.45;
+  padding: 6px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  z-index: 100;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+.filter-wrap .filter-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: #1a1a1a;
+}
+.filter-wrap:hover .filter-tooltip { display: block; }
 /* Edit overlay */
 .edit-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
 .edit-overlay.open { display: flex; }
@@ -607,15 +636,45 @@ function buildBrowseFilters() {
   const row = document.getElementById('browse-filters');
   const stateFilter = document.getElementById('f-state-filter');
 
-  // Remove state filter from its current position so we can re-insert it precisely
-  if (stateFilter.parentNode === row) row.removeChild(stateFilter);
+  // Tooltip text keyed by category fieldKey or by special 'state' key
+  const tooltips = {
+    geo:      'Geographic scope of activities',
+    state:    'What states do they operate in',
+    work:     'Activities they engage in, services they provide',
+    phase:    'Phases of the election process in which they engage',
+    voter:    'Aspects of voter registration on which they focus',
+    demo:     'Age groups, race, etc. on which they focus',
+    partisan: 'Conservative, progressive, non-partisan',
+    need:     'Types of support they need'
+  };
 
-  // Clear any previously built dynamic filters
-  row.querySelectorAll('.dynamic-filter').forEach(f => f.remove());
+  function makeWrap(selectEl, tipText) {
+    const wrap = document.createElement('div');
+    wrap.className = 'filter-wrap';
+    wrap.appendChild(selectEl);
+    if (tipText) {
+      const tip = document.createElement('div');
+      tip.className = 'filter-tooltip';
+      tip.textContent = tipText;
+      wrap.appendChild(tip);
+    }
+    return wrap;
+  }
 
-  // Find the "geo/region" category so we can insert the state filter right after it
+  // Remove state filter wrapper (if already wrapped) or the filter itself
+  const existingStateWrap = stateFilter.closest('.filter-wrap');
+  if (existingStateWrap && existingStateWrap.parentNode === row) {
+    row.removeChild(existingStateWrap);
+  } else if (stateFilter.parentNode === row) {
+    row.removeChild(stateFilter);
+  }
+
+  // Clear any previously built dynamic filter wrappers
+  row.querySelectorAll('.filter-wrap').forEach(f => f.remove());
+
+  // Find the geo/region category so we can insert the state filter right after it
   const geoCat = categories.find(c => c.fieldKey === 'geo' || c.name.toLowerCase().includes('region'));
-  // Find the "need" category so we can insert it last
+  // Find the need category so we can insert it last
   const needCat = categories.find(c => c.fieldKey === 'need');
 
   // Build one filter per active category, skipping need (appended last)
@@ -629,17 +688,17 @@ function buildBrowseFilters() {
     sel.onchange = renderCards;
     sel.innerHTML = `<option value="">All ${cat.name.toLowerCase()}</option>` +
       vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
-    row.appendChild(sel);
+    row.appendChild(makeWrap(sel, tooltips[cat.fieldKey] || ''));
 
     // Insert the state filter right after the geo/region dropdown
     if (geoCat && cat._id === geoCat._id) {
-      row.appendChild(stateFilter);
+      row.appendChild(makeWrap(stateFilter, tooltips['state']));
     }
   });
 
-  // If no geo category was found, insert state filter before needs (still second position)
-  if (!geoCat || !stateFilter.parentNode || stateFilter.parentNode !== row) {
-    row.appendChild(stateFilter);
+  // If no geo category was found, insert state filter now
+  if (!geoCat || !stateFilter.parentNode || stateFilter.parentNode.className !== 'filter-wrap') {
+    row.appendChild(makeWrap(stateFilter, tooltips['state']));
   }
 
   // Append the needs filter last
@@ -652,7 +711,7 @@ function buildBrowseFilters() {
       sel.onchange = renderCards;
       sel.innerHTML = `<option value="">All ${needCat.name.toLowerCase()}</option>` +
         vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
-      row.appendChild(sel);
+      row.appendChild(makeWrap(sel, tooltips['need']));
     }
   }
 }
