@@ -605,15 +605,22 @@ function rebuildUI() {
 
 function buildBrowseFilters() {
   const row = document.getElementById('browse-filters');
-  // Keep the state filter, rebuild the rest
   const stateFilter = document.getElementById('f-state-filter');
 
-  // Clear dynamic filters (all except state)
-  const dynamicFilters = row.querySelectorAll('.dynamic-filter');
-  dynamicFilters.forEach(f => f.remove());
+  // Remove state filter from its current position so we can re-insert it precisely
+  if (stateFilter.parentNode === row) row.removeChild(stateFilter);
 
-  // Build one filter per active category
+  // Clear any previously built dynamic filters
+  row.querySelectorAll('.dynamic-filter').forEach(f => f.remove());
+
+  // Find the "geo/region" category so we can insert the state filter right after it
+  const geoCat = categories.find(c => c.fieldKey === 'geo' || c.name.toLowerCase().includes('region'));
+  // Find the "need" category so we can insert it last
+  const needCat = categories.find(c => c.fieldKey === 'need');
+
+  // Build one filter per active category, skipping need (appended last)
   categories.forEach(cat => {
+    if (needCat && cat._id === needCat._id) return; // handled last
     const vals = getActiveValues(cat._id);
     if (!vals.length) return;
     const sel = document.createElement('select');
@@ -622,8 +629,32 @@ function buildBrowseFilters() {
     sel.onchange = renderCards;
     sel.innerHTML = `<option value="">All ${cat.name.toLowerCase()}</option>` +
       vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
-    row.insertBefore(sel, stateFilter);
+    row.appendChild(sel);
+
+    // Insert the state filter right after the geo/region dropdown
+    if (geoCat && cat._id === geoCat._id) {
+      row.appendChild(stateFilter);
+    }
   });
+
+  // If no geo category was found, insert state filter before needs (still second position)
+  if (!geoCat || !stateFilter.parentNode || stateFilter.parentNode !== row) {
+    row.appendChild(stateFilter);
+  }
+
+  // Append the needs filter last
+  if (needCat) {
+    const vals = getActiveValues(needCat._id);
+    if (vals.length) {
+      const sel = document.createElement('select');
+      sel.id = 'f-cat-' + needCat._id;
+      sel.className = 'dynamic-filter';
+      sel.onchange = renderCards;
+      sel.innerHTML = `<option value="">All ${needCat.name.toLowerCase()}</option>` +
+        vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
+      row.appendChild(sel);
+    }
+  }
 }
 
 function buildCheckboxGroup(containerId, catId, cssClass) {
