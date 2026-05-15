@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Election Integrity Directory — Backup &amp; Restore</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       background: #f5f5f3; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+.page { max-width: 700px; margin: 0 auto; background: #fff;
+        border-radius: 12px; border: 1px solid #e0e0db; overflow: hidden; }
+.header { padding: 1.75rem 1.5rem 1.25rem; border-bottom: 1px solid #e0e0db; }
+.header h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+.header p  { font-size: 13px; color: #666; line-height: 1.6; }
+.body { padding: 1.5rem; }
+.section { margin-bottom: 2rem; }
+.section h2 { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+.section p  { font-size: 13px; color: #666; line-height: 1.6; margin-bottom: 1rem; }
+.warning { background: #faeeda; border: 1px solid #f5c4b3; border-radius: 8px;
+           padding: 1rem 1.25rem; font-size: 13px; color: #633806;
+           line-height: 1.6; margin-bottom: 1rem; }
+.warning strong { font-weight: 500; }
+.btn { width: 100%; padding: 12px; border: none; border-radius: 8px;
+       font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; }
+.btn-dark  { background: #1a1a1a; color: #fff; }
+.btn-dark:hover:not(:disabled)  { background: #333; }
+.btn-red   { background: #faece7; color: #712b13; border: 1px solid #f5c4b3; }
+.btn-red:hover:not(:disabled)   { background: #f5c4b3; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.file-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+.file-row input[type=file] { flex: 1; font-size: 13px; padding: 8px;
+  border: 1px solid #ccc; border-radius: 8px; background: #f5f5f3; font-family: inherit; }
+.divider { border: none; border-top: 1px solid #e0e0db; margin: 1.75rem 0; }
+#log { margin-top: 1.25rem; background: #f5f5f3; border: 1px solid #e0e0db;
+       border-radius: 8px; padding: 1rem 1.25rem; font-size: 12px;
+       font-family: "Menlo", "Consolas", monospace; line-height: 1.7;
+       max-height: 420px; overflow-y: auto; display: none; }
+.log-step  { color: #1a1a1a; }
+.log-ok    { color: #085041; }
+.log-warn  { color: #633806; }
+.log-error { color: #a32d2d; font-weight: 500; }
+.log-done  { color: #185fa5; font-weight: 500; }
+.log-sep   { color: #bbb; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>Election Integrity Directory — Backup &amp; Restore</h1>
+    <p>Back up all Airtable tables to a JSON file on your computer, or restore
+       from a previously saved backup. Must be served from the same domain as
+       the app so the <code>/airtable</code> proxy is available.</p>
+  </div>
+  <div class="body">
+
+    <!-- BACKUP -->
+    <div class="section">
+      <h2>📥 Back up database</h2>
+      <p>Downloads a complete snapshot of all five tables — Organizations, OrgTags,
+         Categories, CategoryValues, and Pending — as a timestamped JSON file.
+         Nothing is modified. Takes about 10–15 seconds.</p>
+      <button class="btn btn-dark" id="backup-btn" onclick="runBackup()">Download backup</button>
+    </div>
+
+    <hr class="divider">
+
+    <!-- RESTORE -->
+    <div class="section">
+      <h2>📤 Restore from backup</h2>
+      <p>Choose a backup JSON file created by this tool. The restore will delete
+         all current records in Organizations, OrgTags, and Pending, then recreate
+         them from the backup. Categories and CategoryValues are <strong>not</strong>
+         touched — their record IDs are stable and the backup data already references them.</p>
+      <div class="warning">
+        <strong>⚠ Destructive operation.</strong> All current Organizations, OrgTags,
+        and Pending records will be permanently deleted and replaced with the backup data.
+        Consider downloading a fresh backup first.
+      </div>
+      <div class="file-row">
+        <input type="file" id="restore-file" accept=".json">
+      </div>
+      <button class="btn btn-red" id="restore-btn" onclick="runRestore()">Restore from backup</button>
+    </div>
+
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>
+const API = '/airtable';
+const TABLES = ['Organizations','OrgTags','Categories','CategoryValues','Pending'];
+// Only these three are cleared+restored (Categories/CategoryValues IDs are stable)
+const RESTORE_TABLES = ['Organizations','OrgTags','Pending'];
+
+// ── API helpers ─────────────────────────────────────────────────────────────
+async function apiGet(table) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`);
+  if (!res.ok) throw new Error(`GET ${table} → HTTP ${res.status}`);
+  return (await res.json()).records;
+}
+async function apiCreate(table, fields) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({records:[{fields}]})
+  });
+  if (!res.ok) throw new Error(`POST ${table} → HTTP ${res.status}`);
+  return (await res.json()).records[0].id;
+}
+async function apiDelete(table, id) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {method:'DELETE'});
+  if (!res.ok) throw new Error(`DELETE ${table}/${id} → HTTP ${res.status}`);
+}
+async function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Logging ──────────────────────────────────────────────────────────────────
+const logEl = document.getElementById('log');
+function log(msg, cls='log-step') {
+  logEl.style.display = 'block';
+  const d = document.createElement('div');
+  d.className = cls; d.textContent = msg;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function sep() { log('─────────────────────────────────────','log-sep'); }
+function clearLog() { logEl.innerHTML = ''; logEl.style.display = 'block'; }
+
+// ── BACKUP ───────────────────────────────────────────────────────────────────
+async function runBackup() {
+  const btn = document.getElementById('backup-btn');
+  btn.disabled = true; btn.textContent = 'Backing up…';
+  clearLog();
+  try {
+    const snapshot = { createdAt: new Date().toISOString(), tables: {} };
+    for (const table of TABLES) {
+      sep();
+      log(`Fetching ${table}…`);
+      const records = await apiGet(table);
+      snapshot.tables[table] = records;
+      log(`  ${records.length} records`, 'log-ok');
+      await delay(300);
+    }
+    // Download as JSON file
+    const ts = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+    const filename = `election-directory-backup-${ts}.json`;
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+    sep();
+    log(`✓ Backup complete — saved as ${filename}`, 'log-done');
+    const total = TABLES.reduce((n,t) => n + snapshot.tables[t].length, 0);
+    log(`  ${total} total records across ${TABLES.length} tables`, 'log-done');
+    btn.textContent = 'Download backup';
+    btn.disabled = false;
+  } catch(e) {
+    sep();
+    log(`✗ Backup failed: ${e.message}`, 'log-error');
+    btn.textContent = 'Download backup';
+    btn.disabled = false;
+    console.error(e);
+  }
+}
+
+// ── RESTORE ──────────────────────────────────────────────────────────────────
+async function runRestore() {
+  const fileInput = document.getElementById('restore-file');
+  const btn = document.getElementById('restore-btn');
+  if (!fileInput.files.length) { alert('Please choose a backup JSON file first.'); return; }
+
+  const confirmed = confirm(
+    'This will permanently delete all current Organizations, OrgTags, and Pending records ' +
+    'and replace them with the backup data. Continue?'
+  );
+  if (!confirmed) return;
+
+  btn.disabled = true; btn.textContent = 'Restoring…';
+  clearLog();
+
+  try {
+    // Read and parse backup file
+    const text = await fileInput.files[0].text();
+    const snapshot = JSON.parse(text);
+    if (!snapshot.tables) throw new Error('Invalid backup file — missing tables key.');
+    log(`Backup created: ${snapshot.createdAt}`, 'log-ok');
+
+    // Build an old-ID → new-ID map so OrgTags foreign keys stay correct
+    // We need to remap OrgID values since new org records get fresh Airtable IDs
+    const orgIdMap = {}; // oldId → newId
+
+    // Step 1: Delete existing records in restore tables
+    for (const table of RESTORE_TABLES) {
+      sep();
+      log(`Deleting existing ${table} records…`);
+      const existing = await apiGet(table);
+      log(`  Found ${existing.length} records`);
+      for (const r of existing) {
+        await apiDelete(table, r.id);
+        await delay(220);
+      }
+      log(`  Deleted ${existing.length} records`, 'log-ok');
+    }
+
+    // Step 2: Restore Organizations (capture old→new ID mapping)
+    sep();
+    const orgRecords = snapshot.tables['Organizations'] || [];
+    log(`Restoring ${orgRecords.length} Organizations…`);
+    for (const r of orgRecords) {
+      const newId = await apiCreate('Organizations', r.fields);
+      orgIdMap[r.id] = newId;
+      log(`  ${r.fields.Name || r.id}`, 'log-ok');
+      await delay(220);
+    }
+
+    // Step 3: Restore OrgTags (remap OrgID using orgIdMap)
+    sep();
+    const tagRecords = snapshot.tables['OrgTags'] || [];
+    log(`Restoring ${tagRecords.length} OrgTags…`);
+    let tagOk = 0, tagSkip = 0;
+    for (const r of tagRecords) {
+      const fields = {...r.fields};
+      // Remap OrgID to the newly created org's ID
+      if (fields.OrgID && orgIdMap[fields.OrgID]) {
+        fields.OrgID = orgIdMap[fields.OrgID];
+      } else if (fields.OrgID) {
+        log(`  SKIP tag — OrgID ${fields.OrgID} not found in restored orgs`, 'log-warn');
+        tagSkip++; continue;
+      }
+      // ValueID references CategoryValues which were not touched — keep as-is
+      await apiCreate('OrgTags', fields);
+      tagOk++;
+      await delay(220);
+    }
+    log(`  ${tagOk} OrgTags restored${tagSkip ? `, ${tagSkip} skipped` : ''}`, 'log-ok');
+
+    // Step 4: Restore Pending
+    sep();
+    const pendingRecords = snapshot.tables['Pending'] || [];
+    log(`Restoring ${pendingRecords.length} Pending submissions…`);
+    for (const r of pendingRecords) {
+      await apiCreate('Pending', r.fields);
+      log(`  ${r.fields.Name || r.id}`, 'log-ok');
+      await delay(220);
+    }
+
+    sep();
+    log('✓ Restore complete!', 'log-done');
+    log('Reload the main app to see the restored data.', 'log-done');
+    btn.textContent = 'Restore from backup';
+    btn.disabled = false;
+  } catch(e) {
+    sep();
+    log(`✗ Restore failed: ${e.message}`, 'log-error');
+    log('The database may be in a partial state. Restore from backup again or check Airtable directly.', 'log-error');
+    btn.textContent = 'Restore from backup';
+    btn.disabled = false;
+    console.error(e);
+  }
+}
+</script>
+</body>
+</html>

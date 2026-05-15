@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Election Integrity Directory — Data Import</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       background: #f5f5f3; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+.page { max-width: 700px; margin: 0 auto; background: #fff;
+        border-radius: 12px; border: 1px solid #e0e0db; overflow: hidden; }
+.header { padding: 1.75rem 1.5rem 1.25rem; border-bottom: 1px solid #e0e0db; }
+.header h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+.header p  { font-size: 13px; color: #666; line-height: 1.6; }
+.body { padding: 1.5rem; }
+.warning { background: #faeeda; border: 1px solid #f5c4b3; border-radius: 8px;
+           padding: 1rem 1.25rem; font-size: 13px; color: #633806;
+           line-height: 1.6; margin-bottom: 1.5rem; }
+.warning strong { font-weight: 500; }
+.run-btn { width: 100%; padding: 12px; background: #1a1a1a; color: #fff;
+           border: none; border-radius: 8px; font-size: 15px; font-weight: 500;
+           cursor: pointer; font-family: inherit; }
+.run-btn:hover:not(:disabled) { background: #333; }
+.run-btn:disabled { background: #999; cursor: not-allowed; }
+#log { margin-top: 1.25rem; background: #f5f5f3; border: 1px solid #e0e0db;
+       border-radius: 8px; padding: 1rem 1.25rem; font-size: 12px;
+       font-family: "Menlo", "Consolas", monospace; line-height: 1.7;
+       max-height: 520px; overflow-y: auto; display: none; }
+.log-step  { color: #1a1a1a; }
+.log-ok    { color: #085041; }
+.log-warn  { color: #633806; }
+.log-error { color: #a32d2d; font-weight: 500; }
+.log-done  { color: #185fa5; font-weight: 500; }
+.log-sep   { color: #bbb; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>Election Integrity Directory — Data Import</h1>
+    <p>Clears all existing Organizations and OrgTags, then loads 46 organizations
+       and their tags fresh. Categories and CategoryValues are read from Airtable
+       but not modified. Must be served from the same domain as the app so the
+       <code>/airtable</code> proxy is available. Run backup.html first.</p>
+  </div>
+  <div class="body">
+    <div class="warning">
+      <strong>⚠ Run backup.html before proceeding.</strong> This will permanently
+      delete all current Organizations and OrgTags records and replace them with
+      the data embedded in this file. Categories and CategoryValues are left untouched.
+    </div>
+    <button class="run-btn" id="run-btn" onclick="runImport()">Run import</button>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>
+// ── Tag mapping reference ────────────────────────────────────────────────────
+// All tags match the exact CategoryValues strings in your Airtable base:
+//
+// geo      → Local | State | National | International
+// work     → Legal | Advocacy | Technology | Research | Training | Litigation |
+//            Voting process information | Door Knocking | Data Analysis |
+//            Community Organizing
+// phase    → Voter registration | Voting | Get out the vote | Vote counting |
+//            Certification | Litigation
+// voter    → Roll monitoring | Re-registration help | Vote rejection monitoring |
+//            Ballot cure | Understanding the voting process
+// demo     → Youth | Seniors | Rural communities | AAPI communities |
+//            Black communities | Latino communities | Native communities
+// partisan → Non-partisan | Partisan - left | Partisan - right
+//
+// Mapping decisions for tags that had no direct match:
+//   "GOTV"                   → phase: Get out the vote
+//   "Policy advocacy"        → work: Advocacy
+//   "Litigation/legal"       → work: Legal + work: Litigation
+//   "Poll monitoring"        → voter: Vote rejection monitoring
+//   "Voter roll maintenance" → voter: Roll monitoring
+//   "Ballot curing"          → voter: Ballot cure
+//   "Voter education"        → work: Voting process information
+//   "Poll worker recruitment"→ work: Training
+//   "Nonpartisan/Bipartisan" → partisan: Non-partisan
+//   "Left-leaning"           → partisan: Partisan - left
+//   "Right-leaning"          → partisan: Partisan - right
+//   "Black/African American" → demo: Black communities
+//   "Hispanic/Latino"        → demo: Latino communities
+//   "Asian American/AAPI"    → demo: AAPI communities
+//   "BIPOC"                  → demo: Black communities + Latino communities
+//   "Communities of color"   → demo: Black + Latino + AAPI communities
+//   "Students"               → demo: Youth
+//   Immigrant/disability/
+//   low-income communities   → no matching value; omitted
+
+// ── Organization data ────────────────────────────────────────────────────────
+// [Name, Description, Website, Email, Phone, State, NeedsText]
+const ORGS = [
+["League of Women Voters (LWV)", "National nonpartisan organization (founded 1920) that empowers voters through registration drives, candidate forums, voter education, and policy advocacy. Operates VOTE411.org, a comprehensive one-stop voter information platform. Has chapters in all 50 states and D.C.", "https://lwv.org", "", "", "Washington, DC", ""],
+["Common Cause", "Nonpartisan citizen advocacy group working to ensure every American has easy ballot access and every vote is counted as cast. Runs the Election Protection program (866-OUR-VOTE hotline), deploys poll monitors in communities with a history of voting problems, and counters election disinformation. Has staff in 35 states.", "https://commoncause.org", "", "", "Washington, DC", ""],
+["Vote.org", "Largest 501(c)(3) nonpartisan voter registration and GOTV technology platform in America. Provides online voter registration, registration verification, election reminders, vote-by-mail tools, and poll worker recruitment. Partners with businesses, celebrities, and other nonprofits to expand reach.", "https://vote.org", "", "", "Oakland, CA", ""],
+["Rock the Vote", "Nonpartisan organization dedicated to getting young people involved in the democratic process through voter registration, voter education, and digital and pop culture engagement. Largest nonprofit devoted to the youth vote.", "https://rockthevote.org", "", "", "Washington, DC", ""],
+["Fair Elections Center", "National nonpartisan voting rights and election reform organization. Runs Campus Vote Project (student voting), Work Elections (poll worker recruitment), and provides voting rights litigation, legal assistance, and advocacy to remove barriers for underrepresented constituencies.", "https://fairelectionscenter.org", "", "", "Washington, DC", ""],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection", "Runs the 866-OUR-VOTE national Election Protection coalition with 300+ partner organizations and 100+ law firms. Provides multilingual voter hotlines, poll monitoring, litigation, and voter education. Multilingual assistance in 10+ languages.", "https://lawyerscommittee.org/project/election-protection/", "", "", "Washington, DC", ""],
+["Brennan Center for Justice", "Nonpartisan law and policy organization at NYU School of Law. Produces widely cited research on voter fraud, voter suppression, and election administration. Engages in litigation, policy advocacy, and communications on voting rights, election security, and redistricting.", "https://brennancenter.org", "", "", "New York, NY", ""],
+["FairVote", "Nonpartisan organization working to make representative democracy fair, functional, and representative through advocacy for ranked choice voting and structural electoral reform. Provides research, analysis, and educational tools for reform partners.", "https://fairvote.org", "", "", "Takoma Park, MD", ""],
+["VoteRiders", "Nonpartisan organization helping every American obtain the ID needed to cast a ballot. Provides a free voter ID hotline, helps individuals obtain required documents, runs voter ID clinics, and supports partner organizations. Especially active in states with strict voter ID laws.", "https://voteriders.org", "", "", "Washington, DC", ""],
+["Vote Smart", "Nonpartisan voter education organization providing factual, unbiased information on candidates, voting records, campaign finance, and policy positions to help voters make informed decisions.", "https://votesmart.org", "", "", "Phillipsburg, MT", ""],
+["National Election Defense Coalition (NEDC)", "Bipartisan organization building the only bipartisan movement in defense of election security. Advocates for voter-verified paper ballots, post-election audits, election security improvements, voting system upgrades, and nonpartisan poll worker training.", "https://electiondefense.org", "", "", "Washington, DC", ""],
+["Issue One — National Council on Election Integrity", "Bipartisan group of 40+ government, political, and civic leaders defending the legitimacy of free and fair elections. Counters election disinformation and advocates for consistent federal election funding. Co-chaired by former members of Congress from both parties.", "https://issueone.org/projects/national-council-on-election-integrity/", "", "", "Washington, DC", ""],
+["Bipartisan Policy Center — Election Programs", "Bipartisan think tank producing research and education on election security, election administration, voting system security, and election laws. Partners with R Street Institute and the Institute for Responsive Government.", "https://bipartisanpolicy.org", "", "", "Washington, DC", ""],
+["Power the Polls", "Nonpartisan coalition recruiting poll workers — especially younger volunteers — and matching them to local election offices. Launched in 2020 amid pandemic-related poll worker shortages; has continued each cycle since.", "https://powerthepolls.org", "", "", "Washington, DC", ""],
+["Democracy Fund", "Nonpartisan grantmaking organization funding election administration improvement, voting access research, and voter participation initiatives. Founded by eBay founder Pierre Omidyar. Primarily a funder of other election-related nonprofits.", "https://democracyfund.org", "", "", "Washington, DC", ""],
+["UCLA Safeguarding Democracy Project", "Nonpartisan academic research project at UCLA School of Law led by election law professor Richard Hasen. Produces policy recommendations and research on election integrity and security. Issued the '24 for 24' report with bipartisan recommendations for the 2024 elections.", "https://law.ucla.edu/academics/centers/safeguarding-democracy-project", "", "", "Los Angeles, CA", ""],
+["NAACP", "One of the oldest and largest civil rights organizations. Conducts voter registration drives, 'Souls to the Polls' GOTV programs, redistricting litigation, and advocacy against voter ID laws and voter roll purges. Has chapters in all 50 states. Youth and College Division targets young Black voters.", "https://naacp.org", "", "", "Baltimore, MD", ""],
+["NAACP Legal Defense Fund (LDF)", "Leading legal organization for racial justice in voting. Pursues voting rights litigation, redistricting challenges, advocacy, and voter education. Active on Section 2 of the Voting Rights Act cases. Operates voting.naacpldf.org for voter information.", "https://naacpldf.org", "", "", "New York, NY", ""],
+["ACLU Voting Rights Project", "Established 1965. Litigates against voter ID laws, voter roll purges, and restrictions on early voting and mail ballots. Has filed 60+ lawsuits to protect voters with active cases in 12+ states. Challenges laws disproportionately impacting Black, Latino, and Indigenous voters.", "https://aclu.org/issues/voting-rights", "", "", "New York, NY", ""],
+["Fair Fight Action", "Founded by Stacey Abrams after the disputed 2018 Georgia gubernatorial election. Conducts voter registration, voter protection, GOTV, election reform advocacy, and litigation against voter suppression. Major national funder of state-based voter protection efforts.", "https://fairfight.com", "", "", "Atlanta, GA", ""],
+["Democracy Docket", "Progressive voting rights litigation platform founded by Democratic attorney Marc Elias. Tracks 1,000+ election court cases in real time. The Democracy Docket Action Fund funds lawsuits challenging restrictive voting laws. Focus on BIPOC and young voters.", "https://democracydocket.com", "", "", "Washington, DC", ""],
+["Elias Law Group", "Democratic election law firm committed to helping Democrats win, citizens vote, and progressives make change. Founded by Marc Elias. Handles election litigation, redistricting, and campaign law. Many cases have the effect of expanding voting access broadly.", "https://elias.law", "", "", "Washington, DC", ""],
+["Demos", "Public policy organization working for equal democratic participation and economic opportunity. Has nine specialists on voting rights and voter registration. Focuses on structural policy change, especially for communities of color and low-income Americans.", "https://demos.org", "", "", "New York, NY", ""],
+["Mi Familia Vota", "National civic engagement organization uniting Latino and immigrant communities through citizenship workshops, voter registration, and voter participation. Operates in AZ, CA, CO, FL, GA, NV, and TX. Strong year-round engagement model.", "https://mifamiliavota.org", "", "", "Phoenix, AZ", ""],
+["UnidosUS", "Nation's largest Latino civil rights and advocacy organization (formerly NCLR). Conducts Latino voter engagement, research on the Hispanic electorate, and policy advocacy. Operates the Hispanic Electorate Data Hub. Multi-year partnership with Mi Familia Vota.", "https://unidosus.org", "", "", "Washington, DC", ""],
+["Voto Latino", "Civic media organization using digital campaigns, pop culture, and grassroots voices to engage, educate, and empower Latinos. Focuses especially on first-time and young Latino voters. Offers a voter registration app pre-populated from driver's license data.", "https://votolatino.org", "", "", "Washington, DC", ""],
+["MALDEF (Mexican American Legal Defense and Educational Fund)", "Nation's leading Latino legal civil rights organization — the 'law firm of the Latino community.' Pursues voting rights litigation, redistricting challenges, and advocacy for political access for Latino communities.", "https://maldef.org", "", "", "Los Angeles, CA", ""],
+["Southwest Voter Registration Education Project (SVREP)", "Largest and oldest nonpartisan Latino voter participation organization in the U.S. (founded 1974). Conducts voter registration, voter education, and GOTV with a focus on Latino communities in the Southwest.", "https://svrep.org", "", "", "San Antonio, TX", ""],
+["LULAC (League of United Latin American Citizens)", "One of the oldest Hispanic civil rights organizations. Works to advance the political influence, economic condition, and civil rights of Hispanic Americans. Voter registration and civic education are key components.", "https://lulac.org", "", "", "Washington, DC", ""],
+["Asian Americans Advancing Justice (AAJC)", "Legal and civil rights organization focused on Asian American and Pacific Islander communities. Engages in voting rights advocacy, multilingual election protection, redistricting challenges, and litigation. Partners with the national Election Protection coalition.", "https://advancingjustice-aajc.org", "", "", "Washington, DC", ""],
+["REV UP Campaign (AAPD)", "Nonpartisan initiative of the American Association of People with Disabilities coordinating with national, state, and local organizations to increase the political power of the disability community through voter registration, GOTV, and accessible polling advocacy.", "https://aapd.com/programs/rev-up/", "", "", "Washington, DC", ""],
+["Heritage Foundation — Election Integrity Program", "Leading conservative think tank conducting research and advocacy on voter fraud, voter roll maintenance, and election security. Operates an Election Fraud Database and Election Integrity Scorecard. Advocates for voter ID laws, citizenship verification, and stricter election administration.", "https://heritage.org/election-integrity", "", "", "Washington, DC", ""],
+["Election Integrity Network (EIN)", "Conservative organization led by Cleta Mitchell. Trains conservative poll workers and poll watchers, pursues voter roll challenges, advocates for restricting early voting and mail ballots, and has pressured states to leave the ERIC voter roll consortium. Active especially in battleground states.", "https://whoscounting.us", "", "", "Washington, DC", ""],
+["True the Vote", "Conservative organization focused on poll watcher training, voter roll challenges, ballot drop box monitoring, and voter fraud investigation. Has been involved in numerous voter list challenges in Georgia, Texas, and other states.", "https://truethevote.org", "", "", "Houston, TX", ""],
+["America First Policy Institute — Center for Election Integrity", "Trump-aligned conservative policy organization advocating for proof-of-citizenship requirements at voter registration, photo ID requirements, and voter roll maintenance. Works to advance the SAVE America Act.", "https://americafirstpolicy.com/centers/election-integrity", "", "", "Washington, DC", ""],
+["Conservative Partnership Institute (CPI)", "MAGA-aligned organization that funds and houses the Election Integrity Network, trains conservative election activists, and supports the State Freedom Caucus Network. Major funder of conservative election integrity infrastructure.", "https://cpi.org", "", "", "Washington, DC", ""],
+["Republican National Committee — Election Integrity Division", "Explicitly Republican party operation deploying poll watchers, poll workers, and lawyers in battleground states. Claimed 175,000+ volunteers for 2024 election operations. Has pursued aggressive voter list maintenance litigation.", "https://gop.com", "", "", "Washington, DC", ""],
+["Tea Party Patriots Action (TPPA)", "Conservative grassroots organization training poll watchers and poll workers, supporting voter roll cleaning, and monitoring election equipment. Part of the Election Integrity Network coalition in multiple states.", "https://teapartypatriots.org", "", "", "Woodstock, GA", ""],
+["Restoring Integrity and Trust in Elections (RITE)", "Conservative organization founded in 2022 by William Barr, Karl Rove, Steve Wynn, and Bobby Burchfield. Pursues election-related litigation, particularly challenging mail-in ballot rules and voter roll maintenance.", "https://rite.org", "", "", "Washington, DC", ""],
+["United Sovereign Americans", "Far-right legal group that has filed lawsuits alleging voter roll inaccuracies and election tabulation errors in Florida and other states. Focuses on citizen-driven voter roll challenges.", "", "", "", "Missouri", ""],
+["Citizens for New Jersey Election Integrity", "Grassroots conservative group training and deploying conservative poll watchers in New Jersey. Driven by Republican voter distrust of election results.", "", "", "", "New Jersey", ""],
+["Soles to the Rolls", "Conservative grassroots voter roll challenge initiative in Michigan. Conducts door-to-door canvassing to verify registrations and files voter challenges with county clerks. Connected to the Election Integrity Network and True the Vote networks.", "", "", "", "Michigan", ""],
+["Pigpen Project", "Conservative state-level voter list accuracy initiative in Nevada. Identifies alleged inaccuracies in the Nevada voter rolls and submits them to election officials. Connected to the broader conservative election integrity network.", "", "", "", "Nevada", ""],
+["Audit the Vote PA", "Pennsylvania-based conservative group advocating for election audits and recruiting poll watchers. Part of the Election Integrity Network coalition in Pennsylvania.", "", "", "", "Pennsylvania", ""],
+["VoPro Pros", "All-volunteer, all-virtual voter protection organization formed during the 2020 Georgia elections. Specializes in ballot curing (contacting voters whose ballots were rejected and helping them fix them), staffing voter hotlines, recruiting poll observers, and year-round voter registration maintenance. Works via phone, text, and internet research in partnership with state and national voter protection organizations.", "https://vopropros.com", "info@vopropros.com", "", "", ""],
+["Field Team 6", "Explicitly partisan Democratic voter registration organization operating as a 527 Federal PAC. Conducts large-scale volunteer-powered voter registration drives, text banking, postcarding, and peer-to-peer outreach targeting unregistered Democrats in swing states. Active in key 2026 target states including battleground House and Senate districts.", "https://fieldteam6.org", "info@fieldteam6.org", "", "", ""],
+];
+
+// ── Tag data ─────────────────────────────────────────────────────────────────
+// [OrgName, TagValue, TagType]
+// Every value exactly matches a CategoryValues record in Airtable.
+const ORG_TAGS = [
+// League of Women Voters
+["League of Women Voters (LWV)","National","geo"],
+["League of Women Voters (LWV)","Non-partisan","partisan"],
+["League of Women Voters (LWV)","Advocacy","work"],
+["League of Women Voters (LWV)","Voting process information","work"],
+["League of Women Voters (LWV)","Voter registration","phase"],
+["League of Women Voters (LWV)","Get out the vote","phase"],
+["League of Women Voters (LWV)","Voting","phase"],
+// Common Cause
+["Common Cause","National","geo"],
+["Common Cause","Non-partisan","partisan"],
+["Common Cause","Advocacy","work"],
+["Common Cause","Legal","work"],
+["Common Cause","Litigation","work"],
+["Common Cause","Voting process information","work"],
+["Common Cause","Vote rejection monitoring","voter"],
+["Common Cause","Voter registration","phase"],
+["Common Cause","Voting","phase"],
+["Common Cause","Vote counting","phase"],
+// Vote.org
+["Vote.org","National","geo"],
+["Vote.org","Non-partisan","partisan"],
+["Vote.org","Technology","work"],
+["Vote.org","Training","work"],
+["Vote.org","Voter registration","phase"],
+["Vote.org","Get out the vote","phase"],
+// Rock the Vote
+["Rock the Vote","National","geo"],
+["Rock the Vote","Non-partisan","partisan"],
+["Rock the Vote","Voting process information","work"],
+["Rock the Vote","Voter registration","phase"],
+["Rock the Vote","Get out the vote","phase"],
+["Rock the Vote","Youth","demo"],
+// Fair Elections Center
+["Fair Elections Center","National","geo"],
+["Fair Elections Center","Non-partisan","partisan"],
+["Fair Elections Center","Legal","work"],
+["Fair Elections Center","Litigation","work"],
+["Fair Elections Center","Advocacy","work"],
+["Fair Elections Center","Training","work"],
+["Fair Elections Center","Ballot cure","voter"],
+["Fair Elections Center","Vote rejection monitoring","voter"],
+["Fair Elections Center","Voter registration","phase"],
+["Fair Elections Center","Voting","phase"],
+["Fair Elections Center","Vote counting","phase"],
+["Fair Elections Center","Youth","demo"],
+// Lawyers' Committee
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","National","geo"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Non-partisan","partisan"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Legal","work"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Litigation","work"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Voting process information","work"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Vote rejection monitoring","voter"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Ballot cure","voter"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Voter registration","phase"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Voting","phase"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Vote counting","phase"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Black communities","demo"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","Latino communities","demo"],
+["Lawyers' Committee for Civil Rights Under Law — Election Protection","AAPI communities","demo"],
+// Brennan Center
+["Brennan Center for Justice","National","geo"],
+["Brennan Center for Justice","Non-partisan","partisan"],
+["Brennan Center for Justice","Legal","work"],
+["Brennan Center for Justice","Litigation","work"],
+["Brennan Center for Justice","Advocacy","work"],
+["Brennan Center for Justice","Research","work"],
+["Brennan Center for Justice","Voter registration","phase"],
+["Brennan Center for Justice","Voting","phase"],
+["Brennan Center for Justice","Vote counting","phase"],
+["Brennan Center for Justice","Certification","phase"],
+// FairVote
+["FairVote","National","geo"],
+["FairVote","Non-partisan","partisan"],
+["FairVote","Advocacy","work"],
+["FairVote","Research","work"],
+["FairVote","Voting process information","work"],
+["FairVote","Voter registration","phase"],
+// VoteRiders
+["VoteRiders","National","geo"],
+["VoteRiders","Non-partisan","partisan"],
+["VoteRiders","Voting process information","work"],
+["VoteRiders","Re-registration help","voter"],
+["VoteRiders","Understanding the voting process","voter"],
+["VoteRiders","Voter registration","phase"],
+["VoteRiders","Voting","phase"],
+// Vote Smart
+["Vote Smart","National","geo"],
+["Vote Smart","Non-partisan","partisan"],
+["Vote Smart","Voting process information","work"],
+["Vote Smart","Voter registration","phase"],
+// NEDC
+["National Election Defense Coalition (NEDC)","National","geo"],
+["National Election Defense Coalition (NEDC)","Non-partisan","partisan"],
+["National Election Defense Coalition (NEDC)","Advocacy","work"],
+["National Election Defense Coalition (NEDC)","Research","work"],
+["National Election Defense Coalition (NEDC)","Training","work"],
+["National Election Defense Coalition (NEDC)","Voter registration","phase"],
+["National Election Defense Coalition (NEDC)","Vote counting","phase"],
+["National Election Defense Coalition (NEDC)","Certification","phase"],
+// Issue One
+["Issue One — National Council on Election Integrity","National","geo"],
+["Issue One — National Council on Election Integrity","Non-partisan","partisan"],
+["Issue One — National Council on Election Integrity","Advocacy","work"],
+["Issue One — National Council on Election Integrity","Voting process information","work"],
+["Issue One — National Council on Election Integrity","Vote counting","phase"],
+["Issue One — National Council on Election Integrity","Certification","phase"],
+// Bipartisan Policy Center
+["Bipartisan Policy Center — Election Programs","National","geo"],
+["Bipartisan Policy Center — Election Programs","Non-partisan","partisan"],
+["Bipartisan Policy Center — Election Programs","Research","work"],
+["Bipartisan Policy Center — Election Programs","Advocacy","work"],
+["Bipartisan Policy Center — Election Programs","Voting process information","work"],
+["Bipartisan Policy Center — Election Programs","Voter registration","phase"],
+// Power the Polls
+["Power the Polls","National","geo"],
+["Power the Polls","Non-partisan","partisan"],
+["Power the Polls","Training","work"],
+["Power the Polls","Voter registration","phase"],
+["Power the Polls","Voting","phase"],
+["Power the Polls","Youth","demo"],
+// Democracy Fund
+["Democracy Fund","National","geo"],
+["Democracy Fund","Non-partisan","partisan"],
+["Democracy Fund","Research","work"],
+// UCLA
+["UCLA Safeguarding Democracy Project","National","geo"],
+["UCLA Safeguarding Democracy Project","Non-partisan","partisan"],
+["UCLA Safeguarding Democracy Project","Research","work"],
+["UCLA Safeguarding Democracy Project","Advocacy","work"],
+// NAACP
+["NAACP","National","geo"],
+["NAACP","Partisan - left","partisan"],
+["NAACP","Legal","work"],
+["NAACP","Litigation","work"],
+["NAACP","Advocacy","work"],
+["NAACP","Community Organizing","work"],
+["NAACP","Voting process information","work"],
+["NAACP","Roll monitoring","voter"],
+["NAACP","Voter registration","phase"],
+["NAACP","Get out the vote","phase"],
+["NAACP","Voting","phase"],
+["NAACP","Vote counting","phase"],
+["NAACP","Black communities","demo"],
+["NAACP","Youth","demo"],
+// NAACP LDF
+["NAACP Legal Defense Fund (LDF)","National","geo"],
+["NAACP Legal Defense Fund (LDF)","Partisan - left","partisan"],
+["NAACP Legal Defense Fund (LDF)","Legal","work"],
+["NAACP Legal Defense Fund (LDF)","Litigation","work"],
+["NAACP Legal Defense Fund (LDF)","Advocacy","work"],
+["NAACP Legal Defense Fund (LDF)","Voting process information","work"],
+["NAACP Legal Defense Fund (LDF)","Voter registration","phase"],
+["NAACP Legal Defense Fund (LDF)","Voting","phase"],
+["NAACP Legal Defense Fund (LDF)","Vote counting","phase"],
+["NAACP Legal Defense Fund (LDF)","Black communities","demo"],
+// ACLU
+["ACLU Voting Rights Project","National","geo"],
+["ACLU Voting Rights Project","Partisan - left","partisan"],
+["ACLU Voting Rights Project","Legal","work"],
+["ACLU Voting Rights Project","Litigation","work"],
+["ACLU Voting Rights Project","Advocacy","work"],
+["ACLU Voting Rights Project","Voter registration","phase"],
+["ACLU Voting Rights Project","Voting","phase"],
+["ACLU Voting Rights Project","Black communities","demo"],
+["ACLU Voting Rights Project","Latino communities","demo"],
+["ACLU Voting Rights Project","Native communities","demo"],
+// Fair Fight
+["Fair Fight Action","National","geo"],
+["Fair Fight Action","Partisan - left","partisan"],
+["Fair Fight Action","Legal","work"],
+["Fair Fight Action","Litigation","work"],
+["Fair Fight Action","Advocacy","work"],
+["Fair Fight Action","Community Organizing","work"],
+["Fair Fight Action","Roll monitoring","voter"],
+["Fair Fight Action","Vote rejection monitoring","voter"],
+["Fair Fight Action","Ballot cure","voter"],
+["Fair Fight Action","Voter registration","phase"],
+["Fair Fight Action","Get out the vote","phase"],
+["Fair Fight Action","Voting","phase"],
+["Fair Fight Action","Vote counting","phase"],
+["Fair Fight Action","Black communities","demo"],
+// Democracy Docket
+["Democracy Docket","National","geo"],
+["Democracy Docket","Partisan - left","partisan"],
+["Democracy Docket","Legal","work"],
+["Democracy Docket","Litigation","work"],
+["Democracy Docket","Research","work"],
+["Democracy Docket","Voter registration","phase"],
+["Democracy Docket","Voting","phase"],
+["Democracy Docket","Vote counting","phase"],
+["Democracy Docket","Certification","phase"],
+["Democracy Docket","Litigation","phase"],
+["Democracy Docket","Black communities","demo"],
+["Democracy Docket","Latino communities","demo"],
+["Democracy Docket","Youth","demo"],
+// Elias Law Group
+["Elias Law Group","National","geo"],
+["Elias Law Group","Partisan - left","partisan"],
+["Elias Law Group","Legal","work"],
+["Elias Law Group","Litigation","work"],
+["Elias Law Group","Voter registration","phase"],
+["Elias Law Group","Voting","phase"],
+["Elias Law Group","Vote counting","phase"],
+["Elias Law Group","Certification","phase"],
+["Elias Law Group","Litigation","phase"],
+// Demos
+["Demos","National","geo"],
+["Demos","Partisan - left","partisan"],
+["Demos","Research","work"],
+["Demos","Advocacy","work"],
+["Demos","Voter registration","phase"],
+["Demos","Black communities","demo"],
+["Demos","Latino communities","demo"],
+// Mi Familia Vota
+["Mi Familia Vota","National","geo"],
+["Mi Familia Vota","Partisan - left","partisan"],
+["Mi Familia Vota","Community Organizing","work"],
+["Mi Familia Vota","Voting process information","work"],
+["Mi Familia Vota","Door Knocking","work"],
+["Mi Familia Vota","Re-registration help","voter"],
+["Mi Familia Vota","Voter registration","phase"],
+["Mi Familia Vota","Get out the vote","phase"],
+["Mi Familia Vota","Voting","phase"],
+["Mi Familia Vota","Latino communities","demo"],
+// UnidosUS
+["UnidosUS","National","geo"],
+["UnidosUS","Non-partisan","partisan"],
+["UnidosUS","Research","work"],
+["UnidosUS","Advocacy","work"],
+["UnidosUS","Community Organizing","work"],
+["UnidosUS","Voting process information","work"],
+["UnidosUS","Voter registration","phase"],
+["UnidosUS","Get out the vote","phase"],
+["UnidosUS","Latino communities","demo"],
+// Voto Latino
+["Voto Latino","National","geo"],
+["Voto Latino","Non-partisan","partisan"],
+["Voto Latino","Technology","work"],
+["Voto Latino","Community Organizing","work"],
+["Voto Latino","Voting process information","work"],
+["Voto Latino","Voter registration","phase"],
+["Voto Latino","Get out the vote","phase"],
+["Voto Latino","Latino communities","demo"],
+["Voto Latino","Youth","demo"],
+// MALDEF
+["MALDEF (Mexican American Legal Defense and Educational Fund)","National","geo"],
+["MALDEF (Mexican American Legal Defense and Educational Fund)","Partisan - left","partisan"],
+["MALDEF (Mexican American Legal Defense and Educational Fund)","Legal","work"],
+["MALDEF (Mexican American Legal Defense and Educational Fund)","Litigation","work"],
+["MALDEF (Mexican American Legal Defense and Educational Fund)","Advocacy","work"],
+["MALDEF (Mexican American Legal Defense and Educational Fund)","Voter registration","phase"],
+["MALDEF (Mexican American Legal Defense and Educational Fund)","Voting","phase"],
+["MALDEF (Mexican American Legal Defense and Educational Fund)","Latino communities","demo"],
+// SVREP
+["Southwest Voter Registration Education Project (SVREP)","National","geo"],
+["Southwest Voter Registration Education Project (SVREP)","Non-partisan","partisan"],
+["Southwest Voter Registration Education Project (SVREP)","Community Organizing","work"],
+["Southwest Voter Registration Education Project (SVREP)","Voting process information","work"],
+["Southwest Voter Registration Education Project (SVREP)","Door Knocking","work"],
+["Southwest Voter Registration Education Project (SVREP)","Voter registration","phase"],
+["Southwest Voter Registration Education Project (SVREP)","Get out the vote","phase"],
+["Southwest Voter Registration Education Project (SVREP)","Latino communities","demo"],
+// LULAC
+["LULAC (League of United Latin American Citizens)","National","geo"],
+["LULAC (League of United Latin American Citizens)","Non-partisan","partisan"],
+["LULAC (League of United Latin American Citizens)","Advocacy","work"],
+["LULAC (League of United Latin American Citizens)","Voting process information","work"],
+["LULAC (League of United Latin American Citizens)","Voter registration","phase"],
+["LULAC (League of United Latin American Citizens)","Latino communities","demo"],
+// AAJC
+["Asian Americans Advancing Justice (AAJC)","National","geo"],
+["Asian Americans Advancing Justice (AAJC)","Partisan - left","partisan"],
+["Asian Americans Advancing Justice (AAJC)","Legal","work"],
+["Asian Americans Advancing Justice (AAJC)","Litigation","work"],
+["Asian Americans Advancing Justice (AAJC)","Advocacy","work"],
+["Asian Americans Advancing Justice (AAJC)","Voting process information","work"],
+["Asian Americans Advancing Justice (AAJC)","Vote rejection monitoring","voter"],
+["Asian Americans Advancing Justice (AAJC)","Ballot cure","voter"],
+["Asian Americans Advancing Justice (AAJC)","Voter registration","phase"],
+["Asian Americans Advancing Justice (AAJC)","Voting","phase"],
+["Asian Americans Advancing Justice (AAJC)","Vote counting","phase"],
+["Asian Americans Advancing Justice (AAJC)","AAPI communities","demo"],
+// REV UP
+["REV UP Campaign (AAPD)","National","geo"],
+["REV UP Campaign (AAPD)","Non-partisan","partisan"],
+["REV UP Campaign (AAPD)","Advocacy","work"],
+["REV UP Campaign (AAPD)","Community Organizing","work"],
+["REV UP Campaign (AAPD)","Voting process information","work"],
+["REV UP Campaign (AAPD)","Voter registration","phase"],
+["REV UP Campaign (AAPD)","Get out the vote","phase"],
+["REV UP Campaign (AAPD)","Voting","phase"],
+// Heritage Foundation
+["Heritage Foundation — Election Integrity Program","National","geo"],
+["Heritage Foundation — Election Integrity Program","Partisan - right","partisan"],
+["Heritage Foundation — Election Integrity Program","Research","work"],
+["Heritage Foundation — Election Integrity Program","Advocacy","work"],
+["Heritage Foundation — Election Integrity Program","Legal","work"],
+["Heritage Foundation — Election Integrity Program","Roll monitoring","voter"],
+["Heritage Foundation — Election Integrity Program","Voter registration","phase"],
+["Heritage Foundation — Election Integrity Program","Vote counting","phase"],
+["Heritage Foundation — Election Integrity Program","Certification","phase"],
+// Election Integrity Network
+["Election Integrity Network (EIN)","National","geo"],
+["Election Integrity Network (EIN)","Partisan - right","partisan"],
+["Election Integrity Network (EIN)","Training","work"],
+["Election Integrity Network (EIN)","Advocacy","work"],
+["Election Integrity Network (EIN)","Community Organizing","work"],
+["Election Integrity Network (EIN)","Roll monitoring","voter"],
+["Election Integrity Network (EIN)","Vote rejection monitoring","voter"],
+["Election Integrity Network (EIN)","Voter registration","phase"],
+["Election Integrity Network (EIN)","Voting","phase"],
+// True the Vote
+["True the Vote","National","geo"],
+["True the Vote","Partisan - right","partisan"],
+["True the Vote","Training","work"],
+["True the Vote","Research","work"],
+["True the Vote","Roll monitoring","voter"],
+["True the Vote","Vote rejection monitoring","voter"],
+["True the Vote","Voter registration","phase"],
+["True the Vote","Voting","phase"],
+// AFPI
+["America First Policy Institute — Center for Election Integrity","National","geo"],
+["America First Policy Institute — Center for Election Integrity","Partisan - right","partisan"],
+["America First Policy Institute — Center for Election Integrity","Advocacy","work"],
+["America First Policy Institute — Center for Election Integrity","Research","work"],
+["America First Policy Institute — Center for Election Integrity","Legal","work"],
+["America First Policy Institute — Center for Election Integrity","Roll monitoring","voter"],
+["America First Policy Institute — Center for Election Integrity","Voter registration","phase"],
+// CPI
+["Conservative Partnership Institute (CPI)","National","geo"],
+["Conservative Partnership Institute (CPI)","Partisan - right","partisan"],
+["Conservative Partnership Institute (CPI)","Advocacy","work"],
+["Conservative Partnership Institute (CPI)","Training","work"],
+["Conservative Partnership Institute (CPI)","Voter registration","phase"],
+["Conservative Partnership Institute (CPI)","Voting","phase"],
+// RNC
+["Republican National Committee — Election Integrity Division","National","geo"],
+["Republican National Committee — Election Integrity Division","Partisan - right","partisan"],
+["Republican National Committee — Election Integrity Division","Legal","work"],
+["Republican National Committee — Election Integrity Division","Litigation","work"],
+["Republican National Committee — Election Integrity Division","Training","work"],
+["Republican National Committee — Election Integrity Division","Roll monitoring","voter"],
+["Republican National Committee — Election Integrity Division","Vote rejection monitoring","voter"],
+["Republican National Committee — Election Integrity Division","Voter registration","phase"],
+["Republican National Committee — Election Integrity Division","Voting","phase"],
+["Republican National Committee — Election Integrity Division","Vote counting","phase"],
+["Republican National Committee — Election Integrity Division","Certification","phase"],
+["Republican National Committee — Election Integrity Division","Litigation","phase"],
+// TPPA
+["Tea Party Patriots Action (TPPA)","National","geo"],
+["Tea Party Patriots Action (TPPA)","Partisan - right","partisan"],
+["Tea Party Patriots Action (TPPA)","Training","work"],
+["Tea Party Patriots Action (TPPA)","Community Organizing","work"],
+["Tea Party Patriots Action (TPPA)","Roll monitoring","voter"],
+["Tea Party Patriots Action (TPPA)","Voter registration","phase"],
+["Tea Party Patriots Action (TPPA)","Voting","phase"],
+// RITE
+["Restoring Integrity and Trust in Elections (RITE)","National","geo"],
+["Restoring Integrity and Trust in Elections (RITE)","Partisan - right","partisan"],
+["Restoring Integrity and Trust in Elections (RITE)","Legal","work"],
+["Restoring Integrity and Trust in Elections (RITE)","Litigation","work"],
+["Restoring Integrity and Trust in Elections (RITE)","Roll monitoring","voter"],
+["Restoring Integrity and Trust in Elections (RITE)","Voter registration","phase"],
+["Restoring Integrity and Trust in Elections (RITE)","Vote counting","phase"],
+["Restoring Integrity and Trust in Elections (RITE)","Certification","phase"],
+["Restoring Integrity and Trust in Elections (RITE)","Litigation","phase"],
+// United Sovereign Americans
+["United Sovereign Americans","National","geo"],
+["United Sovereign Americans","Partisan - right","partisan"],
+["United Sovereign Americans","Legal","work"],
+["United Sovereign Americans","Litigation","work"],
+["United Sovereign Americans","Roll monitoring","voter"],
+["United Sovereign Americans","Voter registration","phase"],
+["United Sovereign Americans","Litigation","phase"],
+// Citizens for NJ
+["Citizens for New Jersey Election Integrity","State","geo"],
+["Citizens for New Jersey Election Integrity","Partisan - right","partisan"],
+["Citizens for New Jersey Election Integrity","Training","work"],
+["Citizens for New Jersey Election Integrity","Vote rejection monitoring","voter"],
+["Citizens for New Jersey Election Integrity","Voting","phase"],
+// Soles to the Rolls
+["Soles to the Rolls","State","geo"],
+["Soles to the Rolls","Partisan - right","partisan"],
+["Soles to the Rolls","Community Organizing","work"],
+["Soles to the Rolls","Roll monitoring","voter"],
+["Soles to the Rolls","Voter registration","phase"],
+// Pigpen Project
+["Pigpen Project","State","geo"],
+["Pigpen Project","Partisan - right","partisan"],
+["Pigpen Project","Research","work"],
+["Pigpen Project","Roll monitoring","voter"],
+["Pigpen Project","Voter registration","phase"],
+// Audit the Vote PA
+["Audit the Vote PA","State","geo"],
+["Audit the Vote PA","Partisan - right","partisan"],
+["Audit the Vote PA","Advocacy","work"],
+["Audit the Vote PA","Training","work"],
+["Audit the Vote PA","Vote rejection monitoring","voter"],
+["Audit the Vote PA","Voting","phase"],
+["Audit the Vote PA","Vote counting","phase"],
+["Audit the Vote PA","Certification","phase"],
+// VoPro Pros
+["VoPro Pros","National","geo"],
+["VoPro Pros","Non-partisan","partisan"],
+["VoPro Pros","Community Organizing","work"],
+["VoPro Pros","Voting process information","work"],
+["VoPro Pros","Roll monitoring","voter"],
+["VoPro Pros","Re-registration help","voter"],
+["VoPro Pros","Vote rejection monitoring","voter"],
+["VoPro Pros","Ballot cure","voter"],
+["VoPro Pros","Voter registration","phase"],
+["VoPro Pros","Voting","phase"],
+["VoPro Pros","Vote counting","phase"],
+// Field Team 6
+["Field Team 6","National","geo"],
+["Field Team 6","Partisan - left","partisan"],
+["Field Team 6","Community Organizing","work"],
+["Field Team 6","Door Knocking","work"],
+["Field Team 6","Technology","work"],
+["Field Team 6","Voter registration","phase"],
+["Field Team 6","Get out the vote","phase"],
+];
+
+// ── API helpers ──────────────────────────────────────────────────────────────
+const API = '/airtable';
+async function apiGet(table) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`);
+  if (!res.ok) throw new Error(`GET ${table} → HTTP ${res.status}`);
+  return (await res.json()).records;
+}
+async function apiCreate(table, fields) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({records:[{fields}]})
+  });
+  if (!res.ok) throw new Error(`POST ${table} → HTTP ${res.status}`);
+  return (await res.json()).records[0].id;
+}
+async function apiDelete(table, id) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {method:'DELETE'});
+  if (!res.ok) throw new Error(`DELETE ${table}/${id} → HTTP ${res.status}`);
+}
+async function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Logging ──────────────────────────────────────────────────────────────────
+const logEl = document.getElementById('log');
+function log(msg, cls='log-step') {
+  logEl.style.display = 'block';
+  const d = document.createElement('div');
+  d.className = cls; d.textContent = msg;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function sep() { log('─────────────────────────────────────','log-sep'); }
+
+// ── Main import ──────────────────────────────────────────────────────────────
+async function runImport() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true; btn.textContent = 'Running…';
+  logEl.innerHTML = '';
+
+  try {
+    // Step 1: Load live schema
+    sep();
+    log('Step 1 of 5 — Loading categories and values from Airtable…');
+    const [catRecords, valRecords] = await Promise.all([
+      apiGet('Categories'), apiGet('CategoryValues')
+    ]);
+    const catMap = {};
+    catRecords.forEach(r => {
+      const key = r.fields.FieldKey || '';
+      if (key) catMap[key] = { values: {} };
+    });
+    valRecords.forEach(r => {
+      const key = (r.fields.CategoryKey || '').trim();
+      const val = (r.fields.Value || '').trim();
+      if (catMap[key] && val) catMap[key].values[val] = r.id;
+    });
+    log(`  ${catRecords.length} categories, ${valRecords.length} values loaded`, 'log-ok');
+
+    // Pre-validate all tags
+    const missing = [];
+    ORG_TAGS.forEach(([orgName, tagValue, tagType]) => {
+      if (!catMap[tagType]) missing.push(`No category "${tagType}" for "${orgName}"`);
+      else if (!catMap[tagType].values[tagValue]) missing.push(`No value "${tagValue}" in "${tagType}" for "${orgName}"`);
+    });
+    if (missing.length) {
+      sep();
+      log(`⚠ ${missing.length} tag(s) will be skipped (not found in CategoryValues):`, 'log-warn');
+      missing.forEach(m => log(`  ${m}`, 'log-warn'));
+    } else {
+      log('  All tags validated — every value matched ✓', 'log-ok');
+    }
+
+    // Step 2: Delete existing OrgTags
+    sep();
+    log('Step 2 of 5 — Deleting existing OrgTags…');
+    const existingTags = await apiGet('OrgTags');
+    for (const r of existingTags) { await apiDelete('OrgTags', r.id); await delay(220); }
+    log(`  Deleted ${existingTags.length} records`, 'log-ok');
+
+    // Step 3: Delete existing Organizations
+    sep();
+    log('Step 3 of 5 — Deleting existing Organizations…');
+    const existingOrgs = await apiGet('Organizations');
+    for (const r of existingOrgs) { await apiDelete('Organizations', r.id); await delay(220); }
+    log(`  Deleted ${existingOrgs.length} records`, 'log-ok');
+
+    // Step 4: Create Organizations
+    sep();
+    log(`Step 4 of 5 — Creating ${ORGS.length} organizations…`);
+    const orgIdMap = {};
+    let n = 0;
+    for (const [name, desc, website, email, phone, state, needsText] of ORGS) {
+      const fields = { Name: name, Description: desc };
+      if (website)   fields.Website   = website;
+      if (email)     fields.Email     = email;
+      if (phone)     fields.Phone     = phone;
+      if (state)     fields.State     = state;
+      if (needsText) fields.NeedsText = needsText;
+      orgIdMap[name] = await apiCreate('Organizations', fields);
+      log(`  [${++n}/${ORGS.length}] ${name}`, 'log-ok');
+      await delay(220);
+    }
+
+    // Step 5: Create OrgTags
+    sep();
+    log('Step 5 of 5 — Creating OrgTag records…');
+    let created = 0, skipped = 0;
+    for (const [orgName, tagValue, tagType] of ORG_TAGS) {
+      const orgId   = orgIdMap[orgName];
+      const valueId = catMap[tagType]?.values[tagValue];
+      if (!orgId || !valueId) {
+        log(`  SKIP "${orgName}" / "${tagValue}" (${tagType})`, 'log-warn');
+        skipped++; continue;
+      }
+      await apiCreate('OrgTags', { OrgID: orgId, ValueID: valueId, TagType: tagType });
+      created++;
+      log(`  [${created}] ${orgName} → ${tagValue} (${tagType})`, 'log-ok');
+      await delay(220);
+    }
+
+    sep();
+    log('✓ Import complete!', 'log-done');
+    log(`  Organizations created : ${n}`, 'log-done');
+    log(`  OrgTag records created: ${created}`, 'log-done');
+    if (skipped) log(`  Tags skipped: ${skipped} — see warnings above`, 'log-warn');
+    log('Reload the main app to see the updated directory.', 'log-done');
+    btn.textContent = 'Import complete ✓';
+
+  } catch(e) {
+    sep();
+    log(`✗ Import failed: ${e.message}`, 'log-error');
+    log('Check the browser console for details. Re-run after fixing the issue.', 'log-error');
+    btn.disabled = false; btn.textContent = 'Retry import';
+    console.error(e);
+  }
+}
+</script>
+</body>
+</html>
