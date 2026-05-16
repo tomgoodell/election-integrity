@@ -539,24 +539,30 @@ async function init() {
     return;
   }
 
-  // Pre-set filter from URL hash written by welcome.html quiz.
-  // Format: #fieldKey=Value  e.g.  #phase=Voter%20registration
+  // Pre-set filter(s) from URL hash written by welcome.html quiz.
+  // Format: #f1=fieldKey=Value&f2=fieldKey=Value
+  // Each f1/f2 segment sets the corresponding filter dropdown.
   if (window.location.hash) {
     try {
       const raw = decodeURIComponent(window.location.hash.slice(1));
-      const eqIdx = raw.indexOf('=');
-      if (eqIdx > -1) {
-        const fieldKey = raw.slice(0, eqIdx).trim();
-        const valueStr = raw.slice(eqIdx + 1).trim();
-        const cat = categories.find(c => c.fieldKey === fieldKey);
-        if (cat) {
-          const val = (catValues[cat._id] || []).find(v => v.value === valueStr);
-          if (val) {
-            const sel = document.getElementById('f-cat-' + cat._id);
-            if (sel) sel.value = val._id;
+      // Split on & to get individual filter segments (f1=..., f2=...)
+      raw.split('&').forEach(segment => {
+        // Strip leading "f1=" / "f2=" prefix if present, then parse fieldKey=Value
+        const withoutPrefix = segment.replace(/^f\d+=/, '');
+        const eqIdx = withoutPrefix.indexOf('=');
+        if (eqIdx > -1) {
+          const fieldKey = withoutPrefix.slice(0, eqIdx).trim();
+          const valueStr = withoutPrefix.slice(eqIdx + 1).trim();
+          const cat = categories.find(c => c.fieldKey === fieldKey);
+          if (cat) {
+            const val = (catValues[cat._id] || []).find(v => v.value === valueStr);
+            if (val) {
+              const sel = document.getElementById('f-cat-' + cat._id);
+              if (sel) sel.value = val._id;
+            }
           }
         }
-      }
+      });
     } catch(e) { /* invalid hash — ignore */ }
   }
 

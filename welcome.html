@@ -46,21 +46,7 @@ body {
   position: relative;
   overflow: hidden;
 }
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    repeating-linear-gradient(
-      to bottom,
-      transparent,
-      transparent 47px,
-      var(--rule) 47px,
-      var(--rule) 48px
-    );
-  opacity: 0.35;
-  pointer-events: none;
-}
+
 
 .nav {
   position: relative;
@@ -106,9 +92,9 @@ body {
 }
 
 .eyebrow {
-  font-size: 11px;
+  font-size: 20px;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--accent);
   margin-bottom: 1.5rem;
@@ -577,7 +563,7 @@ body {
 
       <!-- Step 1 -->
       <div class="quiz-step active" id="step-0">
-        <div class="step-question">What's pulling you toward this work?</div>
+        <div class="step-question">What brought you here?</div>
         <div class="choice-grid">
           <button class="choice" data-step="0" data-value="access"
             data-filter="phase=Voter registration" onclick="selectChoice(this)">
@@ -611,10 +597,33 @@ body {
               <span>Focused work with a particular group — youth, seniors, a specific community</span>
             </div>
           </button>
+          <button class="choice" data-step="0" data-value="other"
+            onclick="selectChoice(this)">
+            <span class="choice-icon">🔎</span>
+            <div class="choice-text">
+              <strong>Something else</strong>
+              <span>I'm not sure yet, or my reason isn't listed above</span>
+            </div>
+          </button>
         </div>
         <div class="quiz-nav">
-          <button class="btn-next" id="next-0" disabled onclick="goToStep(1)">Next question →</button>
+          <button class="btn-next" id="next-0" disabled onclick="handleStep0Next()">Next →</button>
           <a class="skip-link" onclick="skipToDirectory()">Skip — just show me everything</a>
+        </div>
+      </div>
+
+      <!-- Something else interstitial -->
+      <div class="quiz-step" id="step-other">
+        <div class="step-question" style="font-size:22px; margin-bottom:1.25rem;">Welcome.</div>
+        <p style="font-size:16px; font-weight:300; color:rgba(255,255,255,0.75); line-height:1.75; margin-bottom:2rem;">
+          We provide extensive information about organizations across the United States
+          that work on ensuring free and fair elections. On the next screen you will be
+          able to browse and search that database on various criteria that might help
+          you narrow down your search.
+        </p>
+        <div class="quiz-nav">
+          <button class="btn-next" onclick="skipToDirectory()">Browse the directory →</button>
+          <button class="btn-back" onclick="goToStep(0)">← Back</button>
         </div>
       </div>
 
@@ -623,7 +632,7 @@ body {
         <div class="step-question">How do you want to spend your time?</div>
         <div class="choice-grid">
           <button class="choice" data-step="1" data-value="phone"
-            onclick="selectChoice(this)">
+            data-filter="voter=Ballot cure" onclick="selectChoice(this)">
             <span class="choice-icon">📱</span>
             <div class="choice-text">
               <strong>Calling, texting, or writing</strong>
@@ -631,7 +640,7 @@ body {
             </div>
           </button>
           <button class="choice" data-step="1" data-value="field"
-            onclick="selectChoice(this)">
+            data-filter="work=Door Knocking" onclick="selectChoice(this)">
             <span class="choice-icon">🚶</span>
             <div class="choice-text">
               <strong>Knocking on doors or tabling</strong>
@@ -639,7 +648,7 @@ body {
             </div>
           </button>
           <button class="choice" data-step="1" data-value="polls"
-            onclick="selectChoice(this)">
+            data-filter="work=Training" onclick="selectChoice(this)">
             <span class="choice-icon">🏫</span>
             <div class="choice-text">
               <strong>Working at a polling place</strong>
@@ -647,7 +656,7 @@ body {
             </div>
           </button>
           <button class="choice" data-step="1" data-value="research"
-            onclick="selectChoice(this)">
+            data-filter="work=Research" onclick="selectChoice(this)">
             <span class="choice-icon">💻</span>
             <div class="choice-text">
               <strong>Research, data, or legal work</strong>
@@ -818,23 +827,43 @@ body {
 
 <script>
 // ── Quiz state ────────────────────────────────────────────────
-const answers  = { 0: null, 1: null, 2: null };
-const filters  = { 0: null };   // only Q1 carries a filter tag
-let currentStep = 0;
+// answers: step number → selected value string
+// filters: step number → "fieldKey=Value" string (only steps with data-filter)
+const answers = { 0: null, 1: null, 2: null };
+const filters = { 0: null, 1: null };
+let currentStep = 0;  // tracks numeric steps 0/1/2; 'other' handled separately
 
 function selectChoice(el) {
   const step = parseInt(el.dataset.step);
   el.closest('.choice-grid').querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   answers[step] = el.dataset.value;
-  if (el.dataset.filter) filters[step] = el.dataset.filter; // e.g. "phase=Voter registration"
+  filters[step] = el.dataset.filter || null;  // null if no data-filter on this button
   document.getElementById(`next-${step}`).disabled = false;
 }
 
-function goToStep(n) {
+// Q1 Next button — branches to "something else" interstitial or continues to Q2
+function handleStep0Next() {
+  if (answers[0] === 'other') {
+    showOtherPanel();
+  } else {
+    goToStep(1);
+  }
+}
+
+function showOtherPanel() {
   document.getElementById(`step-${currentStep}`).classList.remove('active');
+  document.getElementById('step-other').classList.add('active');
+  // Hide progress dots — this path skips Q2/Q3
+  document.getElementById('step-progress').style.display = 'none';
+}
+
+function goToStep(n) {
+  // Hide whatever is currently shown (could be a numbered step or step-other)
+  document.querySelectorAll('.quiz-step').forEach(s => s.classList.remove('active'));
   currentStep = n;
   document.getElementById(`step-${currentStep}`).classList.add('active');
+  document.getElementById('step-progress').style.display = 'flex';
   updateDots();
 }
 
@@ -852,56 +881,73 @@ function showResult() {
   document.getElementById('step-progress').style.display = 'none';
 
   const a0 = answers[0];
-  const a1 = answers[1];
   let hed, sub;
-  const tags = [];
 
-  // Headline + summary based on motivation (Q1)
+  // Result headline and description based on Q1 motivation.
+  // Tags shown here are ONLY the ones actually being filtered in the directory —
+  // one from Q1 (primary) and one from Q2 (secondary activity).
   if (a0 === 'access') {
     hed = "You're a voter champion.";
-    sub = "You want to expand who participates in democracy. Organizations focused on registration, GOTV, and community outreach are your natural home.";
-    tags.push({ label: 'Voter registration', cls: 'result-tag-green' });
-    tags.push({ label: 'Get out the vote', cls: 'result-tag-green' });
-    tags.push({ label: 'Community Organizing', cls: 'result-tag-warm' });
+    sub = "You want to expand who participates in democracy. We've filtered the directory to show organizations focused on voter registration — then refined further by how you want to spend your time.";
   } else if (a0 === 'integrity') {
     hed = "You're a democracy watchdog.";
-    sub = "You care about accuracy and trust in the process. Organizations focused on election security, roll monitoring, and post-election oversight are where you'll thrive.";
-    tags.push({ label: 'Roll monitoring', cls: 'result-tag-warm' });
-    tags.push({ label: 'Vote counting', cls: 'result-tag-green' });
-    tags.push({ label: 'Research', cls: 'result-tag-blue' });
+    sub = "You care about accuracy and trust in the process. We've filtered the directory to show organizations focused on voter roll monitoring — then refined further by how you want to spend your time.";
   } else if (a0 === 'rights') {
     hed = "You're a voting rights defender.";
-    sub = "You want to fight suppression and protect people's access to the ballot. Legal advocacy, hotline work, and ballot curing organizations will put you right at the center of that work.";
-    tags.push({ label: 'Legal', cls: 'result-tag-blue' });
-    tags.push({ label: 'Ballot cure', cls: 'result-tag-warm' });
-    tags.push({ label: 'Advocacy', cls: 'result-tag-green' });
+    sub = "You want to fight suppression and protect people's access to the ballot. We've filtered the directory to show organizations doing legal work — then refined further by how you want to spend your time.";
   } else if (a0 === 'community') {
     hed = "You're a community builder.";
-    sub = "You want to work with specific communities — your neighbors, your people. Organizations with a demographic focus and deep local roots are your best fit.";
-    tags.push({ label: 'Community Organizing', cls: 'result-tag-green' });
-    tags.push({ label: 'Door Knocking', cls: 'result-tag-warm' });
-    tags.push({ label: 'Voting process information', cls: 'result-tag-blue' });
+    sub = "You want to work with specific communities. We've filtered the directory to show organizations focused on community organizing — then refined further by how you want to spend your time.";
   } else {
     hed = "You're ready to make a real difference.";
     sub = "Here's the full directory — browse by type of work, community focus, or election phase to find your fit.";
   }
 
-  // Add time-commitment context tag (Q3)
-  if (answers[2] === 'few-hours') tags.push({ label: 'Great for new volunteers', cls: 'result-tag-blue' });
-  else if (answers[2] === 'election') tags.push({ label: 'Election-season intensive', cls: 'result-tag-blue' });
-  else if (answers[2] === 'deep') tags.push({ label: 'Ongoing commitment', cls: 'result-tag-blue' });
+  // Build tags that reflect only the active filters (Q1 + Q2)
+  const activeTags = [];
+  const labelColors = {
+    'Voter registration':   'result-tag-green',
+    'Roll monitoring':      'result-tag-warm',
+    'Legal':                'result-tag-blue',
+    'Community Organizing': 'result-tag-green',
+    'Ballot cure':          'result-tag-warm',
+    'Door Knocking':        'result-tag-warm',
+    'Training':             'result-tag-green',
+    'Research':             'result-tag-blue',
+  };
 
-  // Build the explore URL with a hash filter from Q1's answer
-  // index.html reads this hash and pre-sets the matching filter dropdown.
-  // Format: index.html#fieldKey=Value  e.g.  index.html#phase=Voter registration
-  const filterStr = filters[0];  // e.g. "phase=Voter registration"
-  const exploreUrl = filterStr ? `index.html#${encodeURIComponent(filterStr)}` : 'index.html';
+  // Extract human-readable label from filter string "fieldKey=Label"
+  function filterLabel(f) {
+    if (!f) return null;
+    const idx = f.indexOf('=');
+    return idx > -1 ? f.slice(idx + 1) : null;
+  }
+
+  const f0label = filterLabel(filters[0]);
+  const f1label = filterLabel(filters[1]);
+  if (f0label) activeTags.push({ label: f0label, cls: labelColors[f0label] || 'result-tag-blue' });
+  if (f1label) activeTags.push({ label: f1label, cls: labelColors[f1label] || 'result-tag-blue' });
+
+  // Time commitment tag is purely informational (not a filter)
+  if (answers[2] === 'few-hours') activeTags.push({ label: 'Great for new volunteers', cls: 'result-tag-blue' });
+  else if (answers[2] === 'election') activeTags.push({ label: 'Election-season intensive', cls: 'result-tag-blue' });
+  else if (answers[2] === 'deep') activeTags.push({ label: 'Long-term commitment', cls: 'result-tag-blue' });
+
+  // Build multi-filter hash for index.html
+  // Format: #f1=fieldKey=Value&f2=fieldKey=Value
+  // index.html splits on & and applies each filter independently
+  const hashParts = [];
+  if (filters[0]) hashParts.push('f1=' + filters[0]);
+  if (filters[1]) hashParts.push('f2=' + filters[1]);
+  const exploreUrl = hashParts.length
+    ? 'index.html#' + encodeURIComponent(hashParts.join('&'))
+    : 'index.html';
 
   document.getElementById('result-hed').textContent = hed;
   document.getElementById('result-sub').textContent = sub;
   const tagsEl = document.getElementById('result-tags');
   tagsEl.innerHTML = '';
-  tags.forEach(t => {
+  activeTags.forEach(t => {
     const s = document.createElement('span');
     s.className = `result-tag ${t.cls}`;
     s.textContent = t.label;
@@ -915,14 +961,19 @@ function skipToDirectory() { window.location.href = 'index.html'; }
 
 function resetQuiz() {
   answers[0] = answers[1] = answers[2] = null;
-  filters[0] = null;
+  filters[0] = filters[1] = null;
   currentStep = 0;
-  document.querySelectorAll('.quiz-step').forEach((s, i) => {
+  // Show all quiz-step divs and reset active state
+  document.querySelectorAll('.quiz-step').forEach(s => {
     s.style.display = '';
-    s.classList.toggle('active', i === 0);
+    s.classList.remove('active');
   });
+  document.getElementById('step-0').classList.add('active');
   document.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
-  document.querySelectorAll('.btn-next').forEach(b => b.disabled = true);
+  // Re-disable next buttons that need a selection
+  document.getElementById('next-0').disabled = true;
+  document.getElementById('next-1').disabled = true;
+  document.getElementById('next-2').disabled = true;
   document.getElementById('step-progress').style.display = 'flex';
   document.getElementById('quiz-result').classList.remove('show');
   updateDots();
