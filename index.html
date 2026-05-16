@@ -176,6 +176,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .admin-nav-item.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; font-weight: 500; }
 .admin-nav-item:hover:not(.active) { background: #e8e8e5; border-color: #ccc; }
 .admin-section-sub { font-size: 13px; color: #888; margin-bottom: 1rem; }
+/* Progress bar */
+.progress-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  z-index: 400; align-items: center; justify-content: center; }
+.progress-overlay.open { display: flex; }
+.progress-box { background: #fff; border-radius: 12px; border: 1px solid #e0e0db;
+  padding: 1.75rem; width: 340px; text-align: center; }
+.progress-title { font-size: 15px; font-weight: 500; color: #1a1a1a; margin-bottom: 6px; }
+.progress-sub { font-size: 13px; color: #888; margin-bottom: 1.25rem; }
+.progress-bar-track { background: #f0f0f0; border-radius: 8px; height: 8px; overflow: hidden; }
+.progress-bar-fill { background: #1a1a1a; height: 8px; border-radius: 8px;
+  width: 0%; transition: width 0.2s ease; }
+.progress-count { font-size: 12px; color: #aaa; margin-top: 8px; }
 .admin-card { background: #f9f9f7; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 12px; }
 .admin-actions { display: flex; gap: 8px; margin-top: 12px; }
 .btn-approve { padding: 6px 16px; font-size: 13px; background: #e1f5ee; color: #085041; border: 1px solid #9fe1cb; border-radius: 8px; cursor: pointer; font-family: inherit; }
@@ -438,6 +450,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
       </div>
       <div id="admin-section-approved" style="display:none">
         <p class="admin-section-sub">Edit or remove any approved listing.</p>
+        <div class="alpha-bar" id="admin-alpha-bar" style="margin-bottom:1rem"></div>
         <div id="approved-container"></div>
       </div>
       <div id="admin-section-declined" style="display:none">
@@ -480,7 +493,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 </div>
 
 <!-- EDIT ORG MODAL -->
-<div class="edit-overlay" id="edit-overlay" onclick="closeEditModal(event)">
+<div class="edit-overlay" id="edit-overlay">
   <div class="edit-modal">
     <button class="edit-close" onclick="closeEditModalDirect()">Close</button>
     <h2>Edit organization</h2>
@@ -622,6 +635,7 @@ let showDesc = true;
 let showTags = true;
 let activeLetter = '';
 let browseMode = 'volunteer'; // 'volunteer' (Citizen view) | 'researcher'
+let adminActiveLetter = ''; // alpha filter for Approved Organizations tab
 // chipFilters: map of catId -> selected valueId for the volunteer chip UI
 let chipFilters = {};
 
@@ -906,7 +920,7 @@ function buildSubmitCategories() {
       <div class="cb-columns" id="cb-cat-${cat._id}">
         ${vals.map(v => `<label><input type="${inputType}" class="${cssClass}" name="cat-${cat._id}" value="${v._id}"> ${v.value}</label>`).join('')}
       </div>
-      ${showSelectAll ? `<button type="button" class="select-all-btn" onclick="selectAllInCat('${cat._id}','${cssClass}')">Select all</button>` : ''}
+      ${showSelectAll ? `<button type="button" class="select-all-btn" onclick="selectAllInCat('${cat._id}','${cssClass}')">Select all</button> <button type="button" class="select-all-btn" onclick="clearAllInCat('${cssClass}')">Clear all</button>` : ''}
     </div>`;
   });
   container.innerHTML = html;
@@ -934,7 +948,7 @@ function buildEditCategories() {
       <div class="cb-columns" id="e-cat-${cat._id}">
         ${vals.map(v => `<label><input type="${inputType}" class="${cssClass}" name="ecat-${cat._id}" value="${v._id}"> ${v.value}</label>`).join('')}
       </div>
-      ${showSelectAll ? `<button type="button" class="select-all-btn" onclick="selectAllInCat('${cat._id}','${cssClass}')">Select all</button>` : ''}
+      ${showSelectAll ? `<button type="button" class="select-all-btn" onclick="selectAllInCat('${cat._id}','${cssClass}')">Select all</button> <button type="button" class="select-all-btn" onclick="clearAllInCat('${cssClass}')">Clear all</button>` : ''}
     </div>`;
   });
   container.innerHTML = html;
@@ -1321,6 +1335,10 @@ function getCheckedValues(cssClass) {
 
 function selectAllInCat(catId, cssClass) {
   document.querySelectorAll('.' + cssClass).forEach(cb => cb.checked = true);
+}
+
+function clearAllInCat(cssClass) {
+  document.querySelectorAll('.' + cssClass).forEach(cb => cb.checked = false);
 }
 
 async function submitGroup() {
@@ -1928,9 +1946,28 @@ async function declinePending(i) {
   } catch(e) { alert('Error declining: ' + e.message); }
 }
 
+function setAdminLetter(l) {
+  adminActiveLetter = (adminActiveLetter === l) ? '' : l;
+  renderApproved();
+}
+
+function renderAdminAlphaBar() {
+  const bar = document.getElementById('admin-alpha-bar');
+  if (!bar) return;
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const active = orgs.filter(o => !o.declined);
+  const available = new Set(active.map(o => o.name[0]?.toUpperCase()));
+  bar.innerHTML = letters.map(l =>
+    `<button class="alpha-btn ${!available.has(l)?'disabled':''} ${adminActiveLetter===l?'active':''}"
+      onclick="setAdminLetter('${l}')">${l}</button>`
+  ).join('') + `<button class="alpha-all-btn ${adminActiveLetter===''?'active':''}" onclick="setAdminLetter('')">All</button>`;
+}
+
 function renderApproved() {
   const c = document.getElementById('approved-container');
-  const active = [...orgs].filter(o => !o.declined).sort((a,b)=>a.name.localeCompare(b.name));
+  let active = [...orgs].filter(o => !o.declined).sort((a,b)=>a.name.localeCompare(b.name));
+  renderAdminAlphaBar();
+  if (adminActiveLetter) active = active.filter(o => o.name[0]?.toUpperCase() === adminActiveLetter);
   if (!active.length) { c.innerHTML = '<p style="font-size:14px;color:#888">No approved organizations yet.</p>'; return; }
   c.innerHTML = active.map(org => `
     <div class="admin-card">
@@ -2085,26 +2122,52 @@ async function saveEdit() {
 async function deleteOrg(orgId) {
   const org = orgs.find(o => o._id === orgId);
   if (!confirm(`Delete "${org?.name}" from the directory? This cannot be undone.`)) return;
+  const tags = orgTags[orgId] || [];
+  const prog = showProgress('Deleting organization', org?.name || '', tags.length + 1);
   try {
-    // Delete all tags for this org first, sequentially
-    const tags = orgTags[orgId] || [];
+    // Delete all tags first, sequentially
     for (const t of tags) {
       await atDelete(T_ORGTAGS, t._tagId);
       await new Promise(r => setTimeout(r, 220));
+      updateProgress(prog, t.value);
     }
     await atDelete(T_ORGS, orgId);
+    updateProgress(prog, 'Record deleted');
+    hideProgress();
     await loadOrgs();
     renderCards();
     renderApproved();
-  } catch(e) { alert('Error deleting: ' + e.message); }
+  } catch(e) { hideProgress(); alert('Error deleting: ' + e.message); }
+}
+
+// ── Progress bar helpers ───────────────────────────────────────
+function showProgress(title, sub, total) {
+  document.getElementById('progress-title').textContent = title;
+  document.getElementById('progress-sub').textContent = sub;
+  document.getElementById('progress-bar-fill').style.width = '0%';
+  document.getElementById('progress-count').textContent = '';
+  document.getElementById('progress-overlay').classList.add('open');
+  return { total, current: 0 };
+}
+function updateProgress(state, label) {
+  state.current++;
+  const pct = Math.round((state.current / state.total) * 100);
+  document.getElementById('progress-bar-fill').style.width = pct + '%';
+  document.getElementById('progress-count').textContent =
+    `${state.current} of ${state.total}${label ? ' — ' + label : ''}`;
+}
+function hideProgress() {
+  document.getElementById('progress-overlay').classList.remove('open');
 }
 
 async function duplicateOrg(orgId) {
   const org = orgs.find(o => o._id === orgId);
   if (!org) return;
   if (!confirm(`Duplicate "${org.name}"? A copy will be created and opened for editing.`)) return;
+  const srcTags = orgTags[orgId] || [];
+  const prog = showProgress('Duplicating organization', org.name, srcTags.length + 1);
   try {
-    // Create new org record copying all fields, marking as declined until edited
+    // Create new org record
     const newOrgRes = await atCreate(T_ORGS, {
       Name: org.name + ' (copy)',
       Description: org.desc,
@@ -2117,21 +2180,21 @@ async function duplicateOrg(orgId) {
       Declined: false
     });
     const newOrgId = newOrgRes.records[0].id;
+    updateProgress(prog, 'Record created');
 
     // Copy all OrgTags from the original, sequentially
-    const srcTags = orgTags[orgId] || [];
     for (const t of srcTags) {
       await atCreate(T_ORGTAGS, { OrgID: newOrgId, ValueID: t.valueId, TagType: t.catKey || t.tagType });
       await new Promise(r => setTimeout(r, 220));
+      updateProgress(prog, t.value);
     }
 
-    // Reload and open the edit modal on the new copy
+    hideProgress();
     await loadOrgs();
     renderCards();
     renderApproved();
-    // Open the edit modal so admin can rename and adjust immediately
     openEditModal(newOrgId);
-  } catch(e) { alert('Error duplicating: ' + e.message); }
+  } catch(e) { hideProgress(); alert('Error duplicating: ' + e.message); }
 }
 
 // ── Lists/Category Admin ───────────────────────────────────────
@@ -2331,5 +2394,17 @@ document.addEventListener('fullscreenchange', function() {
 
 init();
 </script>
+<!-- PROGRESS OVERLAY -->
+<div class="progress-overlay" id="progress-overlay">
+  <div class="progress-box">
+    <div class="progress-title" id="progress-title">Working…</div>
+    <div class="progress-sub" id="progress-sub">Please wait</div>
+    <div class="progress-bar-track">
+      <div class="progress-bar-fill" id="progress-bar-fill"></div>
+    </div>
+    <div class="progress-count" id="progress-count"></div>
+  </div>
+</div>
+
 </body>
 </html>
