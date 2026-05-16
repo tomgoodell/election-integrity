@@ -269,7 +269,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
      ═══════════════════════════════════════════════════════════ -->
 <div class="page">
   <div class="header">
-    <h1>Election integrity resource directory</h1>
+    <h1>Find your match for supporting free and fair elections</h1>
     <p>Find organizations working on free and fair elections — then reach out to get involved.</p>
   </div>
   <div class="tabs">
@@ -609,13 +609,11 @@ async function init() {
 
   // Pre-set filter(s) from URL hash written by welcome.html quiz.
   // Format: #f1=fieldKey=Value&f2=fieldKey=Value
-  // Each f1/f2 segment sets the corresponding filter dropdown.
+  // Applies to BOTH views: sets researcher dropdowns AND volunteer chipFilters.
   if (window.location.hash) {
     try {
       const raw = decodeURIComponent(window.location.hash.slice(1));
-      // Split on & to get individual filter segments (f1=..., f2=...)
       raw.split('&').forEach(segment => {
-        // Strip leading "f1=" / "f2=" prefix if present, then parse fieldKey=Value
         const withoutPrefix = segment.replace(/^f\d+=/, '');
         const eqIdx = withoutPrefix.indexOf('=');
         if (eqIdx > -1) {
@@ -625,8 +623,19 @@ async function init() {
           if (cat) {
             const val = (catValues[cat._id] || []).find(v => v.value === valueStr);
             if (val) {
+              // Researcher view: set the dropdown
               const sel = document.getElementById('f-cat-' + cat._id);
               if (sel) sel.value = val._id;
+              // Volunteer view: set chipFilters and update chip active states
+              if (chipFilters.hasOwnProperty(cat._id)) {
+                chipFilters[cat._id] = val._id;
+                // Deactivate "All" chip for this category
+                const allChip = document.getElementById('chip-all-' + cat._id);
+                if (allChip) allChip.classList.remove('active');
+                // Activate the matching value chip
+                const valChip = document.getElementById('chip-' + val._id);
+                if (valChip) valChip.classList.add('active');
+              }
             }
           }
         }
