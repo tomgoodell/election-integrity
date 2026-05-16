@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Election Integrity Directory — Add States</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       background: #f5f5f3; color: #1a1a1a; min-height: 100vh; padding: 2rem 1rem; }
+.page { max-width: 700px; margin: 0 auto; background: #fff;
+        border-radius: 12px; border: 1px solid #e0e0db; overflow: hidden; }
+.header { padding: 1.75rem 1.5rem 1.25rem; border-bottom: 1px solid #e0e0db; }
+.header h1 { font-size: 20px; font-weight: 500; margin-bottom: 4px; }
+.header p  { font-size: 13px; color: #666; line-height: 1.6; }
+.body { padding: 1.5rem; }
+.info { background: #e8f2ec; border: 1px solid #b8ddc7; border-radius: 8px;
+        padding: 1rem 1.25rem; font-size: 13px; color: #1a3d28;
+        line-height: 1.6; margin-bottom: 1.5rem; }
+.run-btn { width: 100%; padding: 12px; background: #1a1a1a; color: #fff;
+           border: none; border-radius: 8px; font-size: 15px; font-weight: 500;
+           cursor: pointer; font-family: inherit; }
+.run-btn:hover:not(:disabled) { background: #333; }
+.run-btn:disabled { background: #999; cursor: not-allowed; }
+#log { margin-top: 1.25rem; background: #f5f5f3; border: 1px solid #e0e0db;
+       border-radius: 8px; padding: 1rem 1.25rem; font-size: 12px;
+       font-family: "Menlo", "Consolas", monospace; line-height: 1.7;
+       max-height: 520px; overflow-y: auto; display: none; }
+.log-step  { color: #1a1a1a; }
+.log-ok    { color: #085041; }
+.log-warn  { color: #633806; }
+.log-error { color: #a32d2d; font-weight: 500; }
+.log-done  { color: #185fa5; font-weight: 500; }
+.log-sep   { color: #bbb; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <h1>Add States to CategoryValues</h1>
+    <p>Automatically finds the States category in Airtable and adds all
+       50 states plus Washington DC as CategoryValues. Safe to run more
+       than once — existing states are skipped. Must be served from the
+       same domain as the app.</p>
+  </div>
+  <div class="body">
+    <div class="info">
+      This script will look up your States category, then create one
+      CategoryValue row for each state with the correct CategoryID,
+      CategoryName, CategoryKey, Value, SortOrder, and Active fields
+      all filled in automatically. Takes about 3 minutes.
+    </div>
+    <button class="run-btn" id="run-btn" onclick="runScript()">Add states to Airtable</button>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>
+const API = '/airtable';
+
+const STATES = [
+  'Alabama','Alaska','Arizona','Arkansas','California','Colorado',
+  'Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho',
+  'Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana',
+  'Maine','Maryland','Massachusetts','Michigan','Minnesota',
+  'Mississippi','Missouri','Montana','Nebraska','Nevada',
+  'New Hampshire','New Jersey','New Mexico','New York',
+  'North Carolina','North Dakota','Ohio','Oklahoma','Oregon',
+  'Pennsylvania','Rhode Island','South Carolina','South Dakota',
+  'Tennessee','Texas','Utah','Vermont','Virginia','Washington',
+  'Washington DC','West Virginia','Wisconsin','Wyoming'
+];
+
+async function apiGet(table) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`);
+  if (!res.ok) throw new Error(`GET ${table} → HTTP ${res.status}`);
+  return (await res.json()).records;
+}
+
+async function apiCreate(table, fields) {
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
+    method: 'POST', headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({records:[{fields}]})
+  });
+  if (!res.ok) throw new Error(`POST ${table} → HTTP ${res.status}`);
+  return (await res.json()).records[0].id;
+}
+
+async function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+const logEl = document.getElementById('log');
+function log(msg, cls='log-step') {
+  logEl.style.display = 'block';
+  const d = document.createElement('div');
+  d.className = cls; d.textContent = msg;
+  logEl.appendChild(d);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+function sep() { log('─────────────────────────────────────','log-sep'); }
+
+async function runScript() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true; btn.textContent = 'Running…';
+  logEl.innerHTML = '';
+
+  try {
+    // Step 1: Find the States category record
+    sep();
+    log('Step 1 of 3 — Finding States category in Airtable…');
+    const catRecords = await apiGet('Categories');
+    const statesCat = catRecords.find(r =>
+      (r.fields.FieldKey || '').toLowerCase() === 'state'
+    );
+    if (!statesCat) {
+      log('✗ Could not find a Category with FieldKey = "state".', 'log-error');
+      log('  Please add the States category in Airtable first:', 'log-error');
+      log('  Name: States  |  FieldKey: state  |  Active: checked', 'log-error');
+      btn.disabled = false; btn.textContent = 'Retry';
+      return;
+    }
+    const categoryId   = statesCat.id;
+    const categoryName = statesCat.fields.Name || 'States';
+    log(`  Found: "${categoryName}" (ID: ${categoryId})`, 'log-ok');
+
+    // Step 2: Load existing CategoryValues to find which states already exist
+    sep();
+    log('Step 2 of 3 — Checking which states already exist…');
+    const existing = await apiGet('CategoryValues');
+    const existingStateValues = new Set(
+      existing
+        .filter(r => (r.fields.CategoryKey || '').toLowerCase() === 'state')
+        .map(r => (r.fields.Value || '').trim())
+    );
+    const toAdd = STATES.filter(s => !existingStateValues.has(s));
+    if (existingStateValues.size > 0) {
+      log(`  ${existingStateValues.size} state(s) already exist — will be skipped`, 'log-warn');
+    }
+    log(`  ${toAdd.length} state(s) to create`, 'log-ok');
+
+    if (toAdd.length === 0) {
+      sep();
+      log('✓ All states already exist — nothing to do!', 'log-done');
+      btn.textContent = 'Already complete ✓';
+      return;
+    }
+
+    // Step 3: Create each missing state
+    sep();
+    log(`Step 3 of 3 — Creating ${toAdd.length} state(s)…`);
+    let created = 0;
+    for (const state of toAdd) {
+      const sortOrder = STATES.indexOf(state) + 1;
+      await apiCreate('CategoryValues', {
+        CategoryID:   categoryId,
+        CategoryName: categoryName,
+        CategoryKey:  'state',
+        Value:        state,
+        SortOrder:    sortOrder,
+        Active:       true
+      });
+      created++;
+      log(`  [${created}/${toAdd.length}] ${state}`, 'log-ok');
+      await delay(220);
+    }
+
+    sep();
+    log('✓ Done!', 'log-done');
+    log(`  ${created} state(s) added to CategoryValues.`, 'log-done');
+    log('  Reload the main app to see the States filter.', 'log-done');
+    btn.textContent = 'Complete ✓';
+
+  } catch(e) {
+    sep();
+    log(`✗ Script failed: ${e.message}`, 'log-error');
+    log('Check the browser console for details. Safe to retry.', 'log-error');
+    btn.disabled = false; btn.textContent = 'Retry';
+    console.error(e);
+  }
+}
+</script>
+</body>
+</html>
