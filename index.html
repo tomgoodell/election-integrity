@@ -538,6 +538,28 @@ async function init() {
       `<div class="error-msg">Could not connect to the database. Please check your internet connection and try refreshing.<br><small>${e.message}</small></div>`;
     return;
   }
+
+  // Pre-set filter from URL hash written by welcome.html quiz.
+  // Format: #fieldKey=Value  e.g.  #phase=Voter%20registration
+  if (window.location.hash) {
+    try {
+      const raw = decodeURIComponent(window.location.hash.slice(1));
+      const eqIdx = raw.indexOf('=');
+      if (eqIdx > -1) {
+        const fieldKey = raw.slice(0, eqIdx).trim();
+        const valueStr = raw.slice(eqIdx + 1).trim();
+        const cat = categories.find(c => c.fieldKey === fieldKey);
+        if (cat) {
+          const val = (catValues[cat._id] || []).find(v => v.value === valueStr);
+          if (val) {
+            const sel = document.getElementById('f-cat-' + cat._id);
+            if (sel) sel.value = val._id;
+          }
+        }
+      }
+    } catch(e) { /* invalid hash — ignore */ }
+  }
+
   renderCards();
 }
 

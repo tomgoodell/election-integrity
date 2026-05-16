@@ -18,9 +18,9 @@
   --paper:     #faf9f6;
   --cream:     #f2f0ea;
   --rule:      #e2ded4;
-  --accent:    #2d5f3f;       /* civic green */
+  --accent:    #2d5f3f;
   --accent-lt: #e8f2ec;
-  --warm:      #c8572a;       /* terracotta for energy */
+  --warm:      #c8572a;
   --warm-lt:   #faeee7;
   --blue:      #1d4fa0;
   --blue-lt:   #e8eef9;
@@ -46,8 +46,6 @@ body {
   position: relative;
   overflow: hidden;
 }
-
-/* Decorative ruled lines behind hero */
 .hero::before {
   content: '';
   position: absolute;
@@ -64,7 +62,6 @@ body {
   pointer-events: none;
 }
 
-/* Top nav strip */
 .nav {
   position: relative;
   z-index: 10;
@@ -94,7 +91,6 @@ body {
 }
 .nav-link:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
 
-/* Hero body */
 .hero-body {
   position: relative;
   z-index: 5;
@@ -146,7 +142,6 @@ body {
   animation: fadeUp 0.8s 0.4s ease forwards;
 }
 
-/* Stat strip */
 .stat-strip {
   display: flex;
   gap: 2.5rem;
@@ -156,9 +151,7 @@ body {
   opacity: 0;
   animation: fadeUp 0.8s 0.55s ease forwards;
 }
-.stat {
-  text-align: center;
-}
+.stat { text-align: center; }
 .stat-num {
   font-family: var(--serif);
   font-size: 32px;
@@ -173,7 +166,6 @@ body {
   margin-top: 3px;
 }
 
-/* CTA buttons */
 .cta-row {
   display: flex;
   gap: 12px;
@@ -202,7 +194,6 @@ body {
 .btn-primary:hover { background: #1f4430; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(45,95,63,0.25); }
 .btn-primary .arrow { transition: transform 0.2s; }
 .btn-primary:hover .arrow { transform: translateX(3px); }
-
 .btn-secondary {
   display: inline-flex;
   align-items: center;
@@ -220,7 +211,6 @@ body {
 }
 .btn-secondary:hover { background: var(--cream); border-color: var(--ink-soft); }
 
-/* Scroll hint */
 .hero-footer {
   position: relative;
   z-index: 5;
@@ -247,7 +237,7 @@ body {
   animation: scrollPulse 2s infinite;
 }
 
-/* ── Quiz section ─────────────────────────────────────────── */
+/* ── Quiz ─────────────────────────────────────────────────── */
 .quiz-section {
   background: var(--ink);
   padding: 5rem 2rem;
@@ -261,25 +251,20 @@ body {
   background-image: radial-gradient(circle at 20% 50%, rgba(45,95,63,0.3) 0%, transparent 60%),
                     radial-gradient(circle at 80% 20%, rgba(200,87,42,0.15) 0%, transparent 50%);
 }
-
 .quiz-inner {
   max-width: 700px;
   margin: 0 auto;
   position: relative;
   z-index: 2;
 }
-
 .quiz-label {
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 1rem;
-  /* green on dark bg — use lighter green */
   color: #6fcf97;
+  margin-bottom: 1rem;
 }
-
 .quiz-hed {
   font-family: var(--serif);
   font-size: clamp(26px, 4vw, 40px);
@@ -288,7 +273,6 @@ body {
   line-height: 1.2;
   margin-bottom: 0.75rem;
 }
-
 .quiz-sub {
   font-size: 16px;
   font-weight: 300;
@@ -296,15 +280,8 @@ body {
   margin-bottom: 3rem;
   line-height: 1.6;
 }
-
-/* Steps */
-.quiz-steps {
-  position: relative;
-}
-
-.quiz-step {
-  display: none;
-}
+.quiz-steps { position: relative; }
+.quiz-step { display: none; }
 .quiz-step.active { display: block; }
 
 .step-question {
@@ -314,14 +291,12 @@ body {
   margin-bottom: 1.5rem;
   line-height: 1.45;
 }
-
 .choice-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 10px;
   margin-bottom: 2rem;
 }
-
 .choice {
   display: flex;
   align-items: flex-start;
@@ -347,46 +322,20 @@ body {
   border-color: #6fcf97;
   color: #fff;
 }
-.choice-icon {
-  font-size: 22px;
-  line-height: 1;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.choice-text strong {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 2px;
-}
-.choice-text span {
-  font-size: 12px;
-  opacity: 0.65;
-  line-height: 1.45;
-}
+.choice-icon { font-size: 22px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+.choice-text strong { display: block; font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+.choice-text span { font-size: 12px; opacity: 0.65; line-height: 1.45; }
 
-/* Step progress */
-.step-progress {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 2rem;
-}
+.step-progress { display: flex; gap: 6px; margin-bottom: 2rem; }
 .step-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 6px; height: 6px; border-radius: 50%;
   background: rgba(255,255,255,0.2);
   transition: all 0.3s;
 }
 .step-dot.done { background: #6fcf97; }
 .step-dot.active { background: #fff; width: 18px; border-radius: 3px; }
 
-/* Nav buttons */
-.quiz-nav {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
+.quiz-nav { display: flex; gap: 10px; align-items: center; }
 .btn-next {
   padding: 11px 26px;
   background: #6fcf97;
@@ -417,18 +366,13 @@ body {
   margin-left: auto;
   font-size: 13px;
   color: rgba(255,255,255,0.3);
-  text-decoration: none;
   cursor: pointer;
   transition: color 0.2s;
+  text-decoration: none;
 }
 .skip-link:hover { color: rgba(255,255,255,0.6); }
 
-/* Result panel */
-.quiz-result {
-  display: none;
-  text-align: center;
-  padding: 2rem 0;
-}
+.quiz-result { display: none; text-align: center; padding: 2rem 0; }
 .quiz-result.show { display: block; }
 .result-hed {
   font-family: var(--serif);
@@ -443,19 +387,8 @@ body {
   margin-bottom: 2rem;
   line-height: 1.6;
 }
-.result-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 2rem;
-}
-.result-tag {
-  padding: 5px 14px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 500;
-}
+.result-tags { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 2rem; }
+.result-tag { padding: 5px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; }
 .result-tag-green { background: rgba(111,207,151,0.2); color: #6fcf97; border: 1px solid rgba(111,207,151,0.3); }
 .result-tag-warm  { background: rgba(200,87,42,0.2);   color: #e8906a; border: 1px solid rgba(200,87,42,0.3); }
 .result-tag-blue  { background: rgba(29,79,160,0.3);   color: #8ab4f8; border: 1px solid rgba(29,79,160,0.4); }
@@ -483,34 +416,21 @@ body {
   background: var(--cream);
   border-top: 1px solid var(--rule);
 }
-.how-inner {
-  max-width: 860px;
-  margin: 0 auto;
-}
+.how-inner { max-width: 860px; margin: 0 auto; }
 .section-eyebrow {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-bottom: 1rem;
+  font-size: 11px; font-weight: 500; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 1rem;
 }
 .section-hed {
   font-family: var(--serif);
   font-size: clamp(26px, 3.5vw, 38px);
-  font-weight: 600;
-  color: var(--ink);
-  margin-bottom: 0.75rem;
-  max-width: 500px;
+  font-weight: 600; color: var(--ink);
+  margin-bottom: 0.75rem; max-width: 500px;
 }
 .section-sub {
-  font-size: 16px;
-  color: var(--ink-soft);
-  line-height: 1.65;
-  margin-bottom: 3.5rem;
-  max-width: 520px;
+  font-size: 16px; color: var(--ink-soft);
+  line-height: 1.65; margin-bottom: 3.5rem; max-width: 520px;
 }
-
 .steps-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -521,38 +441,21 @@ body {
   border: 1px solid var(--rule);
   border-radius: 8px;
   padding: 1.5rem;
-  position: relative;
 }
 .step-num {
-  font-family: var(--serif);
-  font-size: 48px;
-  font-weight: 600;
-  color: var(--rule);
-  line-height: 1;
-  margin-bottom: 0.75rem;
+  font-family: var(--serif); font-size: 48px;
+  font-weight: 600; color: var(--rule); line-height: 1; margin-bottom: 0.75rem;
 }
-.step-card-hed {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--ink);
-  margin-bottom: 0.5rem;
-}
-.step-card-body {
-  font-size: 14px;
-  color: var(--ink-soft);
-  line-height: 1.6;
-}
+.step-card-hed { font-size: 16px; font-weight: 500; color: var(--ink); margin-bottom: 0.5rem; }
+.step-card-body { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
 
-/* ── Paths section ────────────────────────────────────────── */
+/* ── Paths ────────────────────────────────────────────────── */
 .paths-section {
   padding: 5rem 2rem;
   background: var(--paper);
   border-top: 1px solid var(--rule);
 }
-.paths-inner {
-  max-width: 860px;
-  margin: 0 auto;
-}
+.paths-inner { max-width: 860px; margin: 0 auto; }
 .paths-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
@@ -575,41 +478,14 @@ body {
   transform: translateY(-2px);
 }
 .path-icon { font-size: 28px; margin-bottom: 0.75rem; }
-.path-hed {
-  font-size: 16px;
-  font-weight: 500;
-  color: var(--ink);
-  margin-bottom: 0.4rem;
-}
-.path-body {
-  font-size: 13px;
-  color: var(--ink-soft);
-  line-height: 1.55;
-  margin-bottom: 1rem;
-}
-.path-link {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--accent);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
+.path-hed { font-size: 16px; font-weight: 500; color: var(--ink); margin-bottom: 0.4rem; }
+.path-body { font-size: 13px; color: var(--ink-soft); line-height: 1.55; margin-bottom: 1rem; }
+.path-link { font-size: 13px; font-weight: 500; color: var(--accent); display: flex; align-items: center; gap: 4px; }
 
 /* ── Footer ───────────────────────────────────────────────── */
-.footer {
-  background: var(--ink);
-  padding: 2rem;
-  text-align: center;
-}
-.footer p {
-  font-size: 13px;
-  color: rgba(255,255,255,0.3);
-}
-.footer a {
-  color: rgba(255,255,255,0.5);
-  text-decoration: none;
-}
+.footer { background: var(--ink); padding: 2rem; text-align: center; }
+.footer p { font-size: 13px; color: rgba(255,255,255,0.3); }
+.footer a { color: rgba(255,255,255,0.5); text-decoration: none; }
 .footer a:hover { color: #fff; }
 
 /* ── Animations ───────────────────────────────────────────── */
@@ -626,7 +502,6 @@ body {
   50%       { opacity: 0.8; }
 }
 
-/* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 600px) {
   .nav { padding: 1rem 1.25rem; }
   .hero-body { padding: 3rem 1.25rem 1.5rem; }
@@ -638,30 +513,24 @@ body {
 </head>
 <body>
 
-<!-- ── Nav ───────────────────────────────────────────────── -->
 <nav class="nav">
   <div class="nav-logo">Election Integrity <span>Resource Directory</span></div>
   <a href="index.html" class="nav-link">Browse the directory →</a>
 </nav>
 
-<!-- ── Hero ──────────────────────────────────────────────── -->
 <section class="hero">
-  <div><!-- spacer for grid --></div>
-
+  <div></div>
   <div class="hero-body">
     <div class="eyebrow">A guide for new civic voices</div>
-
     <h1 class="hero-hed">
       You want to help.<br>
       <em>Where do you begin?</em>
     </h1>
-
     <p class="hero-sub">
-      Every healthy democracy runs on people like you — people who decided,
-      at some point, that showing up mattered. This directory connects you
+      Every healthy democracy runs on people like you — people who decide,
+      at some point, that showing up matters. This directory connects you
       with organizations doing the real work of protecting free and fair elections.
     </p>
-
     <div class="stat-strip">
       <div class="stat">
         <div class="stat-num">46</div>
@@ -676,7 +545,6 @@ body {
         <div class="stat-label">States represented</div>
       </div>
     </div>
-
     <div class="cta-row">
       <a href="#quiz" class="btn-primary">
         Help me find my fit
@@ -685,16 +553,13 @@ body {
       <a href="index.html" class="btn-secondary">Browse all organizations</a>
     </div>
   </div>
-
   <div class="hero-footer">
     <div class="scroll-hint">Scroll to explore</div>
   </div>
 </section>
 
-<!-- ── Quiz ──────────────────────────────────────────────── -->
 <section class="quiz-section" id="quiz">
   <div class="quiz-inner">
-
     <div class="quiz-label">Quick guide</div>
     <h2 class="quiz-hed">Find your place in three questions</h2>
     <p class="quiz-sub">
@@ -702,14 +567,12 @@ body {
       organizations that match how you want to help.
     </p>
 
-    <!-- Progress dots -->
     <div class="step-progress" id="step-progress">
       <div class="step-dot active" id="dot-0"></div>
       <div class="step-dot" id="dot-1"></div>
       <div class="step-dot" id="dot-2"></div>
     </div>
 
-    <!-- Steps container -->
     <div class="quiz-steps" id="quiz-steps">
 
       <!-- Step 1 -->
@@ -717,7 +580,7 @@ body {
         <div class="step-question">What's pulling you toward this work?</div>
         <div class="choice-grid">
           <button class="choice" data-step="0" data-value="access"
-            onclick="selectChoice(this)">
+            data-filter="phase=Voter registration" onclick="selectChoice(this)">
             <span class="choice-icon">🗳️</span>
             <div class="choice-text">
               <strong>I want more people to vote</strong>
@@ -725,7 +588,7 @@ body {
             </div>
           </button>
           <button class="choice" data-step="0" data-value="integrity"
-            onclick="selectChoice(this)">
+            data-filter="voter=Roll monitoring" onclick="selectChoice(this)">
             <span class="choice-icon">🔍</span>
             <div class="choice-text">
               <strong>I want elections to be trustworthy</strong>
@@ -733,7 +596,7 @@ body {
             </div>
           </button>
           <button class="choice" data-step="0" data-value="rights"
-            onclick="selectChoice(this)">
+            data-filter="work=Legal" onclick="selectChoice(this)">
             <span class="choice-icon">⚖️</span>
             <div class="choice-text">
               <strong>I want to protect voting rights</strong>
@@ -741,7 +604,7 @@ body {
             </div>
           </button>
           <button class="choice" data-step="0" data-value="community"
-            onclick="selectChoice(this)">
+            data-filter="work=Community Organizing" onclick="selectChoice(this)">
             <span class="choice-icon">🤝</span>
             <div class="choice-text">
               <strong>I want to help my community specifically</strong>
@@ -848,22 +711,19 @@ body {
     <!-- Result -->
     <div class="quiz-result" id="quiz-result">
       <div class="result-hed" id="result-hed">Here's where you fit</div>
-      <p class="result-sub" id="result-sub">Based on your answers, here are the kinds of organizations that are most likely to be a good match for you.</p>
+      <p class="result-sub" id="result-sub"></p>
       <div class="result-tags" id="result-tags"></div>
       <a href="index.html" class="btn-explore" id="btn-explore">
         Explore matching organizations →
       </a>
       <div style="margin-top: 1rem;">
-        <a class="skip-link" onclick="resetQuiz()" style="color:rgba(255,255,255,0.4); cursor:pointer;">
-          Start over
-        </a>
+        <span class="skip-link" onclick="resetQuiz()">Start over</span>
       </div>
     </div>
-
-  </div><!-- /quiz-inner -->
+  </div>
 </section>
 
-<!-- ── How it works ───────────────────────────────────────── -->
+<!-- How it works -->
 <section class="how-section">
   <div class="how-inner">
     <div class="section-eyebrow">How it works</div>
@@ -873,57 +733,40 @@ body {
       Find an organization whose work speaks to you, then reach out.
       The real work happens in the world.
     </p>
-
     <div class="steps-grid">
       <div class="step-card">
         <div class="step-num">01</div>
         <div class="step-card-hed">Browse or filter</div>
-        <div class="step-card-body">
-          Search by name, filter by the kind of work, the election phase,
-          or the community you care most about. Every organization has a
-          plain-language description of what they do.
-        </div>
+        <div class="step-card-body">Search by name, filter by type of work, election phase, or the community you care about most. Every organization has a plain-language description of what they do.</div>
       </div>
       <div class="step-card">
         <div class="step-num">02</div>
         <div class="step-card-hed">Read the details</div>
-        <div class="step-card-body">
-          Click any organization to see their full profile — what they do,
-          where they operate, who they serve, and how to get in touch with them directly.
-        </div>
+        <div class="step-card-body">Click any organization to see their full profile — what they do, where they operate, who they serve, and how to get in touch.</div>
       </div>
       <div class="step-card">
         <div class="step-num">03</div>
         <div class="step-card-hed">Reach out</div>
-        <div class="step-card-body">
-          Contact the organization directly. Most welcome new volunteers.
-          Don't worry about having experience — most organizations will
-          train you for everything you need.
-        </div>
+        <div class="step-card-body">Contact the organization directly. Most welcome new volunteers and will train you for everything you need. No experience required.</div>
       </div>
       <div class="step-card">
         <div class="step-num">04</div>
         <div class="step-card-hed">Know an organization we missed?</div>
-        <div class="step-card-body">
-          Use the <em>List your group</em> tab to submit an organization
-          you think belongs here. Submissions are reviewed and added regularly.
-        </div>
+        <div class="step-card-body">Use the <em>List your group</em> tab to submit an organization you think belongs here. Submissions are reviewed and added regularly.</div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ── Paths ──────────────────────────────────────────────── -->
+<!-- Paths -->
 <section class="paths-section">
   <div class="paths-inner">
     <div class="section-eyebrow">Ways to get involved</div>
     <h2 class="section-hed">There's no wrong place to start</h2>
     <p class="section-sub">
       Elections involve a lot of moving parts. Here are some of the most
-      common ways everyday people contribute — each links to relevant
-      organizations in the directory.
+      common ways everyday people contribute.
     </p>
-
     <div class="paths-grid">
       <a class="path-card" href="index.html#phase=Voter registration">
         <div class="path-icon">📋</div>
@@ -946,13 +789,13 @@ body {
       <a class="path-card" href="index.html#work=Training">
         <div class="path-icon">🏫</div>
         <div class="path-hed">Poll work</div>
-        <div class="path-body">Serve as a poll worker (administering the election) or a poll watcher (observing for your party or organization).</div>
+        <div class="path-body">Serve as a poll worker (running the election) or poll watcher (observing for your party or organization).</div>
         <div class="path-link">Find organizations <span>→</span></div>
       </a>
       <a class="path-card" href="index.html#voter=Roll monitoring">
         <div class="path-icon">🔎</div>
         <div class="path-hed">Voter roll monitoring</div>
-        <div class="path-body">Help keep voter registration lists accurate — verifying records, flagging errors, and helping voters re-register when needed.</div>
+        <div class="path-body">Help keep voter registration lists accurate — verifying records, flagging errors, and helping voters re-register.</div>
         <div class="path-link">Find organizations <span>→</span></div>
       </a>
       <a class="path-card" href="index.html#work=Legal">
@@ -965,26 +808,26 @@ body {
   </div>
 </section>
 
-<!-- ── Footer ─────────────────────────────────────────────── -->
 <footer class="footer">
   <p>
     Election Integrity Resource Directory ·
     <a href="index.html">Browse organizations</a> ·
-    <a href="index.html" onclick="document.querySelector('.tab:nth-child(2)').click()">List your group</a>
+    <a href="index.html#submit">List your group</a>
   </p>
 </footer>
 
-<!-- ── Quiz logic ─────────────────────────────────────────── -->
 <script>
-const answers = { 0: null, 1: null, 2: null };
+// ── Quiz state ────────────────────────────────────────────────
+const answers  = { 0: null, 1: null, 2: null };
+const filters  = { 0: null };   // only Q1 carries a filter tag
 let currentStep = 0;
 
 function selectChoice(el) {
   const step = parseInt(el.dataset.step);
-  // Deselect siblings
   el.closest('.choice-grid').querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   answers[step] = el.dataset.value;
+  if (el.dataset.filter) filters[step] = el.dataset.filter; // e.g. "phase=Voter registration"
   document.getElementById(`next-${step}`).disabled = false;
 }
 
@@ -1005,20 +848,15 @@ function updateDots() {
 }
 
 function showResult() {
-  // Hide all steps and dots
   document.querySelectorAll('.quiz-step').forEach(s => s.style.display = 'none');
   document.getElementById('step-progress').style.display = 'none';
 
-  // Build result messaging based on answers
-  const a0 = answers[0]; // motivation
-  const a1 = answers[1]; // how
-  const a2 = answers[2]; // time
-
-  let hed = "You're ready to make a real difference.";
-  let sub = "Here are the types of organizations that match what you're looking for.";
+  const a0 = answers[0];
+  const a1 = answers[1];
+  let hed, sub;
   const tags = [];
 
-  // Motivation → suggested work types
+  // Headline + summary based on motivation (Q1)
   if (a0 === 'access') {
     hed = "You're a voter champion.";
     sub = "You want to expand who participates in democracy. Organizations focused on registration, GOTV, and community outreach are your natural home.";
@@ -1044,45 +882,40 @@ function showResult() {
     tags.push({ label: 'Door Knocking', cls: 'result-tag-warm' });
     tags.push({ label: 'Voting process information', cls: 'result-tag-blue' });
   } else {
-    // Skipped
+    hed = "You're ready to make a real difference.";
     sub = "Here's the full directory — browse by type of work, community focus, or election phase to find your fit.";
   }
 
-  // Time → add context
-  if (a2 === 'few-hours') {
-    tags.push({ label: 'Great for new volunteers', cls: 'result-tag-blue' });
-  } else if (a2 === 'election') {
-    tags.push({ label: 'Election-season intensive', cls: 'result-tag-blue' });
-  } else if (a2 === 'deep') {
-    tags.push({ label: 'Ongoing commitment', cls: 'result-tag-blue' });
-  }
+  // Add time-commitment context tag (Q3)
+  if (answers[2] === 'few-hours') tags.push({ label: 'Great for new volunteers', cls: 'result-tag-blue' });
+  else if (answers[2] === 'election') tags.push({ label: 'Election-season intensive', cls: 'result-tag-blue' });
+  else if (answers[2] === 'deep') tags.push({ label: 'Ongoing commitment', cls: 'result-tag-blue' });
 
-  // Build explore URL (simple — just opens the directory)
-  // In the future this could pass query params to pre-filter
-  const exploreUrl = 'index.html';
+  // Build the explore URL with a hash filter from Q1's answer
+  // index.html reads this hash and pre-sets the matching filter dropdown.
+  // Format: index.html#fieldKey=Value  e.g.  index.html#phase=Voter registration
+  const filterStr = filters[0];  // e.g. "phase=Voter registration"
+  const exploreUrl = filterStr ? `index.html#${encodeURIComponent(filterStr)}` : 'index.html';
 
   document.getElementById('result-hed').textContent = hed;
   document.getElementById('result-sub').textContent = sub;
-
   const tagsEl = document.getElementById('result-tags');
   tagsEl.innerHTML = '';
   tags.forEach(t => {
-    const span = document.createElement('span');
-    span.className = `result-tag ${t.cls}`;
-    span.textContent = t.label;
-    tagsEl.appendChild(span);
+    const s = document.createElement('span');
+    s.className = `result-tag ${t.cls}`;
+    s.textContent = t.label;
+    tagsEl.appendChild(s);
   });
-
   document.getElementById('btn-explore').href = exploreUrl;
   document.getElementById('quiz-result').classList.add('show');
 }
 
-function skipToDirectory() {
-  window.location.href = 'index.html';
-}
+function skipToDirectory() { window.location.href = 'index.html'; }
 
 function resetQuiz() {
   answers[0] = answers[1] = answers[2] = null;
+  filters[0] = null;
   currentStep = 0;
   document.querySelectorAll('.quiz-step').forEach((s, i) => {
     s.style.display = '';
@@ -1095,6 +928,5 @@ function resetQuiz() {
   updateDots();
 }
 </script>
-
 </body>
 </html>
