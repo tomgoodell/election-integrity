@@ -1856,27 +1856,27 @@ async function approvePending(i) {
     const newOrgId = orgRes.records[0].id;
 
     // Create OrgTag records for each tag
-    const tagPromises = [];
-    // Focus area tags from tagData
+    // Build tag list then create sequentially to respect Airtable rate limits
+    const tagsToCreate = [];
     Object.entries(p.tagData).forEach(([fieldKey, valStr]) => {
       const cat = categories.find(c => c.fieldKey === fieldKey);
       if (!cat) return;
       valStr.split(',').filter(Boolean).forEach(valName => {
         const catVal = (catValues[cat._id]||[]).find(v => v.value === valName);
-        if (catVal) {
-          tagPromises.push(atCreate(T_ORGTAGS, {OrgID: newOrgId, ValueID: catVal._id, TagType: fieldKey}));
-        }
+        if (catVal) tagsToCreate.push({OrgID: newOrgId, ValueID: catVal._id, TagType: fieldKey});
       });
     });
-    // Need tags
     const needCat = categories.find(c => c.fieldKey === 'need');
     if (needCat) {
       p.needs.split(',').filter(Boolean).forEach(valName => {
         const catVal = (catValues[needCat._id]||[]).find(v => v.value === valName);
-        if (catVal) tagPromises.push(atCreate(T_ORGTAGS, {OrgID: newOrgId, ValueID: catVal._id, TagType: 'need'}));
+        if (catVal) tagsToCreate.push({OrgID: newOrgId, ValueID: catVal._id, TagType: 'need'});
       });
     }
-    await Promise.all(tagPromises);
+    for (const fields of tagsToCreate) {
+      await atCreate(T_ORGTAGS, fields);
+      await new Promise(r => setTimeout(r, 220));
+    }
     await atDelete(T_PENDING, p._id);
     pending.splice(i,1);
     await loadOrgs();
@@ -2058,17 +2058,21 @@ async function saveEdit() {
     const existingTags = orgTags[orgId] || [];
     const existingValueIds = new Set(existingTags.map(t => t.valueId));
 
-    // Delete removed tags
+    // Delete removed tags sequentially to respect Airtable rate limits
     const toDelete = existingTags.filter(t => !newValueIds.has(t.valueId));
-    await Promise.all(toDelete.map(t => atDelete(T_ORGTAGS, t._tagId)));
+    for (const t of toDelete) {
+      await atDelete(T_ORGTAGS, t._tagId);
+      await new Promise(r => setTimeout(r, 220));
+    }
 
-    // Add new tags
+    // Add new tags sequentially to respect Airtable rate limits
     const toAdd = [...newValueIds].filter(vid => !existingValueIds.has(vid));
-    const cat = (vid) => categories.find(c => (catValues[c._id]||[]).some(v => v._id === vid));
-    await Promise.all(toAdd.map(vid => {
-      const c = cat(vid);
-      return atCreate(T_ORGTAGS, {OrgID: orgId, ValueID: vid, TagType: c ? c.fieldKey : ''});
-    }));
+    const catForVid = (vid) => categories.find(c => (catValues[c._id]||[]).some(v => v._id === vid));
+    for (const vid of toAdd) {
+      const c = catForVid(vid);
+      await atCreate(T_ORGTAGS, {OrgID: orgId, ValueID: vid, TagType: c ? c.fieldKey : ''});
+      await new Promise(r => setTimeout(r, 220));
+    }
 
     await loadOrgs();
     renderCards();
@@ -2082,9 +2086,12 @@ async function deleteOrg(orgId) {
   const org = orgs.find(o => o._id === orgId);
   if (!confirm(`Delete "${org?.name}" from the directory? This cannot be undone.`)) return;
   try {
-    // Delete all tags for this org first
+    // Delete all tags for this org first, sequentially
     const tags = orgTags[orgId] || [];
-    await Promise.all(tags.map(t => atDelete(T_ORGTAGS, t._tagId)));
+    for (const t of tags) {
+      await atDelete(T_ORGTAGS, t._tagId);
+      await new Promise(r => setTimeout(r, 220));
+    }
     await atDelete(T_ORGS, orgId);
     await loadOrgs();
     renderCards();
@@ -2107,15 +2114,16 @@ async function duplicateOrg(orgId) {
       State: org.state,
       NeedsText: org.needsText,
       AdminNotes: 'Duplicated from: ' + org.name,
-      Declined: true   // keep hidden until admin edits and re-enables
+      Declined: false
     });
     const newOrgId = newOrgRes.records[0].id;
 
-    // Copy all OrgTags from the original
+    // Copy all OrgTags from the original, sequentially
     const srcTags = orgTags[orgId] || [];
-    await Promise.all(srcTags.map(t =>
-      atCreate(T_ORGTAGS, { OrgID: newOrgId, ValueID: t.valueId, TagType: t.catKey || t.tagType })
-    ));
+    for (const t of srcTags) {
+      await atCreate(T_ORGTAGS, { OrgID: newOrgId, ValueID: t.valueId, TagType: t.catKey || t.tagType });
+      await new Promise(r => setTimeout(r, 220));
+    }
 
     // Reload and open the edit modal on the new copy
     await loadOrgs();
