@@ -490,7 +490,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <div class="form-group"><label>Phone number</label><input type="text" id="e-phone"></div>
     <div class="form-group"><label>Website</label><input type="text" id="e-website"></div>
     <div class="form-group"><label>Brief description *</label><textarea id="e-desc"></textarea></div>
-    <div class="form-group"><label>State / region</label><input type="text" id="e-state"></div>
+    <!-- State is now selected via checkboxes in the categories section below -->
     <div id="edit-categories"></div>
     <div class="form-group">
       <label>Needs</label>
@@ -1996,10 +1996,13 @@ function openEditModal(orgId) {
   document.getElementById('e-phone').value = org.phone;
   document.getElementById('e-website').value = org.website;
   document.getElementById('e-desc').value = org.desc;
-  document.getElementById('e-state').value = org.state;
   document.getElementById('e-needs-text').value = org.needsText;
   document.getElementById('e-declined').checked = !!org.declined;
   document.getElementById('e-admin-notes').value = org.adminNotes || '';
+
+  // Rebuild edit categories every time the modal opens so new
+  // categories (like States) added after page load are always shown
+  buildEditCategories();
 
   // Pre-check tags
   const tags = orgTags[orgId] || [];
@@ -2012,7 +2015,7 @@ function openEditModal(orgId) {
       cb.checked = checkedValueIds.has(cb.value);
     });
   });
-  // Strengths/Needs
+  // Needs
   document.querySelectorAll('.e-need').forEach(cb => cb.checked = checkedValueIds.has(cb.value));
 
   document.getElementById('edit-overlay').classList.add('open');
@@ -2038,7 +2041,6 @@ async function saveEdit() {
       Phone: document.getElementById('e-phone').value.trim(),
       Website: document.getElementById('e-website').value.trim(),
       Description: desc,
-      State: document.getElementById('e-state').value.trim(),
       NeedsText: document.getElementById('e-needs-text').value.trim(),
       Declined: document.getElementById('e-declined').checked,
       AdminNotes: document.getElementById('e-admin-notes').value.trim()
