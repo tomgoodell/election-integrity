@@ -1,0 +1,52 @@
+CategoryKey,Value,SortOrder,Active
+state,Alabama,1,true
+state,Alaska,2,true
+state,Arizona,3,true
+state,Arkansas,4,true
+state,California,5,true
+state,Colorado,6,true
+state,Connecticut,7,true
+state,Delaware,8,true
+state,Florida,9,true
+state,Georgia,10,true
+state,Hawaii,11,true
+state,Idaho,12,true
+state,Illinois,13,true
+state,Indiana,14,true
+state,Iowa,15,true
+state,Kansas,16,true
+state,Kentucky,17,true
+state,Louisiana,18,true
+state,Maine,19,true
+state,Maryland,20,true
+state,Massachusetts,21,true
+state,Michigan,22,true
+state,Minnesota,23,true
+state,Mississippi,24,true
+state,Missouri,25,true
+state,Montana,26,true
+state,Nebraska,27,true
+state,Nevada,28,true
+state,New Hampshire,29,true
+state,New Jersey,30,true
+state,New Mexico,31,true
+state,New York,32,true
+state,North Carolina,33,true
+state,North Dakota,34,true
+state,Ohio,35,true
+state,Oklahoma,36,true
+state,Oregon,37,true
+state,Pennsylvania,38,true
+state,Rhode Island,39,true
+state,South Carolina,40,true
+state,South Dakota,41,true
+state,Tennessee,42,true
+state,Texas,43,true
+state,Utah,44,true
+state,Vermont,45,true
+state,Virginia,46,true
+state,Washington,47,true
+state,Washington DC,48,true
+state,West Virginia,49,true
+state,Wisconsin,50,true
+state,Wyoming,51,true

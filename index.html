@@ -347,7 +347,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
       </div>
       <div class="filter-row" id="browse-filters">
         <!-- Built dynamically from Categories -->
-        <select id="f-state-filter" onchange="renderCards()"><option value="">All states</option><option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option><option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option><option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option><option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option><option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option><option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option><option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option><option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option><option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option><option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option><option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option><option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option><option>Wisconsin</option><option>Wyoming</option></select>
+        <!-- State filter is now a dynamic category filter like all others -->
       </div>
       <div class="view-controls">
         <div class="results-count" id="results-count"></div>
@@ -369,7 +369,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <div class="form-group"><label>Phone number</label><input type="text" id="f-phone" placeholder="e.g. 612-555-1234"></div>
     <div class="form-group"><label>Website</label><input type="text" id="f-website" placeholder="https://..."></div>
     <div class="form-group"><label>Brief description *</label><textarea id="f-desc" placeholder="1–3 sentences about your organization's mission"></textarea></div>
-    <div class="form-group"><label>State / region (if applicable)</label><input type="text" id="f-state" placeholder="e.g. Minnesota, Midwest"></div>
+    <!-- States are now selected as checkboxes in the Focus areas section below -->
     <hr class="section-divider">
     <span class="section-label">Focus areas</span>
     <!-- Category checkboxes built dynamically -->
@@ -816,12 +816,11 @@ function rebuildUI() {
 
 function buildBrowseFilters() {
   const row = document.getElementById('browse-filters');
-  const stateFilter = document.getElementById('f-state-filter');
 
-  // Tooltip text keyed by category fieldKey or by special 'state' key
+  // Tooltip text keyed by category fieldKey
   const tooltips = {
     geo:      'Geographic scope of activities',
-    state:    'What states do they operate in',
+    state:    'Search for organizations that operate in a particular state',
     work:     'Activities they engage in, services they provide',
     phase:    'Phases of the election process in which they engage',
     voter:    'Aspects of voter registration on which they focus',
@@ -843,23 +842,14 @@ function buildBrowseFilters() {
     return wrap;
   }
 
-  // Remove state filter wrapper (if already wrapped) or the filter itself
-  const existingStateWrap = stateFilter.closest('.filter-wrap');
-  if (existingStateWrap && existingStateWrap.parentNode === row) {
-    row.removeChild(existingStateWrap);
-  } else if (stateFilter.parentNode === row) {
-    row.removeChild(stateFilter);
-  }
-
   // Clear any previously built dynamic filter wrappers
   row.querySelectorAll('.filter-wrap').forEach(f => f.remove());
 
-  // Find the geo/region category so we can insert the state filter right after it
-  const geoCat = categories.find(c => c.fieldKey === 'geo' || c.name.toLowerCase().includes('region'));
   // Find the need category so we can insert it last
   const needCat = categories.find(c => c.fieldKey === 'need');
 
-  // Build one filter per active category, skipping need (appended last)
+  // Build one dropdown filter per active category, skipping need (appended last)
+  // State category gets a tooltip but is otherwise treated like all others
   categories.forEach(cat => {
     if (needCat && cat._id === needCat._id) return; // handled last
     const vals = getActiveValues(cat._id);
@@ -871,17 +861,7 @@ function buildBrowseFilters() {
     sel.innerHTML = `<option value="">All ${cat.name.toLowerCase()}</option>` +
       vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
     row.appendChild(makeWrap(sel, tooltips[cat.fieldKey] || ''));
-
-    // Insert the state filter right after the geo/region dropdown
-    if (geoCat && cat._id === geoCat._id) {
-      row.appendChild(makeWrap(stateFilter, tooltips['state']));
-    }
   });
-
-  // If no geo category was found, insert state filter now
-  if (!geoCat || !stateFilter.parentNode || stateFilter.parentNode.className !== 'filter-wrap') {
-    row.appendChild(makeWrap(stateFilter, tooltips['state']));
-  }
 
   // Append the needs filter last
   if (needCat) {
@@ -920,12 +900,13 @@ function buildSubmitCategories() {
     const isSingle = singleSelect.includes(cat.fieldKey);
     const inputType = isSingle ? 'radio' : 'checkbox';
     const cssClass = 'cb-' + cat._id;
+    const showSelectAll = ['demo','state'].includes(cat.fieldKey);
     html += `<div class="form-group">
       <label>${cat.name}</label>
       <div class="cb-columns" id="cb-cat-${cat._id}">
         ${vals.map(v => `<label><input type="${inputType}" class="${cssClass}" name="cat-${cat._id}" value="${v._id}"> ${v.value}</label>`).join('')}
       </div>
-      ${cat.fieldKey === 'demo' ? `<button type="button" class="select-all-btn" onclick="selectAllInCat('${cat._id}','${cssClass}')">Select all</button>` : ''}
+      ${showSelectAll ? `<button type="button" class="select-all-btn" onclick="selectAllInCat('${cat._id}','${cssClass}')">Select all</button>` : ''}
     </div>`;
   });
   container.innerHTML = html;
@@ -947,12 +928,13 @@ function buildEditCategories() {
     const isSingle = singleSelect.includes(cat.fieldKey);
     const inputType = isSingle ? 'radio' : 'checkbox';
     const cssClass = 'e-cat-' + cat._id;
+    const showSelectAll = ['demo','state'].includes(cat.fieldKey);
     html += `<div class="form-group">
       <label>${cat.name}</label>
       <div class="cb-columns" id="e-cat-${cat._id}">
         ${vals.map(v => `<label><input type="${inputType}" class="${cssClass}" name="ecat-${cat._id}" value="${v._id}"> ${v.value}</label>`).join('')}
       </div>
-      ${cat.fieldKey === 'demo' ? `<button type="button" class="select-all-btn" onclick="selectAllInCat('${cat._id}','${cssClass}')">Select all</button>` : ''}
+      ${showSelectAll ? `<button type="button" class="select-all-btn" onclick="selectAllInCat('${cat._id}','${cssClass}')">Select all</button>` : ''}
     </div>`;
   });
   container.innerHTML = html;
@@ -1104,8 +1086,6 @@ function clearFilters() {
   // Clear researcher filters
   const searchEl = document.getElementById('search');
   if (searchEl) searchEl.value = '';
-  const stateEl = document.getElementById('f-state-filter');
-  if (stateEl) stateEl.value = '';
   document.querySelectorAll('.dynamic-filter').forEach(s => s.value = '');
   activeLetter = '';
   // Clear volunteer filters
@@ -1155,13 +1135,12 @@ function getActiveFilters() {
   return filters;
 }
 
-function orgMatchesFilters(org, q, catFilters, stateFilter) {
+function orgMatchesFilters(org, q, catFilters) {
   const tags = orgTags[org._id] || [];
   const tagValues = tags.map(t => t.value).join(' ').toLowerCase();
   const blob = [org.name, org.desc, org.state, org.needsText, tagValues].join(' ').toLowerCase();
 
   if (q && !blob.includes(q)) return false;
-  if (stateFilter && !org.state.toLowerCase().includes(stateFilter.toLowerCase())) return false;
 
   for (const [catId, valueId] of Object.entries(catFilters)) {
     if (!tags.some(t => t.valueId === valueId)) return false;
@@ -1190,11 +1169,14 @@ function buildCardHtml(org, i, alwaysDesc, alwaysTags) {
     vals.slice(0,3).map(v => `<span class="tag tag-${key}">${v}</span>`).join('')
   ).join('') : '';
   const descEscaped = org.desc ? org.desc.replace(/"/g, '&quot;') : '';
+  // Show state tags in the geo line; fall back to org.state text if no state tags
+  const stateTags = tags.filter(t => t.catKey === 'state').map(t => t.value);
+  const geoLine = stateTags.length ? stateTags.join(', ') : (org.state || '');
   return `<div class="card${useDesc ? '' : ' card-compact'}${useTags ? '' : ' card-notags'}" onclick="openModal(${i})">
     <div class="card-name-wrap">
       <span class="card-name">${org.name}</span>${descEscaped ? `<div class="card-name-tooltip">${org.desc}</div>` : ''}
     </div>
-    <div class="card-geo">${org.state || ''}</div>
+    <div class="card-geo">${geoLine}</div>
     <div class="card-desc">${org.desc}</div>
     ${useTags ? `<div class="tags">${tagHtml}</div>` : ''}
   </div>`;
@@ -1235,10 +1217,9 @@ function renderVolunteerCards() {
 
 function renderResearcherCards() {
   const q = document.getElementById('search').value.toLowerCase();
-  const stateFilter = document.getElementById('f-state-filter').value;
   const catFilters = getActiveFilters();
 
-  let filtered = orgs.filter(o => !o.declined && orgMatchesFilters(o, q, catFilters, stateFilter));
+  let filtered = orgs.filter(o => !o.declined && orgMatchesFilters(o, q, catFilters));
   if (activeLetter) filtered = filtered.filter(o => o.name[0].toUpperCase() === activeLetter);
   filtered.sort((a,b) => a.name.localeCompare(b.name));
 
@@ -1277,7 +1258,9 @@ function openModal(i) {
   const org = window._filtered[i];
   if (!org) return;
   document.getElementById('modal-name').textContent = org.name;
-  document.getElementById('modal-geo').textContent = org.state || '';
+  // Show state tags if present, fall back to org.state text
+  const modalStateTags = (orgTags[org._id] || []).filter(t => t.catKey === 'state').map(t => t.value);
+  document.getElementById('modal-geo').textContent = modalStateTags.length ? modalStateTags.join(', ') : (org.state || '');
   document.getElementById('modal-desc').textContent = org.desc;
 
   const tags = orgTags[org._id] || [];
@@ -1363,7 +1346,7 @@ async function submitGroup() {
       Phone: document.getElementById('f-phone').value.trim(),
       Website: document.getElementById('f-website').value.trim(),
       Description: desc,
-      State: document.getElementById('f-state').value.trim(),
+      State: '', // State now stored as OrgTags via tagData
       Needs: getCheckedValues('cb-need').map(vid => (valueIndex[vid]||{}).value||vid).join(','),
       NeedsText: document.getElementById('f-needs-text').value.trim(),
       TagData: JSON.stringify(tagData),
@@ -1385,7 +1368,7 @@ function closeSuccessModal() {
 }
 
 function cancelForm() {
-  ['f-name','f-email','f-phone','f-desc','f-website','f-state','f-needs-text'].forEach(id => {
+  ['f-name','f-email','f-phone','f-desc','f-website','f-needs-text'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1957,6 +1940,7 @@ function renderApproved() {
       ${org.adminNotes ? `<div class="notes-badge">📝 ${org.adminNotes}</div>` : ''}
       <div class="admin-actions">
         <button class="btn-edit" onclick="openEditModal('${org._id}')">Edit</button>
+        <button class="btn-approve" onclick="duplicateOrg('${org._id}')">Duplicate</button>
         <button class="btn-delete" onclick="deleteOrg('${org._id}')">Delete</button>
       </div>
     </div>`).join('');
@@ -2104,6 +2088,40 @@ async function deleteOrg(orgId) {
     renderCards();
     renderApproved();
   } catch(e) { alert('Error deleting: ' + e.message); }
+}
+
+async function duplicateOrg(orgId) {
+  const org = orgs.find(o => o._id === orgId);
+  if (!org) return;
+  if (!confirm(`Duplicate "${org.name}"? A copy will be created and opened for editing.`)) return;
+  try {
+    // Create new org record copying all fields, marking as declined until edited
+    const newOrgRes = await atCreate(T_ORGS, {
+      Name: org.name + ' (copy)',
+      Description: org.desc,
+      Email: org.email,
+      Phone: org.phone,
+      Website: org.website,
+      State: org.state,
+      NeedsText: org.needsText,
+      AdminNotes: 'Duplicated from: ' + org.name,
+      Declined: true   // keep hidden until admin edits and re-enables
+    });
+    const newOrgId = newOrgRes.records[0].id;
+
+    // Copy all OrgTags from the original
+    const srcTags = orgTags[orgId] || [];
+    await Promise.all(srcTags.map(t =>
+      atCreate(T_ORGTAGS, { OrgID: newOrgId, ValueID: t.valueId, TagType: t.catKey || t.tagType })
+    ));
+
+    // Reload and open the edit modal on the new copy
+    await loadOrgs();
+    renderCards();
+    renderApproved();
+    // Open the edit modal so admin can rename and adjust immediately
+    openEditModal(newOrgId);
+  } catch(e) { alert('Error duplicating: ' + e.message); }
 }
 
 // ── Lists/Category Admin ───────────────────────────────────────
