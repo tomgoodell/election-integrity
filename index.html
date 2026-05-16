@@ -186,6 +186,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .btn-edit:hover { background: #e8e8e5; }
 .btn-delete { padding: 6px 16px; font-size: 13px; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 8px; cursor: pointer; font-family: inherit; }
 .btn-delete:hover { background: #f5c4b3; }
+.btn-undecline { padding: 6px 16px; font-size: 13px; background: #e1f5ee; color: #085041; border: 1px solid #9fe1cb; border-radius: 8px; cursor: pointer; font-family: inherit; }
+.btn-undecline:hover { background: #9fe1cb; }
+/* Admin-only fields */
+.admin-only-section { background: #fdf8ee; border: 1px solid #e8d8a0; border-radius: 8px; padding: 1rem 1.25rem; margin-top: 1.25rem; }
+.admin-only-label { font-size: 11px; font-weight: 600; color: #7a6010; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 6px; }
+.admin-only-label::before { content: "🔒"; font-size: 12px; }
+.declined-badge { display: inline-block; font-size: 11px; font-weight: 500; background: #faece7; color: #712b13; border: 1px solid #f5c4b3; border-radius: 4px; padding: 2px 8px; margin-left: 8px; vertical-align: middle; }
+.notes-badge { display: inline-block; font-size: 11px; color: #7a6010; background: #fdf8ee; border: 1px solid #e8d8a0; border-radius: 4px; padding: 2px 8px; margin-top: 4px; }
 /* Map filters */
 .map-filter-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
 .map-filter-label { font-size:12px; font-weight:500; color:#888; text-transform:uppercase; letter-spacing:0.05em; min-width:60px; }
@@ -417,6 +425,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
         <label class="admin-nav-item" id="admin-nav-approved" onclick="showAdminSection('approved')">
           <input type="radio" name="admin-section"> Approved organizations
         </label>
+        <label class="admin-nav-item" id="admin-nav-declined" onclick="showAdminSection('declined')">
+          <input type="radio" name="admin-section"> Declined organizations
+        </label>
         <label class="admin-nav-item" id="admin-nav-lists" onclick="showAdminSection('lists')">
           <input type="radio" name="admin-section"> Manage lists
         </label>
@@ -428,6 +439,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
       <div id="admin-section-approved" style="display:none">
         <p class="admin-section-sub">Edit or remove any approved listing.</p>
         <div id="approved-container"></div>
+      </div>
+      <div id="admin-section-declined" style="display:none">
+        <p class="admin-section-sub">Organizations marked as declined. They are hidden from the public directory but remain in the database. You can reinstate them at any time.</p>
+        <div id="declined-container"></div>
       </div>
       <div id="admin-section-lists" style="display:none">
         <p class="admin-section-sub">Manage categories and their values. Hidden values are preserved in existing data but no longer appear as options.</p>
@@ -481,6 +496,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
       <label>Needs</label>
       <div class="cb-columns" id="e-need-container" style="margin-bottom:8px"></div>
       <textarea id="e-needs-text" placeholder="Additional details (optional)"></textarea>
+    </div>
+    <!-- Admin-only section -->
+    <div class="admin-only-section">
+      <div class="admin-only-label">Admin only — not visible to organizations</div>
+      <div class="form-group" style="margin-bottom:0.75rem">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:14px;color:#1a1a1a">
+          <input type="checkbox" id="e-declined" style="width:15px;height:15px;accent-color:#712b13;cursor:pointer">
+          Declined — hide from public directory
+        </label>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>Admin notes</label>
+        <textarea id="e-admin-notes" placeholder="Reason for declining, follow-up needed, etc." style="min-height:70px"></textarea>
+      </div>
     </div>
     <button class="save-btn" id="save-btn" onclick="saveEdit()">Save changes</button>
   </div>
@@ -705,7 +734,9 @@ async function loadOrgs() {
     website: r.fields.Website||'',
     state: r.fields.State||'',
     strengthsText: '',
-    needsText: r.fields.NeedsText||''
+    needsText: r.fields.NeedsText||'',
+    declined: !!r.fields.Declined,
+    adminNotes: r.fields.AdminNotes||''
   }));
   orgTags = {};
   tagRecords.forEach(r => {
@@ -1174,6 +1205,7 @@ function renderVolunteerCards() {
   const q = (document.getElementById('friendly-search').value || '').toLowerCase();
   // Chip filters: chipFilters[catId] = valueId or null
   const filtered = orgs.filter(o => {
+    if (o.declined) return false; // hidden from public
     const tags = orgTags[o._id] || [];
     const blob = [o.name, o.desc, o.state, o.needsText,
       tags.map(t => t.value).join(' ')].join(' ').toLowerCase();
@@ -1206,7 +1238,7 @@ function renderResearcherCards() {
   const stateFilter = document.getElementById('f-state-filter').value;
   const catFilters = getActiveFilters();
 
-  let filtered = orgs.filter(o => orgMatchesFilters(o, q, catFilters, stateFilter));
+  let filtered = orgs.filter(o => !o.declined && orgMatchesFilters(o, q, catFilters, stateFilter));
   if (activeLetter) filtered = filtered.filter(o => o.name[0].toUpperCase() === activeLetter);
   filtered.sort((a,b) => a.name.localeCompare(b.name));
 
@@ -1771,11 +1803,12 @@ function renderMap() {
 // rejectPending(i)     — deletes from Pending
 // renderApproved()     — draws approved org cards with Edit/Delete buttons
 function showAdminSection(section) {
-  ['pending','approved','lists'].forEach(s => {
+  ['pending','approved','declined','lists'].forEach(s => {
     document.getElementById('admin-section-' + s).style.display = s===section ? 'block' : 'none';
     document.getElementById('admin-nav-' + s).classList.toggle('active', s===section);
   });
   if (section === 'approved') renderApproved();
+  if (section === 'declined') renderDeclined();
   if (section === 'lists') renderListsAdmin();
 }
 
@@ -1821,7 +1854,8 @@ function renderPending() {
       </div>
       <div class="admin-actions">
         <button class="btn-approve" onclick="approvePending(${i})">Approve</button>
-        <button class="btn-reject" onclick="rejectPending(${i})">Reject</button>
+        <button class="btn-reject" onclick="rejectPending(${i})">Reject & delete</button>
+        <button class="btn-edit" onclick="declinePending(${i})">Decline & keep</button>
       </div>
     </div>`).join('');
 }
@@ -1876,19 +1910,83 @@ async function rejectPending(i) {
   } catch(e) { alert('Error rejecting: ' + e.message); }
 }
 
+async function declinePending(i) {
+  // Approve the org into the Organizations table but immediately mark it Declined.
+  // This preserves it in the database with admin notes, hidden from public view.
+  const notes = prompt('Optional: enter a reason for declining (visible to admins only):', '');
+  if (notes === null) return; // user cancelled
+  const p = pending[i];
+  try {
+    const orgRes = await atCreate(T_ORGS, {
+      Name: p.name, Email: p.email, Phone: p.phone, Website: p.website,
+      Description: p.desc, State: p.state, NeedsText: p.needsText,
+      Declined: true,
+      AdminNotes: notes,
+      SubmittedAt: new Date().toISOString()
+    });
+    const newOrgId = orgRes.records[0].id;
+    // Still create tags so the record is complete
+    const tagPromises = [];
+    Object.entries(p.tagData).forEach(([fieldKey, valStr]) => {
+      const cat = categories.find(c => c.fieldKey === fieldKey);
+      if (!cat) return;
+      valStr.split(',').filter(Boolean).forEach(valName => {
+        const catVal = (catValues[cat._id]||[]).find(v => v.value === valName);
+        if (catVal) tagPromises.push(atCreate(T_ORGTAGS, {OrgID: newOrgId, ValueID: catVal._id, TagType: fieldKey}));
+      });
+    });
+    await Promise.all(tagPromises);
+    await atDelete(T_PENDING, p._id);
+    pending.splice(i,1);
+    await loadOrgs();
+    renderCards();
+    renderPending();
+    alert(`"${p.name}" has been declined and saved to the Declined organizations tab.`);
+  } catch(e) { alert('Error declining: ' + e.message); }
+}
+
 function renderApproved() {
   const c = document.getElementById('approved-container');
-  if (!orgs.length) { c.innerHTML = '<p style="font-size:14px;color:#888">No approved organizations yet.</p>'; return; }
-  c.innerHTML = [...orgs].sort((a,b)=>a.name.localeCompare(b.name)).map((org,i) => `
+  const active = [...orgs].filter(o => !o.declined).sort((a,b)=>a.name.localeCompare(b.name));
+  if (!active.length) { c.innerHTML = '<p style="font-size:14px;color:#888">No approved organizations yet.</p>'; return; }
+  c.innerHTML = active.map(org => `
     <div class="admin-card">
       <div style="font-weight:500;font-size:15px">${org.name}</div>
       <div style="font-size:12px;color:#888;margin:2px 0 6px">${org.state}</div>
       <div style="font-size:13px;color:#555;line-height:1.5">${org.desc}</div>
+      ${org.adminNotes ? `<div class="notes-badge">📝 ${org.adminNotes}</div>` : ''}
       <div class="admin-actions">
         <button class="btn-edit" onclick="openEditModal('${org._id}')">Edit</button>
         <button class="btn-delete" onclick="deleteOrg('${org._id}')">Delete</button>
       </div>
     </div>`).join('');
+}
+
+function renderDeclined() {
+  const c = document.getElementById('declined-container');
+  const declined = [...orgs].filter(o => o.declined).sort((a,b)=>a.name.localeCompare(b.name));
+  if (!declined.length) { c.innerHTML = '<p style="font-size:14px;color:#888">No declined organizations.</p>'; return; }
+  c.innerHTML = declined.map(org => `
+    <div class="admin-card" style="opacity:0.85;border-color:#f5c4b3">
+      <div style="font-weight:500;font-size:15px">${org.name} <span class="declined-badge">Declined</span></div>
+      <div style="font-size:12px;color:#888;margin:2px 0 6px">${org.state}</div>
+      <div style="font-size:13px;color:#555;line-height:1.5">${org.desc}</div>
+      ${org.adminNotes ? `<div class="notes-badge">📝 ${org.adminNotes}</div>` : ''}
+      <div class="admin-actions">
+        <button class="btn-undecline" onclick="reinstateOrg('${org._id}')">Reinstate</button>
+        <button class="btn-edit" onclick="openEditModal('${org._id}')">Edit</button>
+        <button class="btn-delete" onclick="deleteOrg('${org._id}')">Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+async function reinstateOrg(orgId) {
+  try {
+    await atUpdate(T_ORGS, orgId, { Declined: false });
+    await loadOrgs();
+    renderCards();
+    renderDeclined();
+  } catch(e) { alert('Error reinstating: ' + e.message); }
 }
 
 // ── Edit org modal ─────────────────────────────────────────────
@@ -1916,7 +2014,8 @@ function openEditModal(orgId) {
   document.getElementById('e-desc').value = org.desc;
   document.getElementById('e-state').value = org.state;
   document.getElementById('e-needs-text').value = org.needsText;
-  document.getElementById('e-needs-text').value = org.needsText;
+  document.getElementById('e-declined').checked = !!org.declined;
+  document.getElementById('e-admin-notes').value = org.adminNotes || '';
 
   // Pre-check tags
   const tags = orgTags[orgId] || [];
@@ -1956,7 +2055,9 @@ async function saveEdit() {
       Website: document.getElementById('e-website').value.trim(),
       Description: desc,
       State: document.getElementById('e-state').value.trim(),
-      NeedsText: document.getElementById('e-needs-text').value.trim()
+      NeedsText: document.getElementById('e-needs-text').value.trim(),
+      Declined: document.getElementById('e-declined').checked,
+      AdminNotes: document.getElementById('e-admin-notes').value.trim()
     });
 
     // Collect new tag value IDs
