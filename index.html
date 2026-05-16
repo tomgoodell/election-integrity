@@ -188,6 +188,35 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .progress-bar-fill { background: #1a1a1a; height: 8px; border-radius: 8px;
   width: 0%; transition: width 0.2s ease; }
 .progress-count { font-size: 12px; color: #aaa; margin-top: 8px; }
+/* Toast notifications */
+.toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  z-index: 500; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  pointer-events: none; }
+.toast { background: #1a1a1a; color: #fff; font-size: 14px; font-family: inherit;
+  padding: 11px 20px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  opacity: 0; transform: translateY(8px); transition: all 0.25s ease;
+  pointer-events: none; max-width: 420px; text-align: center; line-height: 1.45; }
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast.toast-success { background: #085041; }
+.toast.toast-error   { background: #a32d2d; }
+.toast.toast-warn    { background: #633806; }
+/* Custom confirm dialog */
+.confirm-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+  z-index: 450; align-items: center; justify-content: center; padding: 1rem; }
+.confirm-overlay.open { display: flex; }
+.confirm-box { background: #fff; border-radius: 12px; border: 1px solid #e0e0db;
+  padding: 1.75rem; width: 100%; max-width: 400px; }
+.confirm-title { font-size: 16px; font-weight: 500; color: #1a1a1a; margin-bottom: 8px; }
+.confirm-msg { font-size: 14px; color: #555; line-height: 1.55; margin-bottom: 1.5rem; }
+.confirm-btns { display: flex; gap: 8px; justify-content: flex-end; }
+.confirm-ok  { padding: 9px 20px; background: #1a1a1a; color: #fff; border: none;
+  border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
+.confirm-ok:hover { background: #333; }
+.confirm-ok.danger { background: #a32d2d; }
+.confirm-ok.danger:hover { background: #712b13; }
+.confirm-cancel { padding: 9px 20px; background: none; color: #666; border: 1px solid #ddd;
+  border-radius: 8px; font-size: 14px; cursor: pointer; font-family: inherit; }
+.confirm-cancel:hover { background: #f5f5f3; }
 .admin-card { background: #f9f9f7; border: 1px solid #e0e0db; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 12px; }
 .admin-actions { display: flex; gap: 8px; margin-top: 12px; }
 .btn-approve { padding: 6px 16px; font-size: 13px; background: #e1f5ee; color: #085041; border: 1px solid #9fe1cb; border-radius: 8px; cursor: pointer; font-family: inherit; }
@@ -1344,7 +1373,7 @@ function clearAllInCat(cssClass) {
 async function submitGroup() {
   const name = document.getElementById('f-name').value.trim();
   const desc = document.getElementById('f-desc').value.trim();
-  if (!name || !desc) { alert('Please fill in organization name and description.'); return; }
+  if (!name || !desc) { showToast('Please fill in organization name and description.','warn'); return; }
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Submitting…';
@@ -1375,7 +1404,7 @@ async function submitGroup() {
     document.getElementById('success-modal').classList.add('open');
     cancelForm();
   } catch(e) {
-    alert('Submission failed: ' + e.message);
+    showToast('Submission failed: ' + e.message, 'error');
   }
   btn.disabled = false; btn.textContent = 'Submit for review';
 }
@@ -1819,7 +1848,7 @@ function adminLogin() {
     document.getElementById('admin-login-view').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'block';
     loadPending();
-  } else { alert('Incorrect password.'); }
+  } else { showToast('Incorrect password.', 'warn'); }
 }
 
 async function loadPending() {
@@ -1900,7 +1929,7 @@ async function approvePending(i) {
     await loadOrgs();
     renderCards();
     renderPending();
-  } catch(e) { alert('Error approving: ' + e.message); }
+  } catch(e) { showToast('Error approving: ' + e.message, 'error'); }
 }
 
 async function rejectPending(i) {
@@ -1908,7 +1937,7 @@ async function rejectPending(i) {
     await atDelete(T_PENDING, pending[i]._id);
     pending.splice(i,1);
     renderPending();
-  } catch(e) { alert('Error rejecting: ' + e.message); }
+  } catch(e) { showToast('Error rejecting: ' + e.message, 'error'); }
 }
 
 async function declinePending(i) {
@@ -1942,8 +1971,8 @@ async function declinePending(i) {
     await loadOrgs();
     renderCards();
     renderPending();
-    alert(`"${p.name}" has been declined and saved to the Declined organizations tab.`);
-  } catch(e) { alert('Error declining: ' + e.message); }
+    showToast(`"${p.name}" declined and saved.`, 'success');
+  } catch(e) { showToast('Error declining: ' + e.message, 'error'); }
 }
 
 function setAdminLetter(l) {
@@ -2007,7 +2036,7 @@ async function reinstateOrg(orgId) {
     await loadOrgs();
     renderCards();
     renderDeclined();
-  } catch(e) { alert('Error reinstating: ' + e.message); }
+  } catch(e) { showToast('Error reinstating: ' + e.message, 'error'); }
 }
 
 // ── Edit org modal ─────────────────────────────────────────────
@@ -2065,13 +2094,28 @@ async function saveEdit() {
   const orgId = document.getElementById('e-id').value;
   const name = document.getElementById('e-name').value.trim();
   const desc = document.getElementById('e-desc').value.trim();
-  if (!name || !desc) { alert('Please fill in all required fields.'); return; }
+  if (!name || !desc) { showToast('Please fill in all required fields.', 'warn'); return; }
 
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
 
+  // Collect tag changes upfront so we can size the progress bar
+  const newValueIds = new Set();
+  categories.forEach(cat => {
+    if (cat.fieldKey === 'strength' || cat.fieldKey === 'need') return;
+    document.querySelectorAll('.e-cat-' + cat._id + ':checked').forEach(cb => newValueIds.add(cb.value));
+  });
+  document.querySelectorAll('.e-need:checked').forEach(cb => newValueIds.add(cb.value));
+
+  const existingTags = orgTags[orgId] || [];
+  const existingValueIds = new Set(existingTags.map(t => t.valueId));
+  const toDelete = existingTags.filter(t => !newValueIds.has(t.valueId));
+  const toAdd = [...newValueIds].filter(vid => !existingValueIds.has(vid));
+  const totalSteps = 1 + toDelete.length + toAdd.length; // 1 for org record update
+  const prog = showProgress('Saving organization', name, totalSteps);
+
   try {
-    // Update org fields
+    // Update org record
     await atUpdate(T_ORGS, orgId, {
       Name: name,
       Email: document.getElementById('e-email').value.trim(),
@@ -2082,46 +2126,38 @@ async function saveEdit() {
       Declined: document.getElementById('e-declined').checked,
       AdminNotes: document.getElementById('e-admin-notes').value.trim()
     });
+    updateProgress(prog, 'Record updated');
 
-    // Collect new tag value IDs
-    const newValueIds = new Set();
-    categories.forEach(cat => {
-      if (cat.fieldKey === 'strength' || cat.fieldKey === 'need') return;
-      document.querySelectorAll('.e-cat-' + cat._id + ':checked').forEach(cb => newValueIds.add(cb.value));
-    });
-    document.querySelectorAll('.e-need:checked').forEach(cb => newValueIds.add(cb.value));
-
-    // Existing tags
-    const existingTags = orgTags[orgId] || [];
-    const existingValueIds = new Set(existingTags.map(t => t.valueId));
-
-    // Delete removed tags sequentially to respect Airtable rate limits
-    const toDelete = existingTags.filter(t => !newValueIds.has(t.valueId));
+    // Delete removed tags
+    const catForVid = (vid) => categories.find(c => (catValues[c._id]||[]).some(v => v._id === vid));
     for (const t of toDelete) {
       await atDelete(T_ORGTAGS, t._tagId);
       await new Promise(r => setTimeout(r, 220));
+      updateProgress(prog, 'Removed: ' + t.value);
     }
 
-    // Add new tags sequentially to respect Airtable rate limits
-    const toAdd = [...newValueIds].filter(vid => !existingValueIds.has(vid));
-    const catForVid = (vid) => categories.find(c => (catValues[c._id]||[]).some(v => v._id === vid));
+    // Add new tags
     for (const vid of toAdd) {
       const c = catForVid(vid);
       await atCreate(T_ORGTAGS, {OrgID: orgId, ValueID: vid, TagType: c ? c.fieldKey : ''});
       await new Promise(r => setTimeout(r, 220));
+      const label = (valueIndex[vid] || {}).value || '';
+      updateProgress(prog, 'Added: ' + label);
     }
 
+    hideProgress();
+    showToast('Saved successfully', 'success');
     await loadOrgs();
     renderCards();
     renderApproved();
     closeEditModalDirect();
-  } catch(e) { alert('Error saving: ' + e.message); }
+  } catch(e) { hideProgress(); showToast('Error saving: ' + e.message, 'error'); }
   btn.disabled = false; btn.textContent = 'Save changes';
 }
 
 async function deleteOrg(orgId) {
   const org = orgs.find(o => o._id === orgId);
-  if (!confirm(`Delete "${org?.name}" from the directory? This cannot be undone.`)) return;
+  if (!await showConfirm('Delete organization', `Delete "${org?.name}" from the directory? This cannot be undone.`, 'Delete', true)) return;
   const tags = orgTags[orgId] || [];
   const prog = showProgress('Deleting organization', org?.name || '', tags.length + 1);
   try {
@@ -2134,10 +2170,53 @@ async function deleteOrg(orgId) {
     await atDelete(T_ORGS, orgId);
     updateProgress(prog, 'Record deleted');
     hideProgress();
+    showToast('Organization deleted', 'success');
     await loadOrgs();
     renderCards();
     renderApproved();
-  } catch(e) { hideProgress(); alert('Error deleting: ' + e.message); }
+  } catch(e) { hideProgress(); showToast('Error deleting: ' + e.message, 'error'); }
+}
+
+// ── Toast notifications ────────────────────────────────────────
+// showToast(msg, type, duration)
+// type: 'success' | 'error' | 'warn' | '' (dark default)
+function showToast(msg, type='', duration=3500) {
+  const container = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' toast-' + type : '');
+  el.textContent = msg;
+  container.appendChild(el);
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => el.classList.add('show'));
+  });
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.remove(), 300);
+  }, duration);
+}
+
+// ── Custom confirm dialog ───────────────────────────────────────
+// showConfirm(title, msg, okLabel, danger) → Promise<boolean>
+function showConfirm(title, msg, okLabel='Confirm', danger=false) {
+  return new Promise(resolve => {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-msg').textContent = msg;
+    const okBtn = document.getElementById('confirm-ok-btn');
+    okBtn.textContent = okLabel;
+    okBtn.className = 'confirm-ok' + (danger ? ' danger' : '');
+    document.getElementById('confirm-overlay').classList.add('open');
+
+    function cleanup(result) {
+      document.getElementById('confirm-overlay').classList.remove('open');
+      okBtn.removeEventListener('click', onOk);
+      document.getElementById('confirm-cancel-btn').removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOk()     { cleanup(true);  }
+    function onCancel() { cleanup(false); }
+    okBtn.addEventListener('click', onOk);
+    document.getElementById('confirm-cancel-btn').addEventListener('click', onCancel);
+  });
 }
 
 // ── Progress bar helpers ───────────────────────────────────────
@@ -2163,7 +2242,7 @@ function hideProgress() {
 async function duplicateOrg(orgId) {
   const org = orgs.find(o => o._id === orgId);
   if (!org) return;
-  if (!confirm(`Duplicate "${org.name}"? A copy will be created and opened for editing.`)) return;
+  if (!await showConfirm('Duplicate organization', `Create a copy of "${org.name}"?`, 'Duplicate')) return;
   const srcTags = orgTags[orgId] || [];
   const prog = showProgress('Duplicating organization', org.name, srcTags.length + 1);
   try {
@@ -2190,11 +2269,12 @@ async function duplicateOrg(orgId) {
     }
 
     hideProgress();
+    showToast('Duplicate created — edit below', 'success');
     await loadOrgs();
     renderCards();
     renderApproved();
     openEditModal(newOrgId);
-  } catch(e) { hideProgress(); alert('Error duplicating: ' + e.message); }
+  } catch(e) { hideProgress(); showToast('Error duplicating: ' + e.message, 'error'); }
 }
 
 // ── Lists/Category Admin ───────────────────────────────────────
@@ -2272,7 +2352,7 @@ async function addCategory() {
   const keyEl = document.getElementById('new-cat-key');
   const name = nameEl.value.trim();
   const key = keyEl.value.trim().toLowerCase().replace(/\s+/g,'_');
-  if (!name || !key) { alert('Please enter both a category name and field key.'); return; }
+  if (!name || !key) { showToast('Please enter both a category name and field key.', 'warn'); return; }
   const sortOrder = categories.length + 1;
   try {
     await atCreate(T_CATS, {Name:name, FieldKey:key, SortOrder:sortOrder, Active:true});
@@ -2280,7 +2360,7 @@ async function addCategory() {
     await loadSchema();
     rebuildUI();
     renderListsAdmin();
-  } catch(e) { alert('Error adding category: ' + e.message); }
+  } catch(e) { showToast('Error adding category: ' + e.message, 'error'); }
 }
 
 async function toggleCategory(catId, currentActive) {
@@ -2290,7 +2370,7 @@ async function toggleCategory(catId, currentActive) {
     rebuildUI();
     renderCards();
     renderListsAdmin();
-  } catch(e) { alert('Error updating category: ' + e.message); }
+  } catch(e) { showToast('Error updating category: ' + e.message, 'error'); }
 }
 
 async function renameCategory(catId, currentName) {
@@ -2302,7 +2382,7 @@ async function renameCategory(catId, currentName) {
     rebuildUI();
     renderCards();
     renderListsAdmin();
-  } catch(e) { alert('Error renaming: ' + e.message); }
+  } catch(e) { showToast('Error renaming: ' + e.message, 'error'); }
 }
 
 async function addValue(catId) {
@@ -2325,7 +2405,7 @@ async function addValue(catId) {
     await loadSchema();
     rebuildUI();
     renderListsAdmin();
-  } catch(e) { alert('Error adding value: ' + e.message); }
+  } catch(e) { showToast('Error adding value: ' + e.message, 'error'); }
 }
 
 async function toggleValue(valId, currentActive, catId) {
@@ -2335,7 +2415,7 @@ async function toggleValue(valId, currentActive, catId) {
     rebuildUI();
     renderCards();
     renderListsAdmin();
-  } catch(e) { alert('Error updating value: ' + e.message); }
+  } catch(e) { showToast('Error updating value: ' + e.message, 'error'); }
 }
 
 async function renameValue(valId, currentValue, catId) {
@@ -2353,7 +2433,7 @@ async function renameValue(valId, currentValue, catId) {
     rebuildUI();
     renderCards();
     renderListsAdmin();
-  } catch(e) { alert('Error renaming value: ' + e.message); }
+  } catch(e) { showToast('Error renaming value: ' + e.message, 'error'); }
 }
 
 function toggleMapFullscreen() {
@@ -2403,6 +2483,21 @@ init();
       <div class="progress-bar-fill" id="progress-bar-fill"></div>
     </div>
     <div class="progress-count" id="progress-count"></div>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATIONS -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- CUSTOM CONFIRM DIALOG -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirm-title"></div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" id="confirm-cancel-btn">Cancel</button>
+      <button class="confirm-ok" id="confirm-ok-btn">Confirm</button>
+    </div>
   </div>
 </div>
 
