@@ -588,7 +588,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 // To add a new category: Admin → Manage lists → Add category.
 // No code changes required — the UI rebuilds dynamically from Airtable.
 //
-const ADMIN_PASSWORD = 'VerilyNow74';
+// The admin password is NOT stored in this file. It's entered at login, held in memory only
+// for the session, validated server-side, and sent as the X-Admin-Password header on
+// privileged calls. (The real check lives in functions/airtable.js against the ADMIN_PASSWORD
+// environment variable.)
+let adminSecret = '';
 const API = '/airtable';
 const T_ORGS     = 'Organizations';
 const T_PENDING  = 'Pending';
@@ -608,15 +612,19 @@ const T_ORGTAGS  = 'OrgTags';
 //
 // Errors: all helpers throw on non-OK responses so callers can
 // use try/catch. Error messages include the HTTP status code.
+// adminSecret is '' for public visitors (the server applies the public rules) and is set to the
+// entered password once an admin logs in (the server then authorizes privileged calls).
 async function atGet(table) {
-  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`);
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
+    headers: {'X-Admin-Password': adminSecret}
+  });
   if (!res.ok) throw new Error(`Server error ${res.status}`);
   const data = await res.json();
   return data.records;
 }
 async function atCreate(table, fields) {
   const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
-    method: 'POST', headers: {'Content-Type':'application/json'},
+    method: 'POST', headers: {'Content-Type':'application/json', 'X-Admin-Password': adminSecret},
     body: JSON.stringify({records:[{fields}]})
   });
   if (!res.ok) throw new Error(`Server error ${res.status}`);
@@ -624,14 +632,16 @@ async function atCreate(table, fields) {
 }
 async function atUpdate(table, id, fields) {
   const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {
-    method: 'PATCH', headers: {'Content-Type':'application/json'},
+    method: 'PATCH', headers: {'Content-Type':'application/json', 'X-Admin-Password': adminSecret},
     body: JSON.stringify({fields})
   });
   if (!res.ok) throw new Error(`Server error ${res.status}`);
   return res.json();
 }
 async function atDelete(table, id) {
-  const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {method:'DELETE'});
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {
+    method:'DELETE', headers: {'X-Admin-Password': adminSecret}
+  });
   if (!res.ok) throw new Error(`Server error ${res.status}`);
   return res.json();
 }
@@ -1842,13 +1852,21 @@ function showAdminSection(section) {
   if (section === 'lists') renderListsAdmin();
 }
 
-function adminLogin() {
-  if (document.getElementById('admin-pw').value === ADMIN_PASSWORD) {
+async function adminLogin() {
+  const entered = document.getElementById('admin-pw').value;
+  if (!entered) { showToast('Enter the admin password.', 'warn'); return; }
+  adminSecret = entered;  // sent as X-Admin-Password on privileged calls; verified server-side
+  try {
+    const res = await fetch(`${API}?auth=1`, { headers: {'X-Admin-Password': adminSecret} });
+    if (!res.ok) throw new Error('unauthorized');
     adminLoggedIn = true;
     document.getElementById('admin-login-view').style.display = 'none';
     document.getElementById('admin-panel').style.display = 'block';
     loadPending();
-  } else { showToast('Incorrect password.', 'warn'); }
+  } catch (e) {
+    adminSecret = '';
+    showToast('Incorrect password.', 'warn');
+  }
 }
 
 async function loadPending() {

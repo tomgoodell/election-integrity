@@ -1,0 +1,10 @@
+# Local-only secrets — never commit
+.dev.vars
+.env
+.env.*
+
+# Wrangler local state
+.wrangler/
+
+# Node
+node_modules/
