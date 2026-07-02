@@ -5,7 +5,7 @@ How to back up and restore the **Airtable data**. (This does not back up code or
 
 ## Back up (do this before any big data change, and ~monthly)
 
-1. Go to **https://election-integrity.pages.dev/backup.html**
+1. Go to **https://election-integrity.pages.dev/backup**
 2. Enter the **admin password** (same one as the app's Admin tab).
 3. Click **Download backup**. It saves a timestamped `election-directory-backup-YYYY-MM-DD…json`
    containing all five tables: Organizations, OrgTags, Categories, CategoryValues, Pending.
@@ -22,7 +22,7 @@ Nothing is modified by a backup. It takes ~10–15 seconds.
 Use only to roll back to a known-good snapshot.
 
 1. **Take a fresh backup first** (so you can undo the undo).
-2. Go to **https://election-integrity.pages.dev/backup.html**, enter the admin password.
+2. Go to **https://election-integrity.pages.dev/backup**, enter the admin password.
 3. Under **Restore from backup**, choose a backup `.json` file and click **Restore from backup**.
 4. It **deletes all current Organizations, OrgTags, and Pending records and recreates them** from the
    file. It remaps record IDs so tags stay linked to the right orgs. **Categories and CategoryValues
@@ -48,7 +48,7 @@ Keep the base id and both secrets in your **password manager**, not in this repo
 
 ## Notes
 
-- The tool must be run from the live site (`/backup.html`) — it talks to the `/airtable` proxy on the
+- The tool must be run from the live site (`/backup`) — it talks to the `/airtable` proxy on the
   same domain. You can also run it locally against the live data via `wrangler pages dev` (see CLAUDE.md).
 - Superseded: the old browser-console `backup.js`/`restore.js` scripts (they hardcoded a now-revoked
   token and predate the admin-auth model). Don't use them.

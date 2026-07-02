@@ -5,8 +5,10 @@ an interactive network map, a public submission form, and an admin panel. Origin
 Claude *desktop* session; substantially reworked in Claude Code (security hardening + data model).
 See git history.
 
-- **Live site:** https://election-integrity.pages.dev/ — the app is served at the **root `/`**
-  (`/welcome` is the landing page; note `/index.html` returns empty on the deployed site, a Pages quirk).
+- **Live site:** https://election-integrity.pages.dev/ — the app is at the **root `/`**. Cloudflare
+  serves `.html` files **extension-less**: `welcome.html`→`/welcome`, `backup.html`→`/backup`,
+  `import.html`→`/import`, `add-states.html`→`/add-states`. The `.html` URL (and `/index.html`)
+  returns empty — always link/test the extension-less path.
 - **Hosting:** Cloudflare Pages, **auto-deploys on push to `main`** (GitHub → Cloudflare build).
   **This repo is public — never commit secrets.**
 - **Backend/data:** Airtable, reached **only** through the Cloudflare Pages Function at `/airtable`
