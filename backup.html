@@ -53,6 +53,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   </div>
   <div class="body">
 
+    <!-- ADMIN PASSWORD -->
+    <div class="section">
+      <h2>🔑 Admin password</h2>
+      <p>Required: backup reads the Pending table and restore writes records — both are admin-only.
+         Same password as the app's Admin tab.</p>
+      <input type="password" id="admin-pw" placeholder="Admin password"
+             style="width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;font-size:14px;font-family:inherit;">
+    </div>
+
     <!-- BACKUP -->
     <div class="section">
       <h2>📥 Back up database</h2>
@@ -93,21 +102,32 @@ const TABLES = ['Organizations','OrgTags','Categories','CategoryValues','Pending
 const RESTORE_TABLES = ['Organizations','OrgTags','Pending'];
 
 // ── API helpers ─────────────────────────────────────────────────────────────
+// Every call sends the admin password — the function requires it to read Pending and for any writes.
+function adminPw() { return document.getElementById('admin-pw').value; }
+function adminHeaders(extra) { return Object.assign({'X-Admin-Password': adminPw()}, extra || {}); }
+async function requireAdmin() {
+  const res = await fetch(`${API}?auth=1`, { cache:'no-store', headers: adminHeaders() });
+  if (!res.ok) throw new Error('Admin password is missing or incorrect.');
+}
 async function apiGet(table) {
-  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`);
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
+    cache: 'no-store', headers: adminHeaders()
+  });
   if (!res.ok) throw new Error(`GET ${table} → HTTP ${res.status}`);
   return (await res.json()).records;
 }
 async function apiCreate(table, fields) {
   const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
-    method: 'POST', headers: {'Content-Type':'application/json'},
+    method: 'POST', headers: adminHeaders({'Content-Type':'application/json'}),
     body: JSON.stringify({records:[{fields}]})
   });
   if (!res.ok) throw new Error(`POST ${table} → HTTP ${res.status}`);
   return (await res.json()).records[0].id;
 }
 async function apiDelete(table, id) {
-  const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {method:'DELETE'});
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}&id=${id}`, {
+    method:'DELETE', headers: adminHeaders()
+  });
   if (!res.ok) throw new Error(`DELETE ${table}/${id} → HTTP ${res.status}`);
 }
 async function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
@@ -130,6 +150,7 @@ async function runBackup() {
   btn.disabled = true; btn.textContent = 'Backing up…';
   clearLog();
   try {
+    await requireAdmin();
     const snapshot = { createdAt: new Date().toISOString(), tables: {} };
     for (const table of TABLES) {
       sep();
@@ -167,6 +188,7 @@ async function runRestore() {
   const fileInput = document.getElementById('restore-file');
   const btn = document.getElementById('restore-btn');
   if (!fileInput.files.length) { alert('Please choose a backup JSON file first.'); return; }
+  if (!adminPw()) { alert('Enter the admin password first.'); return; }
 
   const confirmed = confirm(
     'This will permanently delete all current Organizations, OrgTags, and Pending records ' +
@@ -178,6 +200,7 @@ async function runRestore() {
   clearLog();
 
   try {
+    await requireAdmin();
     // Read and parse backup file
     const text = await fileInput.files[0].text();
     const snapshot = JSON.parse(text);
