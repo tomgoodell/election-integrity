@@ -600,6 +600,13 @@ const T_CATS     = 'Categories';
 const T_CATVALS  = 'CategoryValues';
 const T_ORGTAGS  = 'OrgTags';
 
+// Category keys to hide from the PUBLIC interface: the filter dropdowns, the submission form, and
+// the tags shown on cards/modals. This is DISPLAY-ONLY — the underlying Airtable data (the category,
+// its values, and every org's tags) is left completely intact, so removing a key here fully restores
+// it. (Admin > Manage lists still lists these, so you can see/re-enable them there too.)
+//   'partisan' = the "Partisan affiliation" category, hidden 2026-07-01 at the owner's request.
+const HIDDEN_CAT_KEYS = ['partisan'];
+
 // ── Airtable helpers ───────────────────────────────────────────
 // Four core functions that wrap fetch() calls to the Cloudflare
 // Pages Function (/airtable). All Airtable API calls go through
@@ -615,7 +622,10 @@ const T_ORGTAGS  = 'OrgTags';
 // adminSecret is '' for public visitors (the server applies the public rules) and is set to the
 // entered password once an admin logs in (the server then authorizes privileged calls).
 async function atGet(table) {
+  // no-store: always pull fresh data (the directory is edited via the admin panel and by
+  // maintenance scripts, so a cached response can silently show stale orgs/tags).
   const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
+    cache: 'no-store',
     headers: {'X-Admin-Password': adminSecret}
   });
   if (!res.ok) throw new Error(`Server error ${res.status}`);
@@ -750,6 +760,7 @@ async function loadSchema() {
   categories = catRecords
     .map(r => ({ _id: r.id, name: r.fields.Name||'', fieldKey: r.fields.FieldKey||'', sortOrder: r.fields.SortOrder||0, active: !!r.fields.Active }))
     .filter(c => c.active)
+    .filter(c => !HIDDEN_CAT_KEYS.includes(c.fieldKey))   // hide categories listed in HIDDEN_CAT_KEYS
     .sort((a,b) => a.sortOrder - b.sortOrder);
 
   catValues = {};
@@ -1210,7 +1221,7 @@ function renderCards() {
 }
 
 function buildCardHtml(org, i, alwaysDesc, alwaysTags) {
-  const tags = orgTags[org._id] || [];
+  const tags = (orgTags[org._id] || []).filter(t => !HIDDEN_CAT_KEYS.includes(t.catKey));
   const tagsByKey = {};
   tags.forEach(t => {
     if (!tagsByKey[t.catKey]) tagsByKey[t.catKey] = [];
@@ -1316,7 +1327,7 @@ function openModal(i) {
   document.getElementById('modal-geo').textContent = modalStateTags.length ? modalStateTags.join(', ') : (org.state || '');
   document.getElementById('modal-desc').textContent = org.desc;
 
-  const tags = orgTags[org._id] || [];
+  const tags = (orgTags[org._id] || []).filter(t => !HIDDEN_CAT_KEYS.includes(t.catKey));
   // Group by category
   const byCat = {};
   tags.forEach(t => {
@@ -1452,8 +1463,8 @@ function cancelForm() {
 // Legend dots are clickable to isolate a group (mapIsolate state).
 // Clicking the same dot again or "Show all" resets isolation.
 //
-// The "State" filter is a special case — it matches against
-// org.state (free text) rather than OrgTags, using a contains check.
+// State is a normal tag category now — matched via OrgTags like every other filter.
+// (org.state free text is still shown on cards as HQ location, but not used for filtering.)
 //
 // In fullscreen mode, the Vis.js canvas fills the browser window.
 // The org detail modal is moved inside the fullscreen container
@@ -1517,18 +1528,14 @@ function initMapFilters() {
 }
 
 function buildCatOptions(selectedCatId) {
-  const stateOpt = '<option value="__state__">State</option>';
-  const catOpts = categories.map(c =>
+  // State is a normal tag category now (no free-text pseudo-filter). `categories` is
+  // already filtered to active rows at load, so inactive/blank junk never appears here.
+  return categories.map(c =>
     '<option value="' + c._id + '"' + (c._id === selectedCatId ? ' selected' : '') + '>' + c.name + '</option>'
   ).join('');
-  return stateOpt + catOpts;
 }
 
 function buildValOptions(catId, selectedValId) {
-  if (catId === '__state__') {
-    const states = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
-    return states.map(s => '<option value="__state__:' + s + '"' + (('__state__:' + s) === selectedValId ? ' selected' : '') + '>' + s + '</option>').join('');
-  }
   const vals = getActiveValues(catId);
   return vals.map(v => '<option value="' + v._id + '"' + (v._id === selectedValId ? ' selected' : '') + '>' + v.value + '</option>').join('');
 }
@@ -1645,16 +1652,11 @@ function onMapValChange(filterId) {
 
 function orgMatchesFilter(org, filter) {
   if (!filter.valueId) return false;
-  if (filter.valueId.startsWith('__state__:')) {
-    const state = filter.valueId.split(':')[1];
-    return org.state && org.state.toLowerCase().includes(state.toLowerCase());
-  }
   return (orgTags[org._id]||[]).some(function(t) { return t.valueId === filter.valueId; });
 }
 
 function getFilterValueName(filter) {
   if (!filter.valueId) return '';
-  if (filter.valueId.startsWith('__state__:')) return filter.valueId.split(':')[1];
   return (valueIndex[filter.valueId]||{}).value || filter.valueId;
 }
 
@@ -1668,15 +1670,18 @@ function renderMap() {
     mapIsolate = activeFilters.length === 3 ? 'all3' : 'both';
   }
 
+  // Declined orgs are hidden from the public map (same rule the Browse view applies).
+  const mapOrgs = orgs.filter(function(o) { return !o.declined; });
+
   // Determine which filters each org matches
   const orgMatchSets = {};
-  orgs.forEach(function(org) {
+  mapOrgs.forEach(function(org) {
     const matches = activeFilters.map(function(f) { return orgMatchesFilter(org, f); });
     orgMatchSets[org._id] = matches;
   });
 
   // Build nodes
-  const nodeData = orgs.map(function(org) {
+  const nodeData = mapOrgs.map(function(org) {
     const matches = orgMatchSets[org._id];
     const matchCount = matches.filter(Boolean).length;
     const label = org.name.length > 22 ? org.name.substring(0,20) + '...' : org.name;
@@ -1718,7 +1723,7 @@ function renderMap() {
   const edgeData = [];
   const edgeSet = new Set();
   activeFilters.forEach(function(filter, fi) {
-    const matched = orgs.filter(function(o) { return orgMatchSets[o._id][fi]; });
+    const matched = mapOrgs.filter(function(o) { return orgMatchSets[o._id][fi]; });
     const edgeColor = FILTER_COLORS[fi].border;
     for (let i = 0; i < matched.length; i++) {
       for (let j = i+1; j < matched.length; j++) {
@@ -1751,15 +1756,15 @@ function renderMap() {
     const name = getFilterValueName(filter);
     const c = FILTER_COLORS[fi];
     // Total orgs matching this filter (including those that also match other filters)
-    const count = orgs.filter(function(o) { return orgMatchSets[o._id][fi]; }).length;
+    const count = mapOrgs.filter(function(o) { return orgMatchSets[o._id][fi]; }).length;
     legendHtml += legendItem(c.bg, c.border, name + ' (' + count + ')', 'fi-' + fi);
   });
 
   if (activeFilters.length === 2) {
-    const bothCount = orgs.filter(function(o) { return orgMatchSets[o._id][0] && orgMatchSets[o._id][1]; }).length;
+    const bothCount = mapOrgs.filter(function(o) { return orgMatchSets[o._id][0] && orgMatchSets[o._id][1]; }).length;
     if (bothCount > 0) legendHtml += legendItem(BOTH_COLOR.bg, BOTH_COLOR.border, 'Both (' + bothCount + ')', 'both');
   } else if (activeFilters.length === 3) {
-    const allCount = orgs.filter(function(o) { return orgMatchSets[o._id].every(Boolean); }).length;
+    const allCount = mapOrgs.filter(function(o) { return orgMatchSets[o._id].every(Boolean); }).length;
     if (allCount > 0) legendHtml += legendItem(ALL3_COLOR.bg, ALL3_COLOR.border, 'All three (' + allCount + ')', 'all3');
   }
 
