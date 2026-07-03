@@ -378,6 +378,10 @@ body {
 .result-tag-green { background: rgba(111,207,151,0.2); color: #6fcf97; border: 1px solid rgba(111,207,151,0.3); }
 .result-tag-warm  { background: rgba(200,87,42,0.2);   color: #e8906a; border: 1px solid rgba(200,87,42,0.3); }
 .result-tag-blue  { background: rgba(29,79,160,0.3);   color: #8ab4f8; border: 1px solid rgba(29,79,160,0.4); }
+.result-matches { display: flex; flex-direction: column; gap: 10px; text-align: left; max-width: 520px; margin: 0 auto 2rem; }
+.match-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; padding: 12px 16px; }
+.match-name { font-size: 15px; font-weight: 500; color: #fff; }
+.match-desc { font-size: 13px; font-weight: 300; color: rgba(255,255,255,0.65); line-height: 1.5; margin-top: 3px; }
 .btn-explore {
   display: inline-flex;
   align-items: center;
@@ -563,46 +567,46 @@ body {
 
       <!-- Step 1 -->
       <div class="quiz-step active" id="step-0">
-        <div class="step-question">What brought you here?</div>
+        <div class="step-question">What do you most want to work on?</div>
         <div class="choice-grid">
-          <button class="choice" data-step="0" data-value="access"
-            data-filter="phase=Voter registration" onclick="selectChoice(this)">
+          <button class="choice" data-step="0" data-value="vote"
+            data-values="Voter registration|Get out the vote|Ballot curing|Voter education" onclick="selectChoice(this)">
             <span class="choice-icon">🗳️</span>
             <div class="choice-text">
-              <strong>I want more people to vote</strong>
-              <span>Registration, turnout, making voting easier and more accessible</span>
+              <strong>Helping people vote</strong>
+              <span>Registration, turnout, ballot curing, voter education</span>
             </div>
           </button>
-          <button class="choice" data-step="0" data-value="integrity"
-            data-filter="voter=Roll monitoring" onclick="selectChoice(this)">
+          <button class="choice" data-step="0" data-value="protect"
+            data-values="Poll observing|Poll working / election admin|Audits &amp; verification|Voter roll integrity" onclick="selectChoice(this)">
             <span class="choice-icon">🔍</span>
             <div class="choice-text">
-              <strong>I want elections to be trustworthy</strong>
-              <span>Accuracy, security, making sure every vote is counted correctly</span>
+              <strong>Protecting the vote &amp; the count</strong>
+              <span>Poll observing, election work, audits, voter-roll integrity</span>
             </div>
           </button>
-          <button class="choice" data-step="0" data-value="rights"
-            data-filter="work=Legal" onclick="selectChoice(this)">
+          <button class="choice" data-step="0" data-value="legal"
+            data-values="Litigation / legal defense|Policy &amp; advocacy" onclick="selectChoice(this)">
             <span class="choice-icon">⚖️</span>
             <div class="choice-text">
-              <strong>I want to protect voting rights</strong>
-              <span>Fighting suppression, helping people navigate barriers, legal advocacy</span>
+              <strong>Legal &amp; policy work</strong>
+              <span>Litigation, legal defense, policy and advocacy</span>
             </div>
           </button>
-          <button class="choice" data-step="0" data-value="community"
-            data-filter="work=Community Organizing" onclick="selectChoice(this)">
-            <span class="choice-icon">🤝</span>
+          <button class="choice" data-step="0" data-value="research"
+            data-values="Research &amp; data|Countering disinformation" onclick="selectChoice(this)">
+            <span class="choice-icon">💡</span>
             <div class="choice-text">
-              <strong>I want to help my community specifically</strong>
-              <span>Focused work with a particular group — youth, seniors, a specific community</span>
+              <strong>Research &amp; information</strong>
+              <span>Data, analysis, countering disinformation</span>
             </div>
           </button>
           <button class="choice" data-step="0" data-value="other"
             onclick="selectChoice(this)">
             <span class="choice-icon">🔎</span>
             <div class="choice-text">
-              <strong>Something else</strong>
-              <span>I'm not sure yet, or my reason isn't listed above</span>
+              <strong>Not sure yet</strong>
+              <span>Show me everything and let me browse</span>
             </div>
           </button>
         </div>
@@ -629,38 +633,46 @@ body {
 
       <!-- Step 2 -->
       <div class="quiz-step" id="step-1">
-        <div class="step-question">How do you want to spend your time?</div>
+        <div class="step-question">How would you like to help?</div>
         <div class="choice-grid">
-          <button class="choice" data-step="1" data-value="phone"
-            data-filter="voter=Ballot cure" onclick="selectChoice(this)">
+          <button class="choice" data-step="1" data-value="home"
+            data-values="Phone banking / texting|Postcard &amp; letter writing" onclick="selectChoice(this)">
             <span class="choice-icon">📱</span>
             <div class="choice-text">
-              <strong>Calling, texting, or writing</strong>
-              <span>Remote work I can do from anywhere on my own schedule</span>
+              <strong>From home</strong>
+              <span>Phone banking, texting, postcards and letters</span>
             </div>
           </button>
-          <button class="choice" data-step="1" data-value="field"
-            data-filter="work=Door Knocking" onclick="selectChoice(this)">
+          <button class="choice" data-step="1" data-value="person"
+            data-values="Door knocking|Poll working / observing" onclick="selectChoice(this)">
             <span class="choice-icon">🚶</span>
             <div class="choice-text">
-              <strong>Knocking on doors or tabling</strong>
-              <span>Face-to-face outreach in my neighborhood or community</span>
+              <strong>In person</strong>
+              <span>Canvassing, tabling, poll working or observing</span>
             </div>
           </button>
-          <button class="choice" data-step="1" data-value="polls"
-            data-filter="work=Training" onclick="selectChoice(this)">
-            <span class="choice-icon">🏫</span>
-            <div class="choice-text">
-              <strong>Working at a polling place</strong>
-              <span>Poll worker or poll watcher on election day</span>
-            </div>
-          </button>
-          <button class="choice" data-step="1" data-value="research"
-            data-filter="work=Research" onclick="selectChoice(this)">
+          <button class="choice" data-step="1" data-value="skill"
+            data-values="Legal / pro bono skills|Data &amp; tech skills|Communications / media|Translation / multilingual" onclick="selectChoice(this)">
             <span class="choice-icon">💻</span>
             <div class="choice-text">
-              <strong>Research, data, or legal work</strong>
-              <span>Using professional skills — law, data, communications, technology</span>
+              <strong>With a professional skill</strong>
+              <span>Legal, data, tech, communications, or translation</span>
+            </div>
+          </button>
+          <button class="choice" data-step="1" data-value="give"
+            data-values="Donating / funding" onclick="selectChoice(this)">
+            <span class="choice-icon">💛</span>
+            <div class="choice-text">
+              <strong>By giving</strong>
+              <span>Donating or helping fund the work</span>
+            </div>
+          </button>
+          <button class="choice" data-step="1" data-value="any"
+            data-values="" onclick="selectChoice(this)">
+            <span class="choice-icon">✨</span>
+            <div class="choice-text">
+              <strong>I'm open to anything</strong>
+              <span>Don't narrow by how I help</span>
             </div>
           </button>
         </div>
@@ -673,43 +685,18 @@ body {
 
       <!-- Step 3 -->
       <div class="quiz-step" id="step-2">
-        <div class="step-question">How much time can you give right now?</div>
-        <div class="choice-grid">
-          <button class="choice" data-step="2" data-value="few-hours"
-            onclick="selectChoice(this)">
-            <span class="choice-icon">⏱️</span>
-            <div class="choice-text">
-              <strong>A few hours here and there</strong>
-              <span>Occasional volunteering, no long-term commitment yet</span>
-            </div>
-          </button>
-          <button class="choice" data-step="2" data-value="regular"
-            onclick="selectChoice(this)">
-            <span class="choice-icon">📅</span>
-            <div class="choice-text">
-              <strong>Regularly, like a few hours a week</strong>
-              <span>Ongoing involvement with a consistent schedule</span>
-            </div>
-          </button>
-          <button class="choice" data-step="2" data-value="election"
-            onclick="selectChoice(this)">
-            <span class="choice-icon">🗓️</span>
-            <div class="choice-text">
-              <strong>Mostly around elections</strong>
-              <span>Intensive bursts during campaign season and election day</span>
-            </div>
-          </button>
-          <button class="choice" data-step="2" data-value="deep"
-            onclick="selectChoice(this)">
-            <span class="choice-icon">🌱</span>
-            <div class="choice-text">
-              <strong>I'm ready to go deep</strong>
-              <span>Major commitment — this is becoming a priority for me</span>
-            </div>
-          </button>
+        <div class="step-question">Where do you want to focus?</div>
+        <div style="max-width:440px;">
+          <select id="state-select" onchange="onStateChange()"
+            style="width:100%;padding:13px 14px;border-radius:12px;font-size:15px;font-family:inherit;color:#fff;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.22);">
+            <option value="">Anywhere / national</option>
+          </select>
+          <p style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:10px;line-height:1.6;">
+            National organizations are included with every state. Leave on "Anywhere" if location doesn't matter to you.
+          </p>
         </div>
         <div class="quiz-nav">
-          <button class="btn-next" id="next-2" disabled onclick="showResult()">See my matches →</button>
+          <button class="btn-next" id="next-2" onclick="showResult()">See my matches →</button>
           <button class="btn-back" onclick="goToStep(1)">← Back</button>
           <a class="skip-link" onclick="skipToDirectory()">Skip</a>
         </div>
@@ -721,9 +708,9 @@ body {
     <div class="quiz-result" id="quiz-result">
       <div class="result-hed" id="result-hed">Here's where you fit</div>
       <p class="result-sub" id="result-sub"></p>
-      <div class="result-tags" id="result-tags"></div>
+      <div class="result-matches" id="result-matches"></div>
       <a href="index.html" class="btn-explore" id="btn-explore">
-        Explore matching organizations →
+        Browse the full directory →
       </a>
       <div style="margin-top: 1rem;">
         <span class="skip-link" onclick="resetQuiz()">Start over</span>
@@ -827,28 +814,39 @@ body {
 
 <script>
 // ── Quiz state ────────────────────────────────────────────────
-// answers: step number → selected value string
-// filters: step number → "fieldKey=Value" string (only steps with data-filter)
-const answers = { 0: null, 1: null, 2: null };
-const filters = { 0: null, 1: null };
-let currentStep = 0;  // tracks numeric steps 0/1/2; 'other' handled separately
+// Q1 focus goal (+ its Focus-area value names), Q2 ways (+ Ways-to-help value names), Q3 state.
+let qGoal = { key: null, label: null, values: [] };
+let qWay  = { label: null, values: [] };
+let qState = '';
+let currentStep = 0;  // numeric steps 0/1/2; 'other' handled separately
+let orgData = null;   // cached org/tag data for match scoring
+
+const US_STATES = ['Alabama','Alaska','Arizona','Arkansas','California','Colorado','Connecticut','Delaware','District of Columbia','Florida','Georgia','Hawaii','Idaho','Illinois','Indiana','Iowa','Kansas','Kentucky','Louisiana','Maine','Maryland','Massachusetts','Michigan','Minnesota','Mississippi','Missouri','Montana','Nebraska','Nevada','New Hampshire','New Jersey','New Mexico','New York','North Carolina','North Dakota','Ohio','Oklahoma','Oregon','Pennsylvania','Rhode Island','South Carolina','South Dakota','Tennessee','Texas','Utah','Vermont','Virginia','Washington','West Virginia','Wisconsin','Wyoming'];
+function populateStates() {
+  const sel = document.getElementById('state-select');
+  if (!sel) return;
+  US_STATES.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
+}
+document.addEventListener('DOMContentLoaded', populateStates);
 
 function selectChoice(el) {
   const step = parseInt(el.dataset.step);
   el.closest('.choice-grid').querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
-  answers[step] = el.dataset.value;
-  filters[step] = el.dataset.filter || null;  // null if no data-filter on this button
-  document.getElementById(`next-${step}`).disabled = false;
+  const vals = (el.dataset.values || '').split('|').filter(Boolean);
+  const strong = el.querySelector('strong');
+  const label = strong ? strong.textContent : el.dataset.value;
+  if (step === 0) qGoal = { key: el.dataset.value, label, values: vals };
+  else if (step === 1) qWay = { label, values: vals };
+  document.getElementById('next-' + step).disabled = false;
 }
 
-// Q1 Next button — branches to "something else" interstitial or continues to Q2
+function onStateChange() { qState = document.getElementById('state-select').value; }
+
+// Q1 Next — branches to the "not sure" interstitial or continues to Q2
 function handleStep0Next() {
-  if (answers[0] === 'other') {
-    showOtherPanel();
-  } else {
-    goToStep(1);
-  }
+  if (qGoal.key === 'other') showOtherPanel();
+  else goToStep(1);
 }
 
 function showOtherPanel() {
@@ -876,104 +874,101 @@ function updateDots() {
   }
 }
 
-function showResult() {
+// Load + cache the public data needed for matching.
+async function loadOrgData() {
+  if (orgData) return orgData;
+  const [orgsR, tagsR, valsR] = await Promise.all([
+    fetch('/airtable?table=Organizations').then(r => r.json()),
+    fetch('/airtable?table=OrgTags').then(r => r.json()),
+    fetch('/airtable?table=CategoryValues').then(r => r.json())
+  ]);
+  const valName = {};
+  valsR.records.forEach(v => { valName[v.id] = v.fields.Value; });
+  const tagsByOrg = {};
+  tagsR.records.forEach(t => {
+    const oid = t.fields.OrgID;
+    (tagsByOrg[oid] = tagsByOrg[oid] || []).push({ type: t.fields.TagType, value: valName[t.fields.ValueID] || '' });
+  });
+  orgData = { orgs: orgsR.records.filter(o => !o.fields.Declined), tagsByOrg };
+  return orgData;
+}
+
+function summaryLine() {
+  const parts = [];
+  if (qGoal.label) parts.push('<strong>' + qGoal.label.toLowerCase() + '</strong>');
+  if (qWay.label && qWay.values.length) parts.push(qWay.label.toLowerCase());
+  if (qState) parts.push('in <strong>' + qState + '</strong>');
+  return parts.length ? 'You want to ' + parts.join(', ') + '. ' : '';
+}
+
+// Score every (approved) org against the answers. Focus (Q1) is required; Ways (Q2) and State (Q3)
+// pull the closest matches to the top. Renders a real shortlist; falls back to the directory on error.
+async function showResult() {
   document.querySelectorAll('.quiz-step').forEach(s => s.style.display = 'none');
   document.getElementById('step-progress').style.display = 'none';
-
-  const a0 = answers[0];
-  let hed, sub;
-
-  // Result headline and description based on Q1 motivation.
-  // Tags shown here are ONLY the ones actually being filtered in the directory —
-  // one from Q1 (primary) and one from Q2 (secondary activity).
-  if (a0 === 'access') {
-    hed = "You're a voter champion.";
-    sub = "You want to expand who participates in democracy. We've filtered the directory to show organizations focused on voter registration — then refined further by how you want to spend your time.";
-  } else if (a0 === 'integrity') {
-    hed = "You're a democracy watchdog.";
-    sub = "You care about accuracy and trust in the process. We've filtered the directory to show organizations focused on voter roll monitoring — then refined further by how you want to spend your time.";
-  } else if (a0 === 'rights') {
-    hed = "You're a voting rights defender.";
-    sub = "You want to fight suppression and protect people's access to the ballot. We've filtered the directory to show organizations doing legal work — then refined further by how you want to spend your time.";
-  } else if (a0 === 'community') {
-    hed = "You're a community builder.";
-    sub = "You want to work with specific communities. We've filtered the directory to show organizations focused on community organizing — then refined further by how you want to spend your time.";
-  } else {
-    hed = "You're ready to make a real difference.";
-    sub = "Here's the full directory — browse by type of work, community focus, or election phase to find your fit.";
-  }
-
-  // Build tags that reflect only the active filters (Q1 + Q2)
-  const activeTags = [];
-  const labelColors = {
-    'Voter registration':   'result-tag-green',
-    'Roll monitoring':      'result-tag-warm',
-    'Legal':                'result-tag-blue',
-    'Community Organizing': 'result-tag-green',
-    'Ballot cure':          'result-tag-warm',
-    'Door Knocking':        'result-tag-warm',
-    'Training':             'result-tag-green',
-    'Research':             'result-tag-blue',
-  };
-
-  // Extract human-readable label from filter string "fieldKey=Label"
-  function filterLabel(f) {
-    if (!f) return null;
-    const idx = f.indexOf('=');
-    return idx > -1 ? f.slice(idx + 1) : null;
-  }
-
-  const f0label = filterLabel(filters[0]);
-  const f1label = filterLabel(filters[1]);
-  if (f0label) activeTags.push({ label: f0label, cls: labelColors[f0label] || 'result-tag-blue' });
-  if (f1label) activeTags.push({ label: f1label, cls: labelColors[f1label] || 'result-tag-blue' });
-
-  // Time commitment tag is purely informational (not a filter)
-  if (answers[2] === 'few-hours') activeTags.push({ label: 'Great for new volunteers', cls: 'result-tag-blue' });
-  else if (answers[2] === 'election') activeTags.push({ label: 'Election-season intensive', cls: 'result-tag-blue' });
-  else if (answers[2] === 'deep') activeTags.push({ label: 'Long-term commitment', cls: 'result-tag-blue' });
-
-  // Build multi-filter hash for index.html
-  // Format: #f1=fieldKey=Value&f2=fieldKey=Value
-  // index.html splits on & and applies each filter independently
-  const hashParts = [];
-  if (filters[0]) hashParts.push('f1=' + filters[0]);
-  if (filters[1]) hashParts.push('f2=' + filters[1]);
-  const exploreUrl = hashParts.length
-    ? 'index.html#' + encodeURIComponent(hashParts.join('&'))
-    : 'index.html';
-
-  document.getElementById('result-hed').textContent = hed;
-  document.getElementById('result-sub').textContent = sub;
-  const tagsEl = document.getElementById('result-tags');
-  tagsEl.innerHTML = '';
-  activeTags.forEach(t => {
-    const s = document.createElement('span');
-    s.className = `result-tag ${t.cls}`;
-    s.textContent = t.label;
-    tagsEl.appendChild(s);
-  });
-  document.getElementById('btn-explore').href = exploreUrl;
   document.getElementById('quiz-result').classList.add('show');
+  const hedEl = document.getElementById('result-hed');
+  const subEl = document.getElementById('result-sub');
+  const matchEl = document.getElementById('result-matches');
+  const btn = document.getElementById('btn-explore');
+  hedEl.textContent = 'Finding your matches…';
+  subEl.innerHTML = '';
+  if (matchEl) matchEl.innerHTML = '';
+  btn.href = 'index.html';
+
+  if (qGoal.key === 'other' || !qGoal.values.length) {
+    hedEl.textContent = "Here's the directory";
+    subEl.textContent = 'Browse organizations by what they work on, how you can help, and where.';
+    return;
+  }
+
+  try {
+    const { orgs, tagsByOrg } = await loadOrgData();
+    const scored = orgs.map(o => {
+      const tags = tagsByOrg[o.id] || [];
+      const has = (type, val) => tags.some(t => t.type === type && t.value === val);
+      const focusMatch = qGoal.values.some(v => has('focus', v));
+      const wayMatch   = qWay.values.length ? qWay.values.some(v => has('help', v)) : false;
+      const stateMatch = qState ? (has('state', qState) || has('state', 'All states')) : false;
+      return { o, focusMatch, score: (focusMatch ? 3 : 0) + (wayMatch ? 2 : 0) + (stateMatch ? 1 : 0) };
+    }).filter(x => x.focusMatch)
+      .sort((a, b) => b.score - a.score || a.o.fields.Name.localeCompare(b.o.fields.Name));
+
+    const n = scored.length;
+    hedEl.textContent = n ? (n + ' organization' + (n > 1 ? 's' : '') + ' match your focus') : 'No exact matches yet';
+    subEl.innerHTML = summaryLine() + (n
+      ? 'The closest fits to how you want to help are at the top.'
+      : 'Try a broader focus, or browse the full directory below.');
+
+    if (matchEl) {
+      matchEl.innerHTML = scored.slice(0, 8).map(x => {
+        const d = (x.o.fields.Description || '').trim();
+        const desc = d.length > 130 ? d.slice(0, 130).trim() + '…' : d;
+        const name = x.o.fields.Name.replace(/</g, '&lt;');
+        return '<div class="match-card"><div class="match-name">' + name + '</div>' +
+               (desc ? '<div class="match-desc">' + desc.replace(/</g, '&lt;') + '</div>' : '') + '</div>';
+      }).join('');
+    }
+  } catch (e) {
+    hedEl.textContent = "Here's the directory";
+    subEl.textContent = 'Browse organizations by what they work on, how you can help, and where.';
+    console.error('quiz match failed', e);
+  }
 }
 
 function skipToDirectory() { window.location.href = 'index.html'; }
 
 function resetQuiz() {
-  answers[0] = answers[1] = answers[2] = null;
-  filters[0] = filters[1] = null;
+  qGoal = { key: null, label: null, values: [] };
+  qWay = { label: null, values: [] };
+  qState = '';
   currentStep = 0;
-  // Show all quiz-step divs and reset active state
-  document.querySelectorAll('.quiz-step').forEach(s => {
-    s.style.display = '';
-    s.classList.remove('active');
-  });
+  const ss = document.getElementById('state-select'); if (ss) ss.value = '';
+  document.querySelectorAll('.quiz-step').forEach(s => { s.style.display = ''; s.classList.remove('active'); });
   document.getElementById('step-0').classList.add('active');
   document.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
-  // Re-disable next buttons that need a selection
   document.getElementById('next-0').disabled = true;
   document.getElementById('next-1').disabled = true;
-  document.getElementById('next-2').disabled = true;
   document.getElementById('step-progress').style.display = 'flex';
   document.getElementById('quiz-result').classList.remove('show');
   updateDots();

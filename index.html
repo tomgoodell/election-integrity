@@ -605,7 +605,10 @@ const T_ORGTAGS  = 'OrgTags';
 // its values, and every org's tags) is left completely intact, so removing a key here fully restores
 // it. (Admin > Manage lists still lists these, so you can see/re-enable them there too.)
 //   'partisan' = the "Partisan affiliation" category, hidden 2026-07-01 at the owner's request.
-const HIDDEN_CAT_KEYS = ['partisan'];
+const HIDDEN_CAT_KEYS = ['partisan', 'work', 'phase', 'need', 'voter'];
+// 'partisan' = Partisan affiliation; 'work'/'phase'/'need'/'voter' = the retired old activity
+// categories (Activities / Election phases / Needs / Voter reg focus), replaced by Focus areas +
+// Ways to get involved. Their old tags are kept in Airtable but hidden here (fully reversible).
 
 // An org tagged with this special States value counts as present in EVERY state, so it matches any
 // specific state filter (see tagSatisfies). Lets a nationwide org (e.g. LWV) carry one tag, not 50.
