@@ -607,6 +607,10 @@ const T_ORGTAGS  = 'OrgTags';
 //   'partisan' = the "Partisan affiliation" category, hidden 2026-07-01 at the owner's request.
 const HIDDEN_CAT_KEYS = ['partisan'];
 
+// An org tagged with this special States value counts as present in EVERY state, so it matches any
+// specific state filter (see tagSatisfies). Lets a nationwide org (e.g. LWV) carry one tag, not 50.
+const ALL_STATES = 'All states';
+
 // ── Airtable helpers ───────────────────────────────────────────
 // Four core functions that wrap fetch() calls to the Cloudflare
 // Pages Function (/airtable). All Airtable API calls go through
@@ -1199,6 +1203,17 @@ function getActiveFilters() {
   return filters;
 }
 
+// Does an org (its tags) satisfy a single tag filter? A direct tag match, OR — for a specific State
+// filter — the org is tagged "All states" (nationwide presence counts for every state).
+function tagSatisfies(tags, valueId) {
+  if (tags.some(t => t.valueId === valueId)) return true;
+  const vi = valueIndex[valueId];
+  if (vi && vi.catKey === 'state' && vi.value !== ALL_STATES) {
+    return tags.some(t => t.catKey === 'state' && t.value === ALL_STATES);
+  }
+  return false;
+}
+
 function orgMatchesFilters(org, q, catFilters) {
   const tags = orgTags[org._id] || [];
   const tagValues = tags.map(t => t.value).join(' ').toLowerCase();
@@ -1207,7 +1222,7 @@ function orgMatchesFilters(org, q, catFilters) {
   if (q && !blob.includes(q)) return false;
 
   for (const [catId, valueId] of Object.entries(catFilters)) {
-    if (!tags.some(t => t.valueId === valueId)) return false;
+    if (!tagSatisfies(tags, valueId)) return false;
   }
   return true;
 }
@@ -1259,7 +1274,7 @@ function renderVolunteerCards() {
     // Apply each active chip filter
     for (const [catId, valueId] of Object.entries(chipFilters)) {
       if (!valueId) continue; // null = All, no filter
-      if (!tags.some(t => t.valueId === valueId)) return false;
+      if (!tagSatisfies(tags, valueId)) return false;
     }
     return true;
   });
@@ -1652,7 +1667,7 @@ function onMapValChange(filterId) {
 
 function orgMatchesFilter(org, filter) {
   if (!filter.valueId) return false;
-  return (orgTags[org._id]||[]).some(function(t) { return t.valueId === filter.valueId; });
+  return tagSatisfies(orgTags[org._id]||[], filter.valueId);
 }
 
 function getFilterValueName(filter) {
