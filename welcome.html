@@ -499,6 +499,9 @@ body {
   .stat-strip { gap: 1.5rem; }
   .choice-grid { grid-template-columns: 1fr; }
 }
+/* The <select> is light text on a dark field; force the native dropdown popup's options to
+   dark-on-white so the state list is actually readable (otherwise it's white-on-white = "empty"). */
+#state-select option { color: #1a1a1a; background: #ffffff; }
 </style>
 </head>
 <body>
@@ -523,7 +526,7 @@ body {
     </p>
     <div class="stat-strip">
       <div class="stat">
-        <div class="stat-num">46</div>
+        <div class="stat-num" id="stat-orgs">46</div>
         <div class="stat-label">Organizations</div>
       </div>
       <div class="stat">
@@ -713,6 +716,56 @@ body {
   </div>
 </section>
 
+<!-- Paths (Ways to get involved) — shown before "How it works" -->
+<section class="paths-section">
+  <div class="paths-inner">
+    <div class="section-eyebrow">Ways to get involved</div>
+    <h2 class="section-hed">There's no wrong place to start</h2>
+    <p class="section-sub">
+      Elections involve a lot of moving parts. Here are some of the most
+      common ways everyday people contribute.
+    </p>
+    <div class="paths-grid">
+      <a class="path-card" href="index.html#focus=Voter registration">
+        <div class="path-icon">📋</div>
+        <div class="path-hed">Voter registration</div>
+        <div class="path-body">Help eligible citizens get on the rolls — at events, door to door, or online.</div>
+        <div class="path-link">Find organizations <span>→</span></div>
+      </a>
+      <a class="path-card" href="index.html#focus=Get out the vote">
+        <div class="path-icon">📣</div>
+        <div class="path-hed">Get out the vote</div>
+        <div class="path-body">Remind, encourage, and help registered voters actually make it to the polls.</div>
+        <div class="path-link">Find organizations <span>→</span></div>
+      </a>
+      <a class="path-card" href="index.html#focus=Ballot curing">
+        <div class="path-icon">✉️</div>
+        <div class="path-hed">Ballot curing</div>
+        <div class="path-body">Contact voters whose mail ballots were rejected and help them fix the problem before the deadline.</div>
+        <div class="path-link">Find organizations <span>→</span></div>
+      </a>
+      <a class="path-card" href="index.html#focus=Poll working / election admin">
+        <div class="path-icon">🏫</div>
+        <div class="path-hed">Poll work</div>
+        <div class="path-body">Serve as a poll worker (running the election) or poll watcher (observing for your party or organization).</div>
+        <div class="path-link">Find organizations <span>→</span></div>
+      </a>
+      <a class="path-card" href="index.html#focus=Voter roll integrity">
+        <div class="path-icon">🔎</div>
+        <div class="path-hed">Voter roll monitoring</div>
+        <div class="path-body">Help keep voter registration lists accurate — verifying records, flagging errors, and helping voters re-register.</div>
+        <div class="path-link">Find organizations <span>→</span></div>
+      </a>
+      <a class="path-card" href="index.html#focus=Litigation / legal defense">
+        <div class="path-icon">⚖️</div>
+        <div class="path-hed">Legal & advocacy</div>
+        <div class="path-body">Use legal, research, or communications skills to support voting rights cases and policy reform.</div>
+        <div class="path-link">Find organizations <span>→</span></div>
+      </a>
+    </div>
+  </div>
+</section>
+
 <!-- How it works -->
 <section class="how-section">
   <div class="how-inner">
@@ -744,56 +797,6 @@ body {
         <div class="step-card-hed">Know an organization we missed?</div>
         <div class="step-card-body">Use the <em>List your group</em> tab to submit an organization you think belongs here. Submissions are reviewed and added regularly.</div>
       </div>
-    </div>
-  </div>
-</section>
-
-<!-- Paths -->
-<section class="paths-section">
-  <div class="paths-inner">
-    <div class="section-eyebrow">Ways to get involved</div>
-    <h2 class="section-hed">There's no wrong place to start</h2>
-    <p class="section-sub">
-      Elections involve a lot of moving parts. Here are some of the most
-      common ways everyday people contribute.
-    </p>
-    <div class="paths-grid">
-      <a class="path-card" href="index.html#phase=Voter registration">
-        <div class="path-icon">📋</div>
-        <div class="path-hed">Voter registration</div>
-        <div class="path-body">Help eligible citizens get on the rolls — at events, door to door, or online.</div>
-        <div class="path-link">Find organizations <span>→</span></div>
-      </a>
-      <a class="path-card" href="index.html#phase=Get out the vote">
-        <div class="path-icon">📣</div>
-        <div class="path-hed">Get out the vote</div>
-        <div class="path-body">Remind, encourage, and help registered voters actually make it to the polls.</div>
-        <div class="path-link">Find organizations <span>→</span></div>
-      </a>
-      <a class="path-card" href="index.html#voter=Ballot cure">
-        <div class="path-icon">✉️</div>
-        <div class="path-hed">Ballot curing</div>
-        <div class="path-body">Contact voters whose mail ballots were rejected and help them fix the problem before the deadline.</div>
-        <div class="path-link">Find organizations <span>→</span></div>
-      </a>
-      <a class="path-card" href="index.html#work=Training">
-        <div class="path-icon">🏫</div>
-        <div class="path-hed">Poll work</div>
-        <div class="path-body">Serve as a poll worker (running the election) or poll watcher (observing for your party or organization).</div>
-        <div class="path-link">Find organizations <span>→</span></div>
-      </a>
-      <a class="path-card" href="index.html#voter=Roll monitoring">
-        <div class="path-icon">🔎</div>
-        <div class="path-hed">Voter roll monitoring</div>
-        <div class="path-body">Help keep voter registration lists accurate — verifying records, flagging errors, and helping voters re-register.</div>
-        <div class="path-link">Find organizations <span>→</span></div>
-      </a>
-      <a class="path-card" href="index.html#work=Legal">
-        <div class="path-icon">⚖️</div>
-        <div class="path-hed">Legal & advocacy</div>
-        <div class="path-body">Use legal, research, or communications skills to support voting rights cases and policy reform.</div>
-        <div class="path-link">Find organizations <span>→</span></div>
-      </a>
     </div>
   </div>
 </section>
@@ -842,6 +845,13 @@ function restoreQuizState() {
 
 populateStates();  // the <select> already exists above this inline script; DOMContentLoaded/bfcache can miss
 restoreQuizState();
+
+// Keep the hero "Organizations" stat honest — count approved orgs live instead of a hardcoded number.
+fetch('/airtable?table=Organizations').then(r => r.json()).then(d => {
+  const n = (d.records || []).filter(o => !o.fields.Declined).length;
+  const el = document.getElementById('stat-orgs');
+  if (el && n) el.textContent = n;
+}).catch(() => {});
 
 function selectChoice(el) {
   const step = parseInt(el.dataset.step);
