@@ -691,6 +691,7 @@ let showDesc = true;
 let showTags = true;
 let activeLetter = '';
 let browseMode = 'volunteer'; // 'volunteer' (Citizen view) | 'researcher'
+let quizMatchSet = null;       // Set of org ids when arriving from the welcome quick guide; null = show all
 let adminActiveLetter = ''; // alpha filter for Approved Organizations tab
 // chipFilters: map of catId -> selected valueId for the volunteer chip UI
 let chipFilters = {};
@@ -719,6 +720,13 @@ async function init() {
       `<div class="error-msg">Could not connect to the database. Please check your internet connection and try refreshing.<br><small>${e.message}</small></div>`;
     return;
   }
+
+  // Restrict to the quiz's matches, if we arrived from the welcome quick guide.
+  try {
+    const qm = JSON.parse(sessionStorage.getItem('quizMatches') || 'null');
+    if (qm && Array.isArray(qm.ids) && qm.ids.length) quizMatchSet = new Set(qm.ids);
+    sessionStorage.removeItem('quizMatches');
+  } catch(e) {}
 
   // Pre-set filter(s) from URL hash written by welcome.html quiz.
   // Format: #f1=fieldKey=Value&f2=fieldKey=Value
@@ -1270,6 +1278,7 @@ function renderVolunteerCards() {
   // Chip filters: chipFilters[catId] = valueId or null
   const filtered = orgs.filter(o => {
     if (o.declined) return false; // hidden from public
+    if (quizMatchSet && !quizMatchSet.has(o._id)) return false; // arrived from the quiz: only its matches
     const tags = orgTags[o._id] || [];
     const blob = [o.name, o.desc, o.state, o.needsText,
       tags.map(t => t.value).join(' ')].join(' ').toLowerCase();
@@ -1289,13 +1298,18 @@ function renderVolunteerCards() {
 
   const c = document.getElementById('cards-container-v');
   if (!c) return;
+  const banner = quizMatchSet
+    ? '<div style="background:#eef4ff;border:1px solid #cddcf5;border-radius:10px;padding:12px 16px;margin-bottom:1rem;font-size:14px;color:#1d4fa0;">Showing your <strong>' + filtered.length + '</strong> match' + (filtered.length !== 1 ? 'es' : '') + ' from the quick guide. <button class="friendly-clear" onclick="clearQuizMatches()" style="margin-left:8px;">Show all organizations</button></div>'
+    : '';
   if (!filtered.length) {
-    c.innerHTML = '<div class="no-results">No organizations match your filters. <button class="friendly-clear" onclick="clearFilters()">Clear filters</button></div>';
+    c.innerHTML = banner + '<div class="no-results">No organizations match your filters. <button class="friendly-clear" onclick="clearFilters()">Clear filters</button></div>';
   } else {
-    c.innerHTML = filtered.map((org, i) => buildCardHtml(org, i, true, true)).join('');
+    c.innerHTML = banner + filtered.map((org, i) => buildCardHtml(org, i, true, true)).join('');
   }
   window._filtered = filtered;
 }
+
+function clearQuizMatches() { quizMatchSet = null; try { sessionStorage.removeItem('quizMatches'); } catch(e){} renderCards(); }
 
 function renderResearcherCards() {
   const q = document.getElementById('search').value.toLowerCase();

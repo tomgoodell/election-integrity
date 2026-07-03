@@ -821,7 +821,27 @@ function populateStates() {
   if (!sel) return;
   US_STATES.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
 }
+// If we're returning right after finishing the quiz (e.g. Back from the directory), restore the
+// answers and jump to the last step instead of starting the interview over.
+function restoreQuizState() {
+  let cameBack, s;
+  try { cameBack = sessionStorage.getItem('cameFromQuiz'); s = JSON.parse(sessionStorage.getItem('quizState') || 'null'); } catch (e) { return; }
+  if (!cameBack || !s || !s.goal || !s.goal.key || s.goal.key === 'other') return;
+  try { sessionStorage.removeItem('cameFromQuiz'); } catch (e) {}
+  qGoal = s.goal; qWay = s.way || { labels: [], values: [] }; qState = s.state || '';
+  const b0 = [...document.querySelectorAll('.choice[data-step="0"]')].find(b => b.dataset.value === qGoal.key);
+  if (b0) b0.classList.add('selected');
+  document.getElementById('next-0').disabled = false;
+  (qWay.labels || []).forEach(lbl => {
+    const b = [...document.querySelectorAll('.choice[data-step="1"]')].find(x => { const st = x.querySelector('strong'); return st && st.textContent === lbl; });
+    if (b) b.classList.add('selected');
+  });
+  const ss = document.getElementById('state-select'); if (ss) ss.value = qState;
+  goToStep(2);
+}
+
 populateStates();  // the <select> already exists above this inline script; DOMContentLoaded/bfcache can miss
+restoreQuizState();
 
 function selectChoice(el) {
   const step = parseInt(el.dataset.step);
@@ -905,56 +925,31 @@ function summaryLine() {
 
 // Score every (approved) org against the answers. Focus (Q1) is required; Ways (Q2) and State (Q3)
 // pull the closest matches to the top. Renders a real shortlist; falls back to the directory on error.
+// Compute the matching org ids, hand them to the directory via sessionStorage, and go there
+// (Citizen view shows just the matches). Remembers answers so Back returns to the finished quiz.
 async function showResult() {
-  document.querySelectorAll('.quiz-step').forEach(s => s.style.display = 'none');
-  document.getElementById('step-progress').style.display = 'none';
-  document.getElementById('quiz-result').classList.add('show');
-  const hedEl = document.getElementById('result-hed');
-  const subEl = document.getElementById('result-sub');
-  const matchEl = document.getElementById('result-matches');
-  const btn = document.getElementById('btn-explore');
-  hedEl.textContent = 'Finding your matches…';
-  subEl.innerHTML = '';
-  if (matchEl) matchEl.innerHTML = '';
-  btn.href = 'index.html';
-
-  if (qGoal.key === 'other' || !qGoal.values.length) {
-    hedEl.textContent = "Here's the directory";
-    subEl.textContent = 'Browse organizations by what they work on, how you can help, and where.';
-    return;
-  }
-
+  const btn = document.getElementById('next-2');
+  try {
+    sessionStorage.setItem('quizState', JSON.stringify({ goal: qGoal, way: qWay, state: qState }));
+    sessionStorage.setItem('cameFromQuiz', '1');
+  } catch (e) {}
+  if (qGoal.key === 'other' || !qGoal.values.length) { window.location.href = 'index.html'; return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Finding your matches…'; }
   try {
     const { orgs, tagsByOrg } = await loadOrgData();
-    const scored = orgs.map(o => {
+    const ids = orgs.map(o => {
       const tags = tagsByOrg[o.id] || [];
       const has = (type, val) => tags.some(t => t.type === type && t.value === val);
-      const focusMatch = qGoal.values.some(v => has('focus', v));
+      if (!qGoal.values.some(v => has('focus', v))) return null;   // focus is required
       const wayMatch   = qWay.values.length ? qWay.values.some(v => has('help', v)) : false;
       const stateMatch = qState ? (has('state', qState) || has('state', 'Nationwide (all states)')) : false;
-      return { o, focusMatch, score: (focusMatch ? 3 : 0) + (wayMatch ? 2 : 0) + (stateMatch ? 1 : 0) };
-    }).filter(x => x.focusMatch)
-      .sort((a, b) => b.score - a.score || a.o.fields.Name.localeCompare(b.o.fields.Name));
-
-    const n = scored.length;
-    hedEl.textContent = n ? (n + ' organization' + (n > 1 ? 's' : '') + ' match your focus') : 'No exact matches yet';
-    subEl.innerHTML = summaryLine() + (n
-      ? 'The closest fits to how you want to help are at the top.'
-      : 'Try a broader focus, or browse the full directory below.');
-
-    if (matchEl) {
-      matchEl.innerHTML = scored.slice(0, 8).map(x => {
-        const d = (x.o.fields.Description || '').trim();
-        const desc = d.length > 130 ? d.slice(0, 130).trim() + '…' : d;
-        const name = x.o.fields.Name.replace(/</g, '&lt;');
-        return '<div class="match-card"><div class="match-name">' + name + '</div>' +
-               (desc ? '<div class="match-desc">' + desc.replace(/</g, '&lt;') + '</div>' : '') + '</div>';
-      }).join('');
-    }
+      return { id: o.id, score: 3 + (wayMatch ? 2 : 0) + (stateMatch ? 1 : 0) };
+    }).filter(Boolean).sort((a, b) => b.score - a.score).map(x => x.id);
+    sessionStorage.setItem('quizMatches', JSON.stringify({ ids }));
+    window.location.href = 'index.html';
   } catch (e) {
-    hedEl.textContent = "Here's the directory";
-    subEl.textContent = 'Browse organizations by what they work on, how you can help, and where.';
     console.error('quiz match failed', e);
+    window.location.href = 'index.html';
   }
 }
 
@@ -965,6 +960,7 @@ function resetQuiz() {
   qWay = { labels: [], values: [] };
   qState = '';
   currentStep = 0;
+  try { sessionStorage.removeItem('quizState'); sessionStorage.removeItem('cameFromQuiz'); sessionStorage.removeItem('quizMatches'); } catch (e) {}
   const ss = document.getElementById('state-select'); if (ss) ss.value = '';
   document.querySelectorAll('.quiz-step').forEach(s => { s.style.display = ''; s.classList.remove('active'); });
   document.getElementById('step-0').classList.add('active');
