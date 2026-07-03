@@ -951,9 +951,16 @@ async function showResult() {
     const ids = orgs.map(o => {
       const tags = tagsByOrg[o.id] || [];
       const has = (type, val) => tags.some(t => t.type === type && t.value === val);
-      if (!qGoal.values.some(v => has('focus', v))) return null;   // focus is required
+      if (!qGoal.values.some(v => has('focus', v))) return null;   // focus (Q1) is required
+      // State (Q3) is a real filter: if a state is chosen, drop orgs focused on OTHER states.
+      // National orgs (no state tag) and "Nationwide (all states)" are included with every state.
+      if (qState) {
+        const stateVals = tags.filter(t => t.type === 'state').map(t => t.value);
+        const stateOk = stateVals.length === 0 || stateVals.includes(qState) || stateVals.includes('Nationwide (all states)');
+        if (!stateOk) return null;
+      }
       const wayMatch   = qWay.values.length ? qWay.values.some(v => has('help', v)) : false;
-      const stateMatch = qState ? (has('state', qState) || has('state', 'Nationwide (all states)')) : false;
+      const stateMatch = qState ? has('state', qState) : false;   // exact state match sorts to the top
       return { id: o.id, score: 3 + (wayMatch ? 2 : 0) + (stateMatch ? 1 : 0) };
     }).filter(Boolean).sort((a, b) => b.score - a.score).map(x => x.id);
     sessionStorage.setItem('quizMatches', JSON.stringify({ ids }));
