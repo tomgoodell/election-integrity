@@ -553,8 +553,8 @@ body {
     <div class="quiz-label">Quick guide</div>
     <h2 class="quiz-hed">Find your place in three questions</h2>
     <p class="quiz-sub">
-      No experience needed. Answer honestly — we'll point you toward
-      organizations that match how you want to help.
+      Answer a few quick questions and we'll point you to organizations that match your
+      interests — or use "Skip" to browse the full directory yourself.
     </p>
 
     <div class="step-progress" id="step-progress">
@@ -578,7 +578,7 @@ body {
             </div>
           </button>
           <button class="choice" data-step="0" data-value="protect"
-            data-values="Poll observing|Poll working / election admin|Audits &amp; verification|Voter roll integrity" onclick="selectChoice(this)">
+            data-values="Poll observing|Poll working / election admin|Audits &amp; verification|Voter roll integrity|Ballot curing" onclick="selectChoice(this)">
             <span class="choice-icon">🔍</span>
             <div class="choice-text">
               <strong>Protecting the vote &amp; the count</strong>
@@ -633,14 +633,16 @@ body {
 
       <!-- Step 2 -->
       <div class="quiz-step" id="step-1">
-        <div class="step-question">How would you like to help?</div>
+        <div class="step-question">How would you like to help?
+          <span style="display:block;font-size:14px;font-weight:300;color:rgba(255,255,255,0.55);margin-top:4px;">Pick any that apply — or none, to keep it open.</span>
+        </div>
         <div class="choice-grid">
           <button class="choice" data-step="1" data-value="home"
-            data-values="Phone banking / texting|Postcard &amp; letter writing" onclick="selectChoice(this)">
+            data-values="Calling &amp; texting|Postcard &amp; letter writing" onclick="selectChoice(this)">
             <span class="choice-icon">📱</span>
             <div class="choice-text">
               <strong>From home</strong>
-              <span>Phone banking, texting, postcards and letters</span>
+              <span>Calling, texting, postcards and letters</span>
             </div>
           </button>
           <button class="choice" data-step="1" data-value="person"
@@ -667,17 +669,9 @@ body {
               <span>Donating or helping fund the work</span>
             </div>
           </button>
-          <button class="choice" data-step="1" data-value="any"
-            data-values="" onclick="selectChoice(this)">
-            <span class="choice-icon">✨</span>
-            <div class="choice-text">
-              <strong>I'm open to anything</strong>
-              <span>Don't narrow by how I help</span>
-            </div>
-          </button>
         </div>
         <div class="quiz-nav">
-          <button class="btn-next" id="next-1" disabled onclick="goToStep(2)">Next question →</button>
+          <button class="btn-next" id="next-1" onclick="goToStep(2)">Next question →</button>
           <button class="btn-back" onclick="goToStep(0)">← Back</button>
           <a class="skip-link" onclick="skipToDirectory()">Skip</a>
         </div>
@@ -816,7 +810,7 @@ body {
 // ── Quiz state ────────────────────────────────────────────────
 // Q1 focus goal (+ its Focus-area value names), Q2 ways (+ Ways-to-help value names), Q3 state.
 let qGoal = { key: null, label: null, values: [] };
-let qWay  = { label: null, values: [] };
+let qWay  = { labels: [], values: [] };
 let qState = '';
 let currentStep = 0;  // numeric steps 0/1/2; 'other' handled separately
 let orgData = null;   // cached org/tag data for match scoring
@@ -827,17 +821,25 @@ function populateStates() {
   if (!sel) return;
   US_STATES.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; sel.appendChild(o); });
 }
-document.addEventListener('DOMContentLoaded', populateStates);
+populateStates();  // the <select> already exists above this inline script; DOMContentLoaded/bfcache can miss
 
 function selectChoice(el) {
   const step = parseInt(el.dataset.step);
+  if (step === 1) {
+    // Q2 is multi-select: toggle, then gather the union of all chosen ways.
+    el.classList.toggle('selected');
+    const chosen = [...el.closest('.choice-grid').querySelectorAll('.choice.selected')];
+    const values = [];
+    chosen.forEach(c => (c.dataset.values || '').split('|').filter(Boolean).forEach(v => { if (!values.includes(v)) values.push(v); }));
+    qWay = { labels: chosen.map(c => c.querySelector('strong').textContent), values };
+    return;  // next-1 stays enabled — zero selections just means "any"
+  }
   el.closest('.choice-grid').querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
   el.classList.add('selected');
   const vals = (el.dataset.values || '').split('|').filter(Boolean);
   const strong = el.querySelector('strong');
   const label = strong ? strong.textContent : el.dataset.value;
-  if (step === 0) qGoal = { key: el.dataset.value, label, values: vals };
-  else if (step === 1) qWay = { label, values: vals };
+  qGoal = { key: el.dataset.value, label, values: vals };
   document.getElementById('next-' + step).disabled = false;
 }
 
@@ -896,7 +898,7 @@ async function loadOrgData() {
 function summaryLine() {
   const parts = [];
   if (qGoal.label) parts.push('<strong>' + qGoal.label.toLowerCase() + '</strong>');
-  if (qWay.label && qWay.values.length) parts.push(qWay.label.toLowerCase());
+  if (qWay.labels && qWay.labels.length) parts.push(qWay.labels.join(' or ').toLowerCase());
   if (qState) parts.push('in <strong>' + qState + '</strong>');
   return parts.length ? 'You want to ' + parts.join(', ') + '. ' : '';
 }
@@ -929,7 +931,7 @@ async function showResult() {
       const has = (type, val) => tags.some(t => t.type === type && t.value === val);
       const focusMatch = qGoal.values.some(v => has('focus', v));
       const wayMatch   = qWay.values.length ? qWay.values.some(v => has('help', v)) : false;
-      const stateMatch = qState ? (has('state', qState) || has('state', 'All states')) : false;
+      const stateMatch = qState ? (has('state', qState) || has('state', 'Nationwide (all states)')) : false;
       return { o, focusMatch, score: (focusMatch ? 3 : 0) + (wayMatch ? 2 : 0) + (stateMatch ? 1 : 0) };
     }).filter(x => x.focusMatch)
       .sort((a, b) => b.score - a.score || a.o.fields.Name.localeCompare(b.o.fields.Name));
@@ -960,7 +962,7 @@ function skipToDirectory() { window.location.href = 'index.html'; }
 
 function resetQuiz() {
   qGoal = { key: null, label: null, values: [] };
-  qWay = { label: null, values: [] };
+  qWay = { labels: [], values: [] };
   qState = '';
   currentStep = 0;
   const ss = document.getElementById('state-select'); if (ss) ss.value = '';
@@ -968,7 +970,6 @@ function resetQuiz() {
   document.getElementById('step-0').classList.add('active');
   document.querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
   document.getElementById('next-0').disabled = true;
-  document.getElementById('next-1').disabled = true;
   document.getElementById('step-progress').style.display = 'flex';
   document.getElementById('quiz-result').classList.remove('show');
   updateDots();
