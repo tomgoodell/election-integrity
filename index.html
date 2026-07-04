@@ -733,13 +733,13 @@ async function init() {
   // Applies to BOTH views: sets researcher dropdowns AND volunteer chipFilters.
   if (window.location.hash) {
     try {
-      const raw = decodeURIComponent(window.location.hash.slice(1));
-      raw.split('&').forEach(segment => {
+      const raw = window.location.hash.slice(1);  // split on '&' first, then decode each part
+      raw.split('&').forEach(segment => {         // (a value may contain %26 = a literal '&')
         const withoutPrefix = segment.replace(/^f\d+=/, '');
         const eqIdx = withoutPrefix.indexOf('=');
         if (eqIdx > -1) {
-          const fieldKey = withoutPrefix.slice(0, eqIdx).trim();
-          const valueStr = withoutPrefix.slice(eqIdx + 1).trim();
+          const fieldKey = decodeURIComponent(withoutPrefix.slice(0, eqIdx)).trim();
+          const valueStr = decodeURIComponent(withoutPrefix.slice(eqIdx + 1)).trim();
           const cat = categories.find(c => c.fieldKey === fieldKey);
           if (cat) {
             const val = (catValues[cat._id] || []).find(v => v.value === valueStr);

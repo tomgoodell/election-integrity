@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ways to Help — Election Integrity Resource Directory</title>
+<meta name="description" content="A plain-language guide to the different ways people help protect free and fair elections — what each one means, and what you'd actually do.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --ink: #1c1c1a; --ink-soft: #5a5a54; --ink-faint: #9a9a90;
+  --paper: #faf9f6; --cream: #f2f0ea; --rule: #e2ded4;
+  --accent: #2d5f3f; --accent-lt: #e8f2ec;
+  --serif: 'Lora', Georgia, serif; --sans: 'DM Sans', -apple-system, sans-serif;
+}
+html { scroll-behavior: smooth; }
+body { font-family: var(--sans); background: var(--paper); color: var(--ink); -webkit-font-smoothing: antialiased; }
+
+/* Nav (matches welcome.html) */
+.nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1.25rem 2.5rem; border-bottom: 1px solid var(--rule);
+  background: rgba(250,249,246,0.9); backdrop-filter: blur(6px);
+  position: sticky; top: 0; z-index: 10;
+}
+.nav-logo { font-family: var(--serif); font-size: 15px; color: var(--ink-soft); letter-spacing: 0.01em; text-decoration: none; }
+.nav-logo span { color: var(--accent); font-weight: 600; }
+.nav-link {
+  font-size: 13px; color: var(--ink-soft); text-decoration: none;
+  padding: 6px 16px; border: 1px solid var(--rule); border-radius: 20px; transition: all 0.2s;
+}
+.nav-link:hover { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+/* Header */
+.guide-header { max-width: 720px; margin: 0 auto; padding: 4.5rem 2rem 2.5rem; text-align: center; }
+.guide-eyebrow { font-size: 12px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin-bottom: 1.25rem; }
+.guide-title { font-family: var(--serif); font-size: clamp(34px, 5vw, 52px); font-weight: 600; line-height: 1.12; margin-bottom: 1.25rem; }
+.guide-title em { font-style: italic; color: var(--accent); }
+.guide-lede { font-size: 17px; color: var(--ink-soft); line-height: 1.7; }
+
+/* Groups */
+.guide-body { max-width: 760px; margin: 0 auto; padding: 1rem 2rem 3rem; }
+.guide-group { margin-top: 3.25rem; }
+.group-title {
+  font-family: var(--serif); font-size: 15px; font-weight: 600; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  padding-bottom: 0.6rem; border-bottom: 2px solid var(--accent-lt); margin-bottom: 1.75rem;
+}
+
+/* Entry card */
+.way {
+  display: flex; gap: 1.1rem; align-items: flex-start;
+  background: #fff; border: 1px solid var(--rule); border-radius: 12px;
+  padding: 1.5rem 1.6rem; margin-bottom: 1rem; transition: box-shadow 0.2s, border-color 0.2s;
+}
+.way:hover { border-color: #cfd8d2; box-shadow: 0 4px 20px rgba(45,95,63,0.07); }
+.way-icon { font-size: 30px; line-height: 1.2; flex-shrink: 0; width: 42px; text-align: center; }
+.way-main { flex: 1; min-width: 0; }
+.way-hed { font-family: var(--serif); font-size: 21px; font-weight: 600; margin-bottom: 0.5rem; }
+.way-desc { font-size: 15.5px; color: var(--ink-soft); line-height: 1.65; }
+.way-do { font-size: 14px; color: var(--ink); line-height: 1.6; margin-top: 0.7rem; }
+.way-do b { color: var(--accent); font-weight: 500; }
+.way-link {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 1rem;
+  font-size: 14px; font-weight: 500; color: var(--accent); text-decoration: none;
+}
+.way-link span { transition: transform 0.2s; }
+.way-link:hover span { transform: translateX(3px); }
+
+/* Closing CTA */
+.guide-cta { background: var(--cream); border-top: 1px solid var(--rule); padding: 4rem 2rem; text-align: center; }
+.guide-cta h2 { font-family: var(--serif); font-size: clamp(24px, 3.5vw, 34px); font-weight: 600; margin-bottom: 0.75rem; }
+.guide-cta p { font-size: 16px; color: var(--ink-soft); margin-bottom: 2rem; }
+.cta-row { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.btn-primary, .btn-secondary { font-size: 15px; font-weight: 500; padding: 13px 26px; border-radius: 30px; text-decoration: none; transition: all 0.2s; }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary:hover { background: #245034; transform: translateY(-1px); }
+.btn-secondary { background: transparent; color: var(--ink); border: 1px solid var(--rule); }
+.btn-secondary:hover { border-color: var(--ink); }
+
+/* Footer */
+.footer { background: var(--ink); padding: 2rem; text-align: center; }
+.footer p { font-size: 13px; color: rgba(255,255,255,0.35); }
+.footer a { color: rgba(255,255,255,0.55); text-decoration: none; }
+.footer a:hover { color: #fff; }
+
+@media (max-width: 600px) {
+  .nav { padding: 1rem 1.25rem; }
+  .guide-header, .guide-body, .guide-cta { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .way { flex-direction: column; gap: 0.5rem; padding: 1.25rem; }
+  .way-icon { width: auto; text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="welcome.html" class="nav-logo">Election Integrity <span>Resource Directory</span></a>
+  <a href="index.html" class="nav-link">Browse the directory →</a>
+</nav>
+
+<header class="guide-header">
+  <div class="guide-eyebrow">A plain-language guide</div>
+  <h1 class="guide-title">So many <em>ways to help</em></h1>
+  <p class="guide-lede">
+    You don't have to be a lawyer, an expert, or a political junkie. Below is a plain-language
+    tour of the different ways people help protect free and fair elections — what each one
+    actually means, and what you'd do. Find one that fits, then jump straight to the
+    organizations doing it.
+  </p>
+</header>
+
+<main class="guide-body">
+
+  <!-- Group 1 -->
+  <section class="guide-group">
+    <div class="group-title">Helping people vote</div>
+
+    <div class="way">
+      <div class="way-icon">📋</div>
+      <div class="way-main">
+        <div class="way-hed">Voter registration</div>
+        <div class="way-desc">Millions of eligible Americans aren't registered — they moved, they just turned 18, or they never got around to it. And you can't vote if you're not on the rolls. Registration drives meet people where they are and help them sign up.</div>
+        <div class="way-do"><b>You might:</b> staff a table at a community event, help people register online, or canvass door to door.</div>
+        <a class="way-link" href="index.html#focus=Voter registration">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+
+    <div class="way">
+      <div class="way-icon">📣</div>
+      <div class="way-main">
+        <div class="way-hed">Get out the vote</div>
+        <div class="way-desc">Being registered isn't the same as voting. "Get out the vote" (GOTV) is the gentle-but-persistent work of reminding people an election is coming, helping them make a plan, and making sure they know <em>when, where, and how</em> to vote — by mail, early, or on Election Day.</div>
+        <div class="way-do"><b>You might:</b> send reminder calls or texts, knock on doors, share deadline info, or offer neighbors a ride to the polls.</div>
+        <a class="way-link" href="index.html#focus=Get out the vote">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+
+    <div class="way">
+      <div class="way-icon">🎓</div>
+      <div class="way-main">
+        <div class="way-hed">Voter education</div>
+        <div class="way-desc">The rules are different in every state, and they change often. Voter education answers the basic questions in plain language: Am I registered? What's on my ballot? What ID do I need? When and where do I vote?</div>
+        <div class="way-do"><b>You might:</b> answer questions on a voter hotline, run a small info session, or help translate materials into other languages.</div>
+        <a class="way-link" href="index.html#focus=Voter education">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+
+    <div class="way">
+      <div class="way-icon">✉️</div>
+      <div class="way-main">
+        <div class="way-hed">Ballot curing</div>
+        <div class="way-desc">When you vote by mail, your ballot can be set aside for a small, fixable problem — a signature that doesn't quite match, a forgotten date. In many states you're allowed to "cure" (fix) it — but only if someone reaches you in time. Curing programs track down those voters and walk them through the fix before the deadline, so a ballot that was about to be thrown out actually counts.</div>
+        <div class="way-do"><b>You might:</b> call or visit flagged voters and help them complete the fix in time.</div>
+        <a class="way-link" href="index.html#focus=Ballot curing">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Group 2 -->
+  <section class="guide-group">
+    <div class="group-title">Protecting the vote &amp; the count</div>
+
+    <div class="way">
+      <div class="way-icon">🗳️</div>
+      <div class="way-main">
+        <div class="way-hed">Poll working</div>
+        <div class="way-desc">Elections are run by regular people. Poll workers check in voters, hand out ballots, and keep the day running smoothly. Lots of places are short-staffed — and the job is usually <em>paid</em>, with training provided.</div>
+        <div class="way-do"><b>You might:</b> work a shift during early voting or on Election Day, often for a stipend.</div>
+        <a class="way-link" href="index.html#focus=Poll working %2F election admin">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+
+    <div class="way">
+      <div class="way-icon">👀</div>
+      <div class="way-main">
+        <div class="way-hed">Poll observing</div>
+        <div class="way-desc">Poll watchers quietly observe the process to confirm it's run by the book — and to reassure the community that it was. They watch and take notes; they don't interfere with voters.</div>
+        <div class="way-do"><b>You might:</b> complete a short training, get credentialed by a nonpartisan or party group, and observe a polling place or the ballot count.</div>
+        <a class="way-link" href="index.html#focus=Poll observing">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+
+    <div class="way">
+      <div class="way-icon">🔎</div>
+      <div class="way-main">
+        <div class="way-hed">Voter roll integrity &amp; re-registration</div>
+        <div class="way-desc">Voter lists are always changing, and people get removed — sometimes rightly (they moved or died), sometimes by mistake. This work keeps the rolls accurate: reviewing records, flagging wrongful removals, and — the part most people have never heard of — finding voters who were quietly dropped and helping them <em>re-register</em> before it's too late.</div>
+        <div class="way-do"><b>You might:</b> help review records, notify affected voters, or assist people with re-registering.</div>
+        <a class="way-link" href="index.html#focus=Voter roll integrity">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+
+    <div class="way">
+      <div class="way-icon">✅</div>
+      <div class="way-main">
+        <div class="way-hed">Audits &amp; verification</div>
+        <div class="way-desc">Once the votes are counted, how do we know the count was right? Audits compare a sample of the actual paper ballots against the reported totals to confirm they match. It's how errors get caught — and how we can honestly say the results are accurate.</div>
+        <div class="way-do"><b>You might:</b> serve as an audit observer or help with post-election reviews.</div>
+        <a class="way-link" href="index.html#focus=Audits %26 verification">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Group 3 -->
+  <section class="guide-group">
+    <div class="group-title">The legal &amp; policy side</div>
+
+    <div class="way">
+      <div class="way-icon">⚖️</div>
+      <div class="way-main">
+        <div class="way-hed">Litigation &amp; legal defense</div>
+        <div class="way-desc">When voters are wrongly turned away, or a new law makes voting harder than it should be, lawyers step in — defending voters in court and challenging rules that don't hold up.</div>
+        <div class="way-do"><b>You might:</b> offer pro bono legal time, or — as a non-lawyer — help with research, intake, or supporting the voters involved.</div>
+        <a class="way-link" href="index.html#focus=Litigation %2F legal defense">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+
+    <div class="way">
+      <div class="way-icon">🏛️</div>
+      <div class="way-main">
+        <div class="way-hed">Policy &amp; advocacy</div>
+        <div class="way-desc">The rules of voting are written by legislatures and election officials. Advocacy is the work of shaping those rules — making the case for laws that keep voting both accessible and secure.</div>
+        <div class="way-do"><b>You might:</b> contact your legislators, testify, organize your neighbors, or join a campaign.</div>
+        <a class="way-link" href="index.html#focus=Policy %26 advocacy">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Group 4 -->
+  <section class="guide-group">
+    <div class="group-title">Information &amp; truth</div>
+
+    <div class="way">
+      <div class="way-icon">📊</div>
+      <div class="way-main">
+        <div class="way-hed">Research &amp; data</div>
+        <div class="way-desc">Good decisions need good information. Researchers gather and analyze data on how elections really work — where the weak spots are, what's improving, what needs attention — so officials, journalists, and advocates can act on facts instead of hunches.</div>
+        <div class="way-do"><b>You might:</b> help with data analysis, mapping, public-records requests, or writing up findings.</div>
+        <a class="way-link" href="index.html#focus=Research %26 data">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+
+    <div class="way">
+      <div class="way-icon">🛡️</div>
+      <div class="way-main">
+        <div class="way-hed">Countering disinformation</div>
+        <div class="way-desc">False claims about voting — wrong dates, made-up ID rules, "your vote won't count anyway" — spread fast, and they keep people home or chip away at trust. This work spots those falsehoods early and gets accurate information out quickly.</div>
+        <div class="way-do"><b>You might:</b> help monitor for false claims, share verified information, or simply help friends and neighbors find the truth.</div>
+        <a class="way-link" href="index.html#focus=Countering disinformation">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<section class="guide-cta">
+  <h2>Found something that fits?</h2>
+  <p>Answer three quick questions, or browse the whole directory yourself.</p>
+  <div class="cta-row">
+    <a href="welcome.html#quiz" class="btn-primary">Take the quick guide →</a>
+    <a href="index.html" class="btn-secondary">Browse all organizations</a>
+  </div>
+</section>
+
+<footer class="footer">
+  <p>
+    Election Integrity Resource Directory ·
+    <a href="index.html">Browse organizations</a> ·
+    <a href="index.html#submit">List your group</a>
+  </p>
+</footer>
+
+</body>
+</html>
