@@ -629,9 +629,12 @@ const ALL_STATES = 'Nationwide (all states)';
 // adminSecret is '' for public visitors (the server applies the public rules) and is set to the
 // entered password once an admin logs in (the server then authorizes privileged calls).
 async function atGet(table) {
-  // no-store: always pull fresh data (the directory is edited via the admin panel and by
-  // maintenance scripts, so a cached response can silently show stale orgs/tags).
-  const res = await fetch(`${API}?table=${encodeURIComponent(table)}`, {
+  // Public reads are served from Cloudflare's edge cache (see functions/airtable.js) to keep
+  // Airtable API usage low. When an admin is logged in, append a cache-busting param so the
+  // admin's own reads skip the edge cache and always get live data (the server key ignores this
+  // param, so anonymous visitors still share a single cached copy per table).
+  const bust = adminSecret ? `&_=${Date.now()}` : '';
+  const res = await fetch(`${API}?table=${encodeURIComponent(table)}${bust}`, {
     cache: 'no-store',
     headers: {'X-Admin-Password': adminSecret}
   });
