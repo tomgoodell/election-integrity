@@ -24,10 +24,12 @@
 // Public visitors therefore see data at most PUBLIC_CACHE_TTL old.
 
 const PUBLIC_READ_TABLES = new Set(['Organizations', 'Categories', 'CategoryValues', 'OrgTags']);
-const PUBLIC_CACHE_TTL = 21600; // 6 hours — tune here (shorter = fresher public view, more API calls).
+const PUBLIC_CACHE_TTL = 86400; // 24 hours — tune here (shorter = fresher public view, more API calls).
                                 // On-demand only: a table is re-fetched from Airtable just once per
                                 // this window, and only if someone actually requests it after it expires.
-                                // Admins always bypass (live), and admin writes purge the table's cache.
+                                // Admins always bypass (live), and admin-panel writes purge the table's
+                                // cache immediately (per data center) — so this TTL only bounds how long a
+                                // direct-in-Airtable edit (not via the admin panel) can lag for the public.
 
 export async function onRequest(context) {
   const { request, env } = context;
