@@ -15,8 +15,16 @@
 //
 // A lightweight probe (GET /airtable?auth=1 with the header) lets the admin login screen verify
 // the password without hitting Airtable.
+//
+// EDGE CACHING: anonymous public GETs on the public tables are served from Cloudflare's edge
+// cache (Cache API) for PUBLIC_CACHE_TTL seconds, so ordinary visitors don't each trigger an
+// Airtable API call — this keeps monthly API usage far under Airtable's plan limits. Admin
+// requests (valid X-Admin-Password) always bypass the cache and hit Airtable, so the admin sees
+// live data; any admin write also purges that table's cached copy (best-effort, per data center).
+// Public visitors therefore see data at most PUBLIC_CACHE_TTL old.
 
 const PUBLIC_READ_TABLES = new Set(['Organizations', 'Categories', 'CategoryValues', 'OrgTags']);
+const PUBLIC_CACHE_TTL = 1800; // 30 minutes — tune here (shorter = fresher public view, more API calls)
 
 export async function onRequest(context) {
   const { request, env } = context;
@@ -27,6 +35,9 @@ export async function onRequest(context) {
 
   const json = (obj, status = 200) =>
     new Response(JSON.stringify(obj), { status, headers: { 'Content-Type': 'application/json' } });
+
+  // A stable, same-origin cache key per table (ignores unrelated query params / headers).
+  const cacheKeyFor = (t) => new Request(`${url.origin}/airtable?table=${encodeURIComponent(t)}`, { method: 'GET' });
 
   const isAdmin = () => {
     const supplied = request.headers.get('X-Admin-Password') || '';
@@ -60,8 +71,20 @@ export async function onRequest(context) {
     'Content-Type': 'application/json'
   };
 
+  // Cacheable = anonymous read of a public table. Admin reads bypass the cache (always live).
+  const cacheable = method === 'GET' && PUBLIC_READ_TABLES.has(table) && !isAdmin();
+  const cache = caches.default;
+
   try {
     if (method === 'GET') {
+      // Try the edge cache first for anonymous public reads.
+      if (cacheable) {
+        try {
+          const hit = await cache.match(cacheKeyFor(table));
+          if (hit) return hit;
+        } catch (_) { /* Cache API unavailable (e.g. local dev) — fall through to Airtable */ }
+      }
+
       let records = [], offset = null;
       do {
         const atUrl = `${AT_BASE}/${encodeURIComponent(table)}?pageSize=100` + (offset ? `&offset=${offset}` : '');
@@ -71,7 +94,20 @@ export async function onRequest(context) {
         records = records.concat(data.records || []);
         offset = data.offset || null;
       } while (offset);
-      return json({ records });
+
+      const body = JSON.stringify({ records });
+      if (cacheable) {
+        // Store in the edge cache with a TTL, and return the same body.
+        const resp = new Response(body, {
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': `public, max-age=${PUBLIC_CACHE_TTL}` }
+        });
+        try { context.waitUntil(cache.put(cacheKeyFor(table), resp.clone())); } catch (_) {}
+        return resp;
+      }
+      // Admin / non-public reads: always fresh, never stored by clients.
+      return new Response(body, {
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
+      });
     }
 
     let atUrl, atOptions;
@@ -91,6 +127,11 @@ export async function onRequest(context) {
     const res = await fetch(atUrl, atOptions);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error?.message || `Airtable ${res.status}`);
+    // A write may have changed a public table — drop its cached copy so the change shows up
+    // promptly (best-effort; purges only this data center's cache, others expire via the TTL).
+    if (PUBLIC_READ_TABLES.has(table)) {
+      try { context.waitUntil(cache.delete(cacheKeyFor(table))); } catch (_) {}
+    }
     return json(data);
 
   } catch (e) {
