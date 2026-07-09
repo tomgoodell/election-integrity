@@ -368,6 +368,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
     <div class="friendly-actions">
       <div class="results-count" id="results-count-v"></div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="toggle-btn" id="toggle-desc" onclick="toggleDesc()">Hide descriptions</button>
         <button class="toggle-btn" id="toggle-tags" onclick="toggleTags()">Hide tags</button>
         <button class="friendly-clear" onclick="clearFilters()">Clear all filters — show everything</button>
       </div>
@@ -947,6 +948,7 @@ function buildMapCategorySelect() {
 //
 // showTab()        — switches between the four main tabs
 // clearFilters()   — resets all filters, search, and the quiz match set
+// toggleDesc()     — shows/hides org descriptions on cards (concise list)
 // toggleTags()     — shows/hides the category tags on cards
 // setLetter()      — sets the active alpha bar letter filter
 // renderCards()    — main render function, filters+sorts orgs, draws cards
@@ -1156,6 +1158,13 @@ function clearFilters() {
   renderCards();
 }
 
+function toggleDesc() {
+  showDesc = !showDesc;
+  const btn = document.getElementById('toggle-desc');
+  if (btn) btn.textContent = showDesc ? 'Hide descriptions' : 'Show descriptions';
+  renderCards();
+}
+
 function toggleTags() {
   showTags = !showTags;
   const btn = document.getElementById('toggle-tags');
@@ -1295,7 +1304,7 @@ function renderVolunteerCards() {
   if (!filtered.length) {
     c.innerHTML = '<div class="no-results">No organizations match your filters. <button class="friendly-clear" onclick="clearFilters()">Clear filters — show everything</button></div>';
   } else {
-    c.innerHTML = filtered.map((org, i) => buildCardHtml(org, i, true, showTags)).join('');   // descriptions always on; tags follow the Hide-tags toggle
+    c.innerHTML = filtered.map((org, i) => buildCardHtml(org, i, showDesc, showTags)).join('');   // descriptions + tags each follow their Hide/Show toggle
   }
   window._filtered = filtered;
 }
