@@ -71,8 +71,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .chip:hover { border-color: #aaa; background: #eee; color: #1a1a1a; }
 .chip.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 .chip.active:hover { background: #333; }
+.chip-subgroup { margin-top: 12px; }
+.chip-subgroup-label { font-size: 11px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 7px; }
 .friendly-search { width: 100%; padding: 10px 14px; font-size: 15px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; color: #1a1a1a; margin-bottom: 0.5rem; }
 .friendly-search:focus { outline: none; border-color: #888; }
+.friendly-dropdown { width: 100%; max-width: 340px; padding: 9px 12px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; color: #1a1a1a; background: #fff; cursor: pointer; }
+.friendly-dropdown:focus { outline: none; border-color: #888; }
 .friendly-actions { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 8px; }
 .friendly-clear { font-size: 13px; color: #444; background: none; border: none; cursor: pointer; font-family: inherit; text-decoration: underline; padding: 0; }
 .friendly-clear:hover { color: #1a1a1a; }
@@ -325,8 +329,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
      ═══════════════════════════════════════════════════════════ -->
 <div class="page">
   <div class="header">
-    <h1>Find your match for supporting free and fair elections</h1>
-    <p>Find organizations working on free and fair elections — then reach out to get involved.</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem;">
+      <div>
+        <h1>Find your match for supporting free and fair elections</h1>
+        <p>Find organizations working on free and fair elections — then reach out to get involved.</p>
+      </div>
+      <a href="welcome.html" onclick="try{sessionStorage.removeItem('cameFromQuiz');sessionStorage.removeItem('quizState');sessionStorage.removeItem('quizMatches');}catch(e){}" style="display:inline-flex;align-items:center;gap:7px;font-size:15px;font-weight:600;color:#fff;background:#085041;text-decoration:none;padding:11px 20px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 8px rgba(8,80,65,0.28);transition:all 0.15s;" onmouseover="this.style.background='#0a6a55';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#085041';this.style.transform='none'">← Back to start page</a>
+    </div>
   </div>
   <div class="tabs">
     <button class="tab active" onclick="showTab('browse',this)">Browse groups</button>
@@ -338,66 +347,36 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
   <!-- BROWSE -->
   <div id="tab-browse" class="view active">
 
-    <!-- Mode toggle -->
-    <div class="mode-toggle">
-      <span class="mode-toggle-label">View:</span>
-      <span class="view-tooltip-wrap">
-        <span class="view-tooltip-icon" tabindex="0">?</span>
-        <span class="view-tooltip-box">
-          <strong>Citizen view</strong> — Simple filters and plain-language descriptions, designed for people new to election work.<br><br>
-          <strong>Researcher view</strong> — Full dropdown filters and advanced controls for experienced advocates and researchers.
-        </span>
-      </span>
-      <button class="mode-btn active" id="mode-btn-volunteer" onclick="setBrowseMode('volunteer')">🙋 Citizen</button>
-      <button class="mode-btn" id="mode-btn-researcher" onclick="setBrowseMode('researcher')">🔬 Researcher</button>
+    <!-- Intro panel (dismissible) -->
+    <div class="intro-panel" id="intro-panel">
+      <button class="intro-dismiss" onclick="dismissIntro()" title="Dismiss">×</button>
+      <p id="intro-text">
+        <strong>Welcome!</strong> Browse organizations working to protect free and fair elections.
+        <em>Search by name or keyword</em>, or narrow the list using the filters below.
+        Click any organization to learn more and find contact information.
+      </p>
     </div>
 
-    <!-- ── VOLUNTEER VIEW ─────────────────────────────────── -->
-    <div id="volunteer-view">
-      <!-- Intro panel (dismissible) -->
-      <div class="intro-panel" id="intro-panel">
-        <button class="intro-dismiss" onclick="dismissIntro()" title="Dismiss">×</button>
-        <p>
-          <strong>Welcome!</strong> Below are 46 organizations working to protect free and fair elections.
-          Use the filters to narrow by <em>what kind of work</em> interests you, or just
-          <em>search by name or keyword</em>. Click any organization to learn more and find contact information.
-        </p>
-      </div>
+    <!-- Search -->
+    <input class="friendly-search" type="text" id="friendly-search"
+      placeholder="🔍  Search by name or keyword — e.g. &quot;Georgia&quot; or &quot;ballot&quot;"
+      oninput="syncSearchAndRender(this.value)">
 
-      <!-- Friendly search -->
-      <input class="friendly-search" type="text" id="friendly-search"
-        placeholder="🔍  Search by name or keyword — e.g. "Georgia" or "ballot""
-        oninput="syncSearchAndRender(this.value)">
+    <!-- Filters (chips + dropdowns) — populated by buildFriendlyFilters() -->
+    <div class="friendly-filters" id="friendly-filters"></div>
 
-      <!-- Friendly filter chips — populated by buildFriendlyFilters() -->
-      <div class="friendly-filters" id="friendly-filters"></div>
-
-      <div class="friendly-actions">
-        <div class="results-count" id="results-count-v"></div>
+    <div class="friendly-actions">
+      <div class="results-count" id="results-count-v"></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <button class="toggle-btn" id="toggle-tags" onclick="toggleTags()">Hide tags</button>
         <button class="friendly-clear" onclick="clearFilters()">Clear all filters — show everything</button>
       </div>
-
-      <div id="cards-container-v"></div>
     </div>
 
-    <!-- ── RESEARCHER VIEW ────────────────────────────────── -->
-    <div id="researcher-view" style="display:none">
-      <div class="search-row">
-        <input type="text" id="search" placeholder="Search by name, description, or keyword..." oninput="renderCards()">
-        <button class="clear-btn" onclick="clearFilters()">Clear filters</button>
-      </div>
-      <div class="filter-row" id="browse-filters">
-        <!-- Built dynamically from Categories -->
-        <!-- State filter is now a dynamic category filter like all others -->
-      </div>
-      <div class="view-controls">
-        <div class="results-count" id="results-count"></div>
-        <button class="toggle-btn" id="toggle-tags" onclick="toggleTags()">Hide tags</button>
-        <button class="toggle-btn" id="toggle-desc" onclick="toggleDesc()">Hide descriptions</button>
-      </div>
-      <div class="alpha-bar" id="alpha-bar"></div>
-      <div id="cards-container"><div class="loading">Loading organizations…</div></div>
-    </div>
+    <!-- A–Z quick jump -->
+    <div class="alpha-bar" id="alpha-bar"></div>
+
+    <div id="cards-container-v"><div class="loading">Loading organizations…</div></div>
 
   </div>
 
@@ -605,14 +584,15 @@ const T_ORGTAGS  = 'OrgTags';
 // its values, and every org's tags) is left completely intact, so removing a key here fully restores
 // it. (Admin > Manage lists still lists these, so you can see/re-enable them there too.)
 //   'partisan' = the "Partisan affiliation" category, hidden 2026-07-01 at the owner's request.
-const HIDDEN_CAT_KEYS = ['partisan', 'work', 'phase', 'need', 'voter'];
+//   'geo' = "Geographic Scope" (Local/Regional/Statewide/National) — simplified to a single State filter 2026-07-08.
+const HIDDEN_CAT_KEYS = ['partisan', 'work', 'phase', 'need', 'voter', 'geo'];
 // 'partisan' = Partisan affiliation; 'work'/'phase'/'need'/'voter' = the retired old activity
 // categories (Activities / Election phases / Needs / Voter reg focus), replaced by Focus areas +
 // Ways to get involved. Their old tags are kept in Airtable but hidden here (fully reversible).
 
 // An org tagged with this special States value counts as present in EVERY state, so it matches any
 // specific state filter (see tagSatisfies). Lets a nationwide org (e.g. LWV) carry one tag, not 50.
-const ALL_STATES = 'Nationwide (all states)';
+const ALL_STATES = 'Nationwide';
 
 // ── Airtable helpers ───────────────────────────────────────────
 // Four core functions that wrap fetch() calls to the Cloudflare
@@ -693,8 +673,8 @@ let adminLoggedIn = false;
 let showDesc = true;
 let showTags = true;
 let activeLetter = '';
-let browseMode = 'volunteer'; // 'volunteer' (Citizen view) | 'researcher'
 let quizMatchSet = null;       // Set of org ids when arriving from the welcome quick guide; null = show all
+let quizSummaryHtml = '';      // human-readable description of the quiz answers (goal, ways, state) for the banner
 let adminActiveLetter = ''; // alpha filter for Approved Organizations tab
 // chipFilters: map of catId -> selected valueId for the volunteer chip UI
 let chipFilters = {};
@@ -719,7 +699,7 @@ async function init() {
     rebuildUI();
     await loadOrgs();
   } catch(e) {
-    document.getElementById('cards-container').innerHTML =
+    document.getElementById('cards-container-v').innerHTML =
       `<div class="error-msg">Could not connect to the database. Please check your internet connection and try refreshing.<br><small>${e.message}</small></div>`;
     return;
   }
@@ -731,9 +711,16 @@ async function init() {
     sessionStorage.removeItem('quizMatches');
   } catch(e) {}
 
-  // Pre-set filter(s) from URL hash written by welcome.html quiz.
-  // Format: #f1=fieldKey=Value&f2=fieldKey=Value
-  // Applies to BOTH views: sets researcher dropdowns AND volunteer chipFilters.
+  // Describe those quiz answers (goal, ways, and the "where") so the banner can show WHY the list
+  // is narrowed — the quiz matches by id, so no filter control reflects the criteria on its own.
+  // (quizState is left in place; welcome.html's Back-button restore still uses it.)
+  try {
+    const qs = JSON.parse(sessionStorage.getItem('quizState') || 'null');
+    if (quizMatchSet && qs) quizSummaryHtml = buildQuizSummary(qs);
+  } catch(e) {}
+
+  // Pre-set filter(s) from URL hash written by welcome.html / ways.html links.
+  // Format: #f1=fieldKey=Value&f2=fieldKey=Value  (also accepts #focus=Value from the Ways guide)
   if (window.location.hash) {
     try {
       const raw = window.location.hash.slice(1);  // split on '&' first, then decode each part
@@ -746,20 +733,10 @@ async function init() {
           const cat = categories.find(c => c.fieldKey === fieldKey);
           if (cat) {
             const val = (catValues[cat._id] || []).find(v => v.value === valueStr);
-            if (val) {
-              // Researcher view: set the dropdown
-              const sel = document.getElementById('f-cat-' + cat._id);
-              if (sel) sel.value = val._id;
-              // Volunteer view: set chipFilters and update chip active states
-              if (chipFilters.hasOwnProperty(cat._id)) {
-                chipFilters[cat._id] = val._id;
-                // Deactivate "All" chip for this category
-                const allChip = document.getElementById('chip-all-' + cat._id);
-                if (allChip) allChip.classList.remove('active');
-                // Activate the matching value chip
-                const valChip = document.getElementById('chip-' + val._id);
-                if (valChip) valChip.classList.add('active');
-              }
+            if (val && chipFilters.hasOwnProperty(cat._id)) {
+              // Set the filter and reflect it in its control (chips or dropdown).
+              chipFilters[cat._id] = val._id;
+              syncFriendlyControl(cat._id, val._id);
             }
           }
         }
@@ -868,7 +845,7 @@ async function loadPendingData() {
 // and again whenever the schema changes (e.g. admin adds a new value).
 //
 // rebuildUI()              — calls all builders below in sequence
-// buildBrowseFilters()     — populates the filter dropdowns on Browse tab
+// buildFriendlyFilters()   — populates the Browse view's filters (chips + dropdowns)
 // buildCheckboxGroup()     — populates a checkbox grid for a given category
 // buildSubmitCategories()  — builds the focus-area checkboxes on Submit form
 // buildEditCategories()    — builds the same for the Edit org modal
@@ -889,75 +866,10 @@ function getOrgTagsByType(orgId, tagType) {
 }
 
 function rebuildUI() {
-  buildBrowseFilters();
-  buildFriendlyFilters();
+  buildFriendlyFilters();     // the single Browse view's filters (chips + dropdowns)
   buildSubmitCategories();
   buildEditCategories();
   buildMapCategorySelect();
-}
-
-function buildBrowseFilters() {
-  const row = document.getElementById('browse-filters');
-
-  // Tooltip text keyed by category fieldKey
-  const tooltips = {
-    geo:      'Geographic scope of activities',
-    state:    'Search for organizations that operate in a particular state',
-    work:     'Activities they engage in, services they provide',
-    phase:    'Phases of the election process in which they engage',
-    voter:    'Aspects of voter registration on which they focus',
-    demo:     'Age groups, race, etc. on which they focus',
-    partisan: 'Conservative, progressive, non-partisan',
-    need:     'Types of support they need'
-  };
-
-  function makeWrap(selectEl, tipText) {
-    const wrap = document.createElement('div');
-    wrap.className = 'filter-wrap';
-    wrap.appendChild(selectEl);
-    if (tipText) {
-      const tip = document.createElement('div');
-      tip.className = 'filter-tooltip';
-      tip.textContent = tipText;
-      wrap.appendChild(tip);
-    }
-    return wrap;
-  }
-
-  // Clear any previously built dynamic filter wrappers
-  row.querySelectorAll('.filter-wrap').forEach(f => f.remove());
-
-  // Find the need category so we can insert it last
-  const needCat = categories.find(c => c.fieldKey === 'need');
-
-  // Build one dropdown filter per active category, skipping need (appended last)
-  // State category gets a tooltip but is otherwise treated like all others
-  categories.forEach(cat => {
-    if (needCat && cat._id === needCat._id) return; // handled last
-    const vals = getActiveValues(cat._id);
-    if (!vals.length) return;
-    const sel = document.createElement('select');
-    sel.id = 'f-cat-' + cat._id;
-    sel.className = 'dynamic-filter';
-    sel.onchange = renderCards;
-    sel.innerHTML = `<option value="">All ${cat.name.toLowerCase()}</option>` +
-      vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
-    row.appendChild(makeWrap(sel, tooltips[cat.fieldKey] || ''));
-  });
-
-  // Append the needs filter last
-  if (needCat) {
-    const vals = getActiveValues(needCat._id);
-    if (vals.length) {
-      const sel = document.createElement('select');
-      sel.id = 'f-cat-' + needCat._id;
-      sel.className = 'dynamic-filter';
-      sel.onchange = renderCards;
-      sel.innerHTML = `<option value="">All ${needCat.name.toLowerCase()}</option>` +
-        vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
-      row.appendChild(makeWrap(sel, tooltips['need']));
-    }
-  }
 }
 
 function buildCheckboxGroup(containerId, catId, cssClass) {
@@ -1034,13 +946,11 @@ function buildMapCategorySelect() {
 // loaded into memory on startup) for fast, responsive filtering.
 //
 // showTab()        — switches between the four main tabs
-// clearFilters()   — resets all filters and search
-// toggleDesc()     — shows/hides org descriptions on cards
+// clearFilters()   — resets all filters, search, and the quiz match set
+// toggleTags()     — shows/hides the category tags on cards
 // setLetter()      — sets the active alpha bar letter filter
-// getActiveFilters() — reads current dropdown selections, returns
-//                     a map of {catId: valueId} for active filters
-// orgMatchesFilters() — tests a single org against all active filters
 // renderCards()    — main render function, filters+sorts orgs, draws cards
+// renderVolunteerCards() — does the actual filtering/sorting/drawing
 // renderAlphaBar() — draws the A–Z letter bar, highlights available letters
 //
 // window._filtered is set by renderCards() and used by openModal()
@@ -1054,33 +964,36 @@ function showTab(t, btn) {
   if (t === 'map') { if (!mapFilters.length) initMapFilters(); else renderMap(); }
 }
 
-// ── Browse mode ────────────────────────────────────────────────
-// Two views share the same underlying data and renderCards() logic.
-// 'volunteer' shows friendly chip filters + always-on descriptions.
-// 'researcher' shows the original dropdown + alpha bar interface.
-// Switching modes syncs search text and clears filters.
+// ── Browse filters ─────────────────────────────────────────────
+// Single Browse view. Filter state lives in chipFilters (catId -> valueId|null); the search box,
+// A–Z bar, and Hide-tags toggle round it out. Helpers below keep the on-screen controls in sync
+// with chipFilters (used by the URL-hash pre-select and by Clear filters).
 
-function setBrowseMode(mode) {
-  browseMode = mode;
-  document.getElementById('volunteer-view').style.display  = mode === 'volunteer'  ? '' : 'none';
-  document.getElementById('researcher-view').style.display = mode === 'researcher' ? '' : 'none';
-  document.getElementById('mode-btn-volunteer').classList.toggle('active', mode === 'volunteer');
-  document.getElementById('mode-btn-researcher').classList.toggle('active', mode === 'researcher');
-  // Sync search text between the two inputs
-  if (mode === 'researcher') {
-    const fv = document.getElementById('friendly-search').value;
-    document.getElementById('search').value = fv;
-  } else {
-    const rv = document.getElementById('search').value;
-    document.getElementById('friendly-search').value = rv;
-  }
+// Reflect chipFilters[catId] in that chip group's button highlighting.
+function syncChipActiveState(catId, valueId) {
+  const allChip = document.getElementById('chip-all-' + catId);
+  if (allChip) allChip.classList.toggle('active', !valueId);
+  (catValues[catId] || []).forEach(v => {
+    const c = document.getElementById('chip-' + v._id);
+    if (c) c.classList.toggle('active', v._id === valueId);
+  });
+}
+
+// Reflect chipFilters[catId] in whichever Citizen control this category uses (chips OR dropdown).
+function syncFriendlyControl(catId, valueId) {
+  const dd = document.getElementById('friendly-cat-' + catId);
+  if (dd) { dd.value = valueId || ''; return; }
+  syncChipActiveState(catId, valueId);
+}
+
+// Citizen dropdown (e.g. State) change handler — mirrors selectChip for large categories.
+function selectFriendlyDropdown(catId, value) {
+  chipFilters[catId] = value || null;
   renderCards();
 }
 
 function syncSearchAndRender(val) {
-  // Keep researcher search input in sync so switching modes preserves query
-  document.getElementById('search').value = val;
-  renderCards();
+  renderCards();   // the search box (#friendly-search) is read directly in renderVolunteerCards
 }
 
 function dismissIntro() {
@@ -1088,64 +1001,128 @@ function dismissIntro() {
   if (p) p.style.display = 'none';
 }
 
-// Build the volunteer-mode chip filters from live category data.
-// Called once from rebuildUI() after schema loads.
-// Chips show the most useful categories for newcomers:
-//   What kind of work? (work), Election phase (phase),
-//   Who do they serve? (demo), Political leaning (partisan)
-// Each chip sets chipFilters[catId] = valueId and re-renders.
+// Build the Citizen-view filter controls from live category data (called from rebuildUI()).
+// Shows EVERY visible filter category so Citizen has the same criteria as Researcher — small value
+// lists render as chip buttons; long ones (e.g. the 50 States) render as a dropdown so we don't
+// paint a wall of buttons. Each control sets chipFilters[catId] = valueId and re-renders.
 function buildFriendlyFilters() {
   const container = document.getElementById('friendly-filters');
   if (!container) return;
   chipFilters = {};
-
-  // Which categories to show as chips, and their friendly labels + hints
-  const friendlyCats = [
-    { key: 'work',     label: 'What kind of work?',     hint: 'Pick one to narrow the list' },
-    { key: 'phase',    label: 'What part of elections?', hint: '' },
-    { key: 'demo',     label: 'Which communities?',      hint: '' },
-    { key: 'partisan', label: 'Political leaning',       hint: '' },
-  ];
-
   container.innerHTML = '';
 
-  friendlyCats.forEach(({ key, label, hint }) => {
-    const cat = categories.find(c => c.fieldKey === key);
-    if (!cat) return;
+  // Friendlier labels for known categories; any other visible category falls back to its own name.
+  // Two lenses, phrased from different points of view so they're not confused:
+  //   'they' = what the ORGANIZATION works on;  'you' = how the VISITOR can help.
+  const labelOverrides = { focus: 'What they work on', help: 'How you can help', demo: 'Which communities?', state: 'Where? (choose a state)' };
+  // A short clarifier per category; the shared "pick one to narrow the list" guidance is appended.
+  const descOverrides  = {
+    focus: 'The area of election work this organization focuses on',
+    help:  'Hands-on ways you could personally pitch in',
+    demo:  'Communities this organization focuses on serving',
+    state: 'National organizations appear with every state'
+  };
+  // Broad-area grouping for a category's chips (VISUAL only — the filter is still single-select of
+  // one activity). Value names must match the CategoryValues in Airtable; any active value not listed
+  // here still shows, under a "More" heading. A grouped category always renders as chips (not a
+  // dropdown) since the sub-sections, not a flat wall, keep it readable.
+  const CATEGORY_GROUPS = {
+    focus: [
+      { title: 'Helping people vote',             values: ['Voter registration', 'Get out the vote', 'Voter education'] },
+      { title: 'Protecting the vote & the count', values: ['Poll observing', 'Poll working / election admin', 'Audits & verification', 'Voter roll integrity', 'Ballot curing'] },
+      { title: 'Legal & policy',                  values: ['Litigation / legal defense', 'Policy & advocacy'] },
+      { title: 'Information & truth',              values: ['Research & data', 'Countering disinformation'] },
+    ]
+  };
+  const CHIP_MAX = 12;   // more values than this → dropdown instead of chips (unless grouped)
+
+  categories.forEach(cat => {
     const vals = (catValues[cat._id] || []).filter(v => v.active);
     if (!vals.length) return;
-
-    chipFilters[cat._id] = null; // no chip selected initially
+    chipFilters[cat._id] = null;   // nothing selected initially
 
     const group = document.createElement('div');
     group.className = 'friendly-filter-group';
 
+    const label = labelOverrides[cat.fieldKey] || cat.name;
+    const desc  = descOverrides[cat.fieldKey];
+    const hint  = desc ? (desc + ' — pick one to narrow the list') : 'Pick one to narrow the list';
     const lbl = document.createElement('div');
     lbl.className = 'friendly-filter-group-label';
     lbl.innerHTML = label + (hint ? ` <span>${hint}</span>` : '');
     group.appendChild(lbl);
 
-    const row = document.createElement('div');
-    row.className = 'chip-row';
+    const groups = CATEGORY_GROUPS[cat.fieldKey];
+    if (vals.length > CHIP_MAX && !groups) {
+      // Dropdown for long lists (States).
+      const sel = document.createElement('select');
+      sel.className = 'friendly-dropdown';
+      sel.id = 'friendly-cat-' + cat._id;
+      sel.onchange = () => selectFriendlyDropdown(cat._id, sel.value);
+      sel.innerHTML = `<option value="">Any ${cat.name.toLowerCase()}</option>` +
+        vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
+      group.appendChild(sel);
+    } else {
+      // Chip buttons. One "All" chip for the whole category (selection is single-select), then
+      // either flat chips or, if this category is grouped, labelled sub-sections.
+      const makeChip = (v) => {
+        const chip = document.createElement('button');
+        chip.className = 'chip';
+        chip.id = 'chip-' + v._id;
+        chip.textContent = v.value;
+        chip.onclick = () => selectChip(cat._id, v._id, chip);
+        return chip;
+      };
 
-    // "All" chip
-    const allChip = document.createElement('button');
-    allChip.className = 'chip active';
-    allChip.id = 'chip-all-' + cat._id;
-    allChip.textContent = 'All';
-    allChip.onclick = () => selectChip(cat._id, null, allChip);
-    row.appendChild(allChip);
+      const allRow = document.createElement('div');
+      allRow.className = 'chip-row';
+      const allChip = document.createElement('button');
+      allChip.className = 'chip active';
+      allChip.id = 'chip-all-' + cat._id;
+      allChip.textContent = 'All';
+      allChip.onclick = () => selectChip(cat._id, null, allChip);
+      allRow.appendChild(allChip);
+      group.appendChild(allRow);
 
-    vals.forEach(v => {
-      const chip = document.createElement('button');
-      chip.className = 'chip';
-      chip.id = 'chip-' + v._id;
-      chip.textContent = v.value;
-      chip.onclick = () => selectChip(cat._id, v._id, chip);
-      row.appendChild(chip);
-    });
-
-    group.appendChild(row);
+      if (groups) {
+        const placed = new Set();
+        groups.forEach(g => {
+          const groupVals = g.values.map(name => vals.find(v => v.value === name)).filter(Boolean);
+          if (!groupVals.length) return;
+          const sub = document.createElement('div');
+          sub.className = 'chip-subgroup';
+          const subLbl = document.createElement('div');
+          subLbl.className = 'chip-subgroup-label';
+          subLbl.textContent = g.title;
+          sub.appendChild(subLbl);
+          const subRow = document.createElement('div');
+          subRow.className = 'chip-row';
+          groupVals.forEach(v => { placed.add(v._id); subRow.appendChild(makeChip(v)); });
+          sub.appendChild(subRow);
+          group.appendChild(sub);
+        });
+        // Any active values not covered above (e.g. newly added in Airtable) go under "More".
+        const leftovers = vals.filter(v => !placed.has(v._id));
+        if (leftovers.length) {
+          const sub = document.createElement('div');
+          sub.className = 'chip-subgroup';
+          const subLbl = document.createElement('div');
+          subLbl.className = 'chip-subgroup-label';
+          subLbl.textContent = 'More';
+          sub.appendChild(subLbl);
+          const subRow = document.createElement('div');
+          subRow.className = 'chip-row';
+          leftovers.forEach(v => subRow.appendChild(makeChip(v)));
+          sub.appendChild(subRow);
+          group.appendChild(sub);
+        }
+      } else {
+        const row = document.createElement('div');
+        row.className = 'chip-row';
+        vals.forEach(v => row.appendChild(makeChip(v)));
+        group.appendChild(row);
+      }
+    }
     container.appendChild(group);
   });
 }
@@ -1165,32 +1142,17 @@ function selectChip(catId, valueId, chipEl) {
 }
 
 function clearFilters() {
-  // Clear researcher filters
-  const searchEl = document.getElementById('search');
-  if (searchEl) searchEl.value = '';
-  document.querySelectorAll('.dynamic-filter').forEach(s => s.value = '');
+  // Exit quiz-match mode too, so "show everything" really means everything.
+  quizMatchSet = null;
+  try { sessionStorage.removeItem('quizMatches'); } catch(e){}
   activeLetter = '';
-  // Clear volunteer filters
   const friendlySearch = document.getElementById('friendly-search');
   if (friendlySearch) friendlySearch.value = '';
-  // Reset all chip filters to "All"
+  // Reset every filter control (chips or dropdown) to "All"
   Object.keys(chipFilters).forEach(catId => {
     chipFilters[catId] = null;
-    const allChip = document.getElementById('chip-all-' + catId);
-    if (allChip) allChip.classList.add('active');
-    const vals = catValues[catId] || [];
-    vals.forEach(v => {
-      const c = document.getElementById('chip-' + v._id);
-      if (c) c.classList.remove('active');
-    });
+    syncFriendlyControl(catId, null);
   });
-  renderCards();
-}
-
-function toggleDesc() {
-  showDesc = !showDesc;
-  const btn = document.getElementById('toggle-desc');
-  if (btn) btn.textContent = showDesc ? 'Hide descriptions' : 'Show descriptions';
   renderCards();
 }
 
@@ -1206,17 +1168,6 @@ function setLetter(l) {
   renderCards();
 }
 
-function getActiveFilters() {
-  const filters = {};
-  document.querySelectorAll('.dynamic-filter').forEach(sel => {
-    if (sel.value) {
-      const catId = sel.id.replace('f-cat-','');
-      filters[catId] = sel.value; // valueId
-    }
-  });
-  return filters;
-}
-
 // Does an org (its tags) satisfy a single tag filter? A direct tag match, OR — for a specific State
 // filter — the org is tagged "All states" (nationwide presence counts for every state).
 function tagSatisfies(tags, valueId) {
@@ -1228,25 +1179,30 @@ function tagSatisfies(tags, valueId) {
   return false;
 }
 
-function orgMatchesFilters(org, q, catFilters) {
-  const tags = orgTags[org._id] || [];
-  const tagValues = tags.map(t => t.value).join(' ').toLowerCase();
-  const blob = [org.name, org.desc, org.state, org.needsText, tagValues].join(' ').toLowerCase();
-
-  if (q && !blob.includes(q)) return false;
-
-  for (const [catId, valueId] of Object.entries(catFilters)) {
-    if (!tagSatisfies(tags, valueId)) return false;
-  }
-  return true;
+function renderCards() {
+  renderVolunteerCards();   // single Browse view
 }
 
-function renderCards() {
-  if (browseMode === 'volunteer') {
-    renderVolunteerCards();
-  } else {
-    renderResearcherCards();
-  }
+// Public total EXCLUDES declined orgs (they're hidden from the directory), so it matches the cards
+// actually shown — using the raw orgs.length would overstate the total and make the "showing X of Y"
+// line misfire even with no filter applied.
+function publicOrgTotal() { return orgs.filter(o => !o.declined).length; }
+
+// Count text for both views: just the total when nothing is narrowed, else "Showing X of Y".
+function formatResultsCount(shownCount) {
+  const total = publicOrgTotal();
+  if (shownCount === total) return total + ' organization' + (total !== 1 ? 's' : '');
+  return 'Showing ' + shownCount + ' of ' + total + ' organizations';
+}
+
+// Build a readable phrase from the stored quiz answers, e.g. "helping people vote, from home, in
+// Minnesota" — used in the quick-guide banners so the criteria (including the state) are visible.
+function buildQuizSummary(qs) {
+  const parts = [];
+  if (qs.goal && qs.goal.label) parts.push('<strong>' + qs.goal.label.toLowerCase() + '</strong>');
+  if (qs.way && qs.way.labels && qs.way.labels.length) parts.push('<strong>' + qs.way.labels.join(' or ').toLowerCase() + '</strong>');
+  if (qs.state) parts.push('in <strong>' + qs.state + '</strong>');
+  return parts.join(', ');
 }
 
 function buildCardHtml(org, i, alwaysDesc, alwaysTags) {
@@ -1278,64 +1234,80 @@ function buildCardHtml(org, i, alwaysDesc, alwaysTags) {
 function renderVolunteerCards() {
   // Search comes from the friendly search box
   const q = (document.getElementById('friendly-search').value || '').toLowerCase();
-  // Chip filters: chipFilters[catId] = valueId or null
-  const filtered = orgs.filter(o => {
+  // Base set = everything EXCEPT the A–Z letter, so the letter bar can reflect what the other
+  // filters (search, chips, State, quiz) actually leave available.
+  const base = orgs.filter(o => {
     if (o.declined) return false; // hidden from public
     if (quizMatchSet && !quizMatchSet.has(o._id)) return false; // arrived from the quiz: only its matches
     const tags = orgTags[o._id] || [];
     const blob = [o.name, o.desc, o.state, o.needsText,
       tags.map(t => t.value).join(' ')].join(' ').toLowerCase();
     if (q && !blob.includes(q)) return false;
-    // Apply each active chip filter
+    // Apply each active chip/dropdown filter
     for (const [catId, valueId] of Object.entries(chipFilters)) {
       if (!valueId) continue; // null = All, no filter
       if (!tagSatisfies(tags, valueId)) return false;
     }
     return true;
   });
+  // Letters that actually have matches under the current filters. If the active letter no longer
+  // has any (because another filter changed), drop it rather than show an empty list.
+  const available = new Set(base.map(o => (o.name[0] || '').toUpperCase()));
+  if (activeLetter && !available.has(activeLetter)) activeLetter = '';
+  let filtered = activeLetter ? base.filter(o => (o.name[0] || '').toUpperCase() === activeLetter) : base.slice();
   filtered.sort((a,b) => a.name.localeCompare(b.name));
+  renderAlphaBar(available);
 
+  // Update the green intro banner to lead with the total + how many match — either the quick-guide
+  // answers or the current search/filters — falling back to the plain welcome when nothing narrows
+  // the list. This keeps the prominent banner carrying the primary message instead of relying on the
+  // small count line below (and folds in the old separate "quick guide" notice).
+  const total = publicOrgTotal();
+  const shown = filtered.length;
+  const introText = document.getElementById('intro-text');
+  if (introText) {
+    if (quizMatchSet) {
+      const forText = quizSummaryHtml ? ' for ' + quizSummaryHtml : '';
+      introText.innerHTML =
+        'Of the <strong>' + total + '</strong> organizations in our database, here are the <strong>' + shown +
+        '</strong> that match your quick‑guide answers' + forText + '. ' +
+        '<button class="friendly-clear" onclick="clearFilters()">Show all ' + total + '</button><br>' +
+        'Search by name or keyword, or narrow the list further with the filters above.';
+    } else if (shown < total) {
+      introText.innerHTML =
+        'Of the <strong>' + total + '</strong> organizations in our database, here are the <strong>' + shown +
+        '</strong> that meet your search criteria. ' +
+        'Search by name or keyword, or narrow the list with the filters above.';
+    } else {
+      introText.innerHTML =
+        '<strong>Welcome!</strong> We have <strong>' + total + '</strong> organizations working to protect free and fair elections. ' +
+        '<em>Search by name or keyword</em>, or narrow the list using the filters below. ' +
+        'Click any organization to learn more and find contact information.';
+    }
+  }
+
+  // Secondary results count line (the banner above carries the primary message)
   const countEl = document.getElementById('results-count-v');
-  if (countEl) countEl.textContent =
-    filtered.length + ' organization' + (filtered.length !== 1 ? 's' : '') + ' found';
+  if (countEl) countEl.textContent = formatResultsCount(shown);
 
   const c = document.getElementById('cards-container-v');
   if (!c) return;
-  const banner = quizMatchSet
-    ? '<div style="background:#eef4ff;border:1px solid #cddcf5;border-radius:10px;padding:12px 16px;margin-bottom:1rem;font-size:14px;color:#1d4fa0;">Showing your <strong>' + filtered.length + '</strong> match' + (filtered.length !== 1 ? 'es' : '') + ' from the quick guide. <button class="friendly-clear" onclick="clearQuizMatches()" style="margin-left:8px;">Show all organizations</button></div>'
-    : '';
   if (!filtered.length) {
-    c.innerHTML = banner + '<div class="no-results">No organizations match your filters. <button class="friendly-clear" onclick="clearFilters()">Clear filters</button></div>';
+    c.innerHTML = '<div class="no-results">No organizations match your filters. <button class="friendly-clear" onclick="clearFilters()">Clear filters — show everything</button></div>';
   } else {
-    c.innerHTML = banner + filtered.map((org, i) => buildCardHtml(org, i, true, true)).join('');
+    c.innerHTML = filtered.map((org, i) => buildCardHtml(org, i, true, showTags)).join('');   // descriptions always on; tags follow the Hide-tags toggle
   }
   window._filtered = filtered;
 }
 
 function clearQuizMatches() { quizMatchSet = null; try { sessionStorage.removeItem('quizMatches'); } catch(e){} renderCards(); }
 
-function renderResearcherCards() {
-  const q = document.getElementById('search').value.toLowerCase();
-  const catFilters = getActiveFilters();
-
-  let filtered = orgs.filter(o => !o.declined && orgMatchesFilters(o, q, catFilters));
-  if (activeLetter) filtered = filtered.filter(o => o.name[0].toUpperCase() === activeLetter);
-  filtered.sort((a,b) => a.name.localeCompare(b.name));
-
-  renderAlphaBar();
-  document.getElementById('results-count').textContent =
-    filtered.length + ' organization' + (filtered.length !== 1 ? 's' : '') + ' found';
-
-  const c = document.getElementById('cards-container');
-  if (!filtered.length) { c.innerHTML = '<div class="no-results">No organizations match your filters.</div>'; return; }
-  c.innerHTML = filtered.map((org, i) => buildCardHtml(org, i)).join('');
-  window._filtered = filtered;
-}
-
-function renderAlphaBar() {
+function renderAlphaBar(available) {
   const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  const available = new Set(orgs.map(o => o.name[0]?.toUpperCase()));
+  // Caller passes the letters available under the current filters; fall back to all orgs if omitted.
+  if (!available) available = new Set(orgs.filter(o => !o.declined).map(o => (o.name[0] || '').toUpperCase()));
   const bar = document.getElementById('alpha-bar');
+  if (!bar) return;
   bar.innerHTML = letters.map(l =>
     `<button class="alpha-btn ${!available.has(l)?'disabled':''} ${activeLetter===l?'active':''}" onclick="setLetter('${l}')">${l}</button>`
   ).join('') + `<button class="alpha-all-btn ${activeLetter===''?'active':''}" onclick="setLetter('')">All</button>`;
@@ -1538,27 +1510,6 @@ function initMapFilters() {
   mapIsolateUserReset = false;
   document.getElementById('map-filters').innerHTML = '';
   addMapFilter();
-
-  // Default Filter 1 to Region → National
-  const regionCat = categories.find(function(c) { return c.fieldKey === 'geo'; });
-  if (regionCat) {
-    const catSel = document.getElementById('map-cat-' + mapFilters[0].id);
-    if (catSel) {
-      catSel.value = regionCat._id;
-      onMapCatChange(mapFilters[0].id);
-      // Then set value to National
-      const valSel = document.getElementById('map-val-' + mapFilters[0].id);
-      if (valSel) {
-        for (let i = 0; i < valSel.options.length; i++) {
-          if (valSel.options[i].text === 'National') {
-            valSel.selectedIndex = i;
-            mapFilters[0].valueId = valSel.options[i].value;
-            break;
-          }
-        }
-      }
-    }
-  }
   renderMap();
 }
 

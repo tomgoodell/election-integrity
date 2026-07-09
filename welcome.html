@@ -706,10 +706,10 @@ body {
         <div style="max-width:440px;">
           <select id="state-select" onchange="onStateChange()"
             style="width:100%;padding:13px 14px;border-radius:12px;font-size:15px;font-family:inherit;color:#fff;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.22);">
-            <option value="">Anywhere / national</option>
+            <option value="">← Any state — show me everything</option>
           </select>
           <p style="font-size:13px;color:rgba(255,255,255,0.55);margin-top:10px;line-height:1.6;">
-            National organizations are included with every state. Leave on "Anywhere" if location doesn't matter to you.
+            National organizations show up with every state. Leave on "Any state" to see all organizations nationwide.
           </p>
         </div>
         <div class="quiz-nav">
@@ -976,10 +976,10 @@ async function showResult() {
       const has = (type, val) => tags.some(t => t.type === type && t.value === val);
       if (!qGoal.values.some(v => has('focus', v))) return null;   // focus (Q1) is required
       // State (Q3) is a real filter: if a state is chosen, drop orgs focused on OTHER states.
-      // National orgs (no state tag) and "Nationwide (all states)" are included with every state.
+      // National orgs (no state tag) and "Nationwide" are included with every state.
       if (qState) {
         const stateVals = tags.filter(t => t.type === 'state').map(t => t.value);
-        const stateOk = stateVals.length === 0 || stateVals.includes(qState) || stateVals.includes('Nationwide (all states)');
+        const stateOk = stateVals.length === 0 || stateVals.includes(qState) || stateVals.includes('Nationwide');
         if (!stateOk) return null;
       }
       const wayMatch   = qWay.values.length ? qWay.values.some(v => has('help', v)) : false;
