@@ -86,6 +86,27 @@ key fully restores it. (Admin ▸ Manage lists still shows all categories.) Curr
 ## Deploy
 Commit to `main` and `git push` → Cloudflare auto-builds and publishes (~1 min). Verify at the root `/`.
 
+## Readability treatment (directory cards + filters in `index.html`)
+2026-07: darkened text / bumped sizes to fix a "light-gray-on-gray, too small" complaint. **Option "C" is
+live.** **Option "D" (maximum legibility) is the documented fallback** — to switch, apply the D column below.
+Only `index.html` was changed (the `/welcome` + `/ways` pages already use a larger, warmer palette).
+
+| Element (selector) | C — LIVE | D — fallback |
+|---|---|---|
+| Page ground (`body` background) | `#f7f7f5` | `#fbfbfa` |
+| Card (`.card`) border / padding | `#d7d7d1` / `1.15rem 1.4rem` | `#d2d2cc` / `1.2rem 1.45rem` |
+| Org name (`.card-name`) | `17px` / `600` / `#141414` | `18px` / `600` / `#111` |
+| Location line (`.card-geo`) | `13px` / `#5f5f5f` | `13px` / `#585858` |
+| Description (`.card-desc`) | `15px` / `#333` / lh `1.62` | `15.5px` / `#2b2b2b` / lh `1.66` |
+| Base tag (`.tag`) size | `11.5px` (semantic tag COLORS unchanged) | `12px` (colors unchanged) |
+| Chips (`.chip`) | `14px`, bg `#fff`, border `#c6c6bf`, text `#2b2b2b` | `14px`, bg `#fff`, border `#bdbdb5`, text `#262626` |
+| Filter label (`.friendly-filter-group-label`) | `12.5px` / `#222` | `13px` / `#1c1c1a` |
+| Filter hint (`… span`) | `13px` / `#565656` | `13px` / `#505050` |
+| Sub-group header (`.chip-subgroup-label`) | `11.5px` / `#6a6a6a` | `12px` / `#585858` |
+
+D's essence: near-white ground (gray shading almost gone) + slightly larger text; it trades compactness for
+a roomier, longer-scrolling page. Full side-by-side mock kept in chat (artifact "Readability options").
+
 ## Conventions
 - Keep `index.html`'s inline comments; match its plain-JS, explicit-render style (no framework).
 - Never expose the Airtable token or admin password in the client or in committed files.

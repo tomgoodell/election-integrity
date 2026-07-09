@@ -99,7 +99,10 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); -w
 
 <nav class="nav">
   <a href="welcome.html" class="nav-logo">Election Integrity <span>Resource Directory</span></a>
-  <a href="index.html" class="nav-link">Browse the directory →</a>
+  <div style="display:flex;gap:10px;align-items:center;">
+    <a href="index.html" class="nav-link">Browse the directory →</a>
+    <a href="welcome.html" onclick="try{sessionStorage.removeItem('cameFromQuiz');sessionStorage.removeItem('quizState');sessionStorage.removeItem('quizMatches');}catch(e){}" style="display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:#fff;background:#085041;text-decoration:none;padding:10px 18px;border-radius:8px;white-space:nowrap;box-shadow:0 2px 8px rgba(8,80,65,0.28);transition:all 0.15s;" onmouseover="this.style.background='#0a6a55';this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#085041';this.style.transform='none'">← Back to start page</a>
+  </div>
 </nav>
 
 <header class="guide-header">
@@ -148,31 +151,11 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); -w
         <a class="way-link" href="index.html#focus=Voter education">Find these organizations <span>→</span></a>
       </div>
     </div>
-
-    <div class="way">
-      <div class="way-icon">✉️</div>
-      <div class="way-main">
-        <div class="way-hed">Ballot curing</div>
-        <div class="way-desc">When you vote by mail, your ballot can be set aside for a small, fixable problem — a signature that doesn't quite match, a forgotten date. In many states you're allowed to "cure" (fix) it — but only if someone reaches you in time. Curing programs track down those voters and walk them through the fix before the deadline, so a ballot that was about to be thrown out actually counts.</div>
-        <div class="way-do"><b>You might:</b> call or visit flagged voters and help them complete the fix in time.</div>
-        <a class="way-link" href="index.html#focus=Ballot curing">Find these organizations <span>→</span></a>
-      </div>
-    </div>
   </section>
 
   <!-- Group 2 -->
   <section class="guide-group">
     <div class="group-title">Protecting the vote &amp; the count</div>
-
-    <div class="way">
-      <div class="way-icon">🗳️</div>
-      <div class="way-main">
-        <div class="way-hed">Poll working</div>
-        <div class="way-desc">Elections are run by regular people. Poll workers check in voters, hand out ballots, and keep the day running smoothly. Lots of places are short-staffed — and the job is usually <em>paid</em>, with training provided.</div>
-        <div class="way-do"><b>You might:</b> work a shift during early voting or on Election Day, often for a stipend.</div>
-        <a class="way-link" href="index.html#focus=Poll working %2F election admin">Find these organizations <span>→</span></a>
-      </div>
-    </div>
 
     <div class="way">
       <div class="way-icon">👀</div>
@@ -185,12 +168,12 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); -w
     </div>
 
     <div class="way">
-      <div class="way-icon">🔎</div>
+      <div class="way-icon">🗳️</div>
       <div class="way-main">
-        <div class="way-hed">Voter roll integrity &amp; re-registration</div>
-        <div class="way-desc">Voter lists are always changing, and people get removed — sometimes rightly (they moved or died), sometimes by mistake. This work keeps the rolls accurate: reviewing records, flagging wrongful removals, and — the part most people have never heard of — finding voters who were quietly dropped and helping them <em>re-register</em> before it's too late.</div>
-        <div class="way-do"><b>You might:</b> help review records, notify affected voters, or assist people with re-registering.</div>
-        <a class="way-link" href="index.html#focus=Voter roll integrity">Find these organizations <span>→</span></a>
+        <div class="way-hed">Poll working / election admin</div>
+        <div class="way-desc">Elections are run by regular people. Poll workers check in voters, hand out ballots, and keep the day running smoothly. Lots of places are short-staffed — and the job is usually <em>paid</em>, with training provided.</div>
+        <div class="way-do"><b>You might:</b> work a shift during early voting or on Election Day, often for a stipend.</div>
+        <a class="way-link" href="index.html#focus=Poll working %2F election admin">Find these organizations <span>→</span></a>
       </div>
     </div>
 
@@ -203,16 +186,36 @@ body { font-family: var(--sans); background: var(--paper); color: var(--ink); -w
         <a class="way-link" href="index.html#focus=Audits %26 verification">Find these organizations <span>→</span></a>
       </div>
     </div>
+
+    <div class="way">
+      <div class="way-icon">🔎</div>
+      <div class="way-main">
+        <div class="way-hed">Voter roll integrity</div>
+        <div class="way-desc">Voter lists are always changing, and people get removed — sometimes rightly (they moved or died), sometimes by mistake. This work keeps the rolls accurate: reviewing records, flagging wrongful removals, and — the part most people have never heard of — finding voters who were quietly dropped and helping them <em>re-register</em> before it's too late.</div>
+        <div class="way-do"><b>You might:</b> help review records, notify affected voters, or assist people with re-registering.</div>
+        <a class="way-link" href="index.html#focus=Voter roll integrity">Find these organizations <span>→</span></a>
+      </div>
+    </div>
+
+    <div class="way">
+      <div class="way-icon">✉️</div>
+      <div class="way-main">
+        <div class="way-hed">Ballot curing</div>
+        <div class="way-desc">When you vote by mail, your ballot can be set aside for a small, fixable problem — a signature that doesn't quite match, a forgotten date. In many states you're allowed to "cure" (fix) it — but only if someone reaches you in time. Curing programs track down those voters and walk them through the fix before the deadline, so a ballot that was about to be thrown out actually counts.</div>
+        <div class="way-do"><b>You might:</b> call or visit flagged voters and help them complete the fix in time.</div>
+        <a class="way-link" href="index.html#focus=Ballot curing">Find these organizations <span>→</span></a>
+      </div>
+    </div>
   </section>
 
   <!-- Group 3 -->
   <section class="guide-group">
-    <div class="group-title">The legal &amp; policy side</div>
+    <div class="group-title">Legal &amp; policy</div>
 
     <div class="way">
       <div class="way-icon">⚖️</div>
       <div class="way-main">
-        <div class="way-hed">Litigation &amp; legal defense</div>
+        <div class="way-hed">Litigation / legal defense</div>
         <div class="way-desc">When voters are wrongly turned away, or a new law makes voting harder than it should be, lawyers step in — defending voters in court and challenging rules that don't hold up.</div>
         <div class="way-do"><b>You might:</b> offer pro bono legal time, or — as a non-lawyer — help with research, intake, or supporting the voters involved.</div>
         <a class="way-link" href="index.html#focus=Litigation %2F legal defense">Find these organizations <span>→</span></a>
