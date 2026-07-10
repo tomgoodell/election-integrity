@@ -675,6 +675,7 @@ let showDesc = true;
 let showTags = true;
 let activeLetter = '';
 let quizMatchSet = null;       // Set of org ids when arriving from the welcome quick guide; null = show all
+let stateExactOnly = false;    // when a specific state is picked, true = hide Nationwide orgs (exact-state only)
 let quizSummaryHtml = '';      // human-readable description of the quiz answers (goal, ways, state) for the banner
 let adminActiveLetter = ''; // alpha filter for Approved Organizations tab
 // chipFilters: map of catId -> selected valueId for the volunteer chip UI
@@ -991,6 +992,18 @@ function syncFriendlyControl(catId, valueId) {
 // Citizen dropdown (e.g. State) change handler — mirrors selectChip for large categories.
 function selectFriendlyDropdown(catId, value) {
   chipFilters[catId] = value || null;
+  // The "only this state" toggle applies only to a SPECIFIC state (not "Any" or "Nationwide").
+  const cat = categories.find(c => c._id === catId);
+  if (cat && cat.fieldKey === 'state') {
+    const isSpecific = value && valueIndex[value] && valueIndex[value].value !== ALL_STATES;
+    const wrap = document.getElementById('state-exact-wrap');
+    if (wrap) wrap.style.display = isSpecific ? 'flex' : 'none';
+    if (!isSpecific) {                       // reset when it can't apply
+      stateExactOnly = false;
+      const cb = document.getElementById('state-exact-only');
+      if (cb) cb.checked = false;
+    }
+  }
   renderCards();
 }
 
@@ -1064,6 +1077,16 @@ function buildFriendlyFilters() {
       sel.innerHTML = `<option value="">Any ${cat.name.toLowerCase()}</option>` +
         vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
       group.appendChild(sel);
+      if (cat.fieldKey === 'state') {
+        // "Only this state" toggle — hidden until a SPECIFIC state (not Nationwide) is chosen. When
+        // on, the state filter drops the Nationwide fallback so only orgs tagged for that exact state show.
+        const ex = document.createElement('label');
+        ex.id = 'state-exact-wrap';
+        ex.style.cssText = 'display:none;align-items:center;gap:7px;margin-top:8px;font-size:13px;color:#444;cursor:pointer;';
+        ex.innerHTML = '<input type="checkbox" id="state-exact-only" style="width:15px;height:15px;accent-color:#1a1a1a;cursor:pointer;"> Only organizations specific to this state (hide nationwide)';
+        ex.querySelector('input').onchange = e => { stateExactOnly = e.target.checked; renderCards(); };
+        group.appendChild(ex);
+      }
     } else {
       // Chip buttons. One "All" chip for the whole category (selection is single-select), then
       // either flat chips or, if this category is grouped, labelled sub-sections.
@@ -1148,6 +1171,9 @@ function clearFilters() {
   quizMatchSet = null;
   try { sessionStorage.removeItem('quizMatches'); } catch(e){}
   activeLetter = '';
+  stateExactOnly = false;
+  const exCb = document.getElementById('state-exact-only'); if (exCb) exCb.checked = false;
+  const exWrap = document.getElementById('state-exact-wrap'); if (exWrap) exWrap.style.display = 'none';
   const friendlySearch = document.getElementById('friendly-search');
   if (friendlySearch) friendlySearch.value = '';
   // Reset every filter control (chips or dropdown) to "All"
@@ -1255,7 +1281,13 @@ function renderVolunteerCards() {
     // Apply each active chip/dropdown filter
     for (const [catId, valueId] of Object.entries(chipFilters)) {
       if (!valueId) continue; // null = All, no filter
-      if (!tagSatisfies(tags, valueId)) return false;
+      const vi = valueIndex[valueId];
+      if (stateExactOnly && vi && vi.catKey === 'state') {
+        // "Only this state": require the exact state tag — no Nationwide fallback.
+        if (!tags.some(t => t.valueId === valueId)) return false;
+      } else if (!tagSatisfies(tags, valueId)) {
+        return false;
+      }
     }
     return true;
   });
