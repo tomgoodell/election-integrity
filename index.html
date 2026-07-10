@@ -82,6 +82,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 .friendly-clear:hover { color: #1a1a1a; }
 /* Alpha bar */
 .alpha-bar { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 1rem; }
+#results-summary { font-size: 14px; color: #555; line-height: 1.55; margin-bottom: 1rem; }
+#results-summary:empty { display: none; }
 .alpha-btn { width: 28px; height: 28px; font-size: 12px; font-weight: 600; border: 1px solid #b5d4f4; border-radius: 6px; background: #e6f1fb; color: #0c447c; cursor: pointer; font-family: inherit; display: flex; align-items: center; justify-content: center; transition: all 0.1s; }
 .alpha-btn:hover { background: #b5d4f4; border-color: #0c447c; }
 .alpha-btn.active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
@@ -376,6 +378,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 
     <!-- A–Z quick jump -->
     <div class="alpha-bar" id="alpha-bar"></div>
+
+    <!-- Results summary — repeats the count here since the top banner scrolls off once you're down at the cards -->
+    <div id="results-summary"></div>
 
     <div id="cards-container-v"><div class="loading">Loading organizations…</div></div>
 
@@ -1337,6 +1342,25 @@ function renderVolunteerCards() {
         '<strong>Welcome!</strong> We have <strong>' + total + '</strong> organizations working to protect free and fair elections. ' +
         '<em>Search by name or keyword</em>, or narrow the list using the filters below. ' +
         'Click any organization to learn more and find contact information.';
+    }
+  }
+
+  // Repeat the summary just above the cards (below the A–Z bar), since the top banner scrolls off
+  // once you're browsing. "…filters above" is always correct here.
+  const summaryEl = document.getElementById('results-summary');
+  if (summaryEl) {
+    if (quizMatchSet) {
+      summaryEl.innerHTML =
+        'Of the <strong>' + total + '</strong> organizations in our database, here are the <strong>' + shown +
+        '</strong> that match your quick‑guide answers. ' +
+        '<button class="friendly-clear" onclick="clearFilters()">Show all ' + total + '</button>';
+    } else if (shown < total) {
+      summaryEl.innerHTML =
+        'Of the <strong>' + total + '</strong> organizations in our database, here are the <strong>' + shown +
+        '</strong> that meet your search criteria. Search by name or keyword, or narrow the list with the filters above.';
+    } else {
+      summaryEl.innerHTML =
+        'Showing all <strong>' + total + '</strong> organizations. Search by name or keyword, or narrow the list with the filters above.';
     }
   }
 
