@@ -997,8 +997,14 @@ function selectFriendlyDropdown(catId, value) {
   if (cat && cat.fieldKey === 'state') {
     const isSpecific = value && valueIndex[value] && valueIndex[value].value !== ALL_STATES;
     const wrap = document.getElementById('state-exact-wrap');
-    if (wrap) wrap.style.display = isSpecific ? 'flex' : 'none';
-    if (!isSpecific) {                       // reset when it can't apply
+    if (wrap) wrap.style.display = isSpecific ? 'block' : 'none';
+    if (isSpecific) {
+      const st = valueIndex[value].value;
+      const note = document.getElementById('state-exact-note');
+      if (note) note.innerHTML =
+        'Showing organizations that serve <strong>' + st + '</strong> — this includes <strong>nationwide</strong> ' +
+        'organizations (which work in every state) as well as organizations <strong>specific to ' + st + '</strong>.';
+    } else {                                 // reset when it can't apply
       stateExactOnly = false;
       const cb = document.getElementById('state-exact-only');
       if (cb) cb.checked = false;
@@ -1078,14 +1084,21 @@ function buildFriendlyFilters() {
         vals.map(v => `<option value="${v._id}">${v.value}</option>`).join('');
       group.appendChild(sel);
       if (cat.fieldKey === 'state') {
-        // "Only this state" toggle — hidden until a SPECIFIC state (not Nationwide) is chosen. When
-        // on, the state filter drops the Nationwide fallback so only orgs tagged for that exact state show.
-        const ex = document.createElement('label');
-        ex.id = 'state-exact-wrap';
-        ex.style.cssText = 'display:none;align-items:center;gap:7px;margin-top:8px;font-size:13px;color:#444;cursor:pointer;';
-        ex.innerHTML = '<input type="checkbox" id="state-exact-only" style="width:15px;height:15px;accent-color:#1a1a1a;cursor:pointer;"> Only organizations specific to this state (hide nationwide)';
-        ex.querySelector('input').onchange = e => { stateExactOnly = e.target.checked; renderCards(); };
-        group.appendChild(ex);
+        // Explanatory note + "hide nationwide" toggle — both hidden until a SPECIFIC state (not
+        // Nationwide) is chosen. The note's state name is filled in by selectFriendlyDropdown().
+        const wrap = document.createElement('div');
+        wrap.id = 'state-exact-wrap';
+        wrap.style.cssText = 'display:none;margin-top:8px;';
+        const note = document.createElement('div');
+        note.id = 'state-exact-note';
+        note.style.cssText = 'font-size:13px;color:#555;line-height:1.5;margin-bottom:6px;';
+        wrap.appendChild(note);
+        const lbl = document.createElement('label');
+        lbl.style.cssText = 'display:flex;align-items:center;gap:7px;font-size:13px;color:#444;cursor:pointer;';
+        lbl.innerHTML = '<input type="checkbox" id="state-exact-only" style="width:15px;height:15px;accent-color:#1a1a1a;cursor:pointer;"> Hide the nationwide ones — show only organizations specific to this state';
+        lbl.querySelector('input').onchange = e => { stateExactOnly = e.target.checked; renderCards(); };
+        wrap.appendChild(lbl);
+        group.appendChild(wrap);
       }
     } else {
       // Chip buttons. One "All" chip for the whole category (selection is single-select), then
