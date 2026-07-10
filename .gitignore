@@ -8,3 +8,6 @@
 
 # Node
 node_modules/
+
+# Local-only working docs — contain editorial/partisan notes; keep OUT of this public repo
+TAG_REVIEW.md

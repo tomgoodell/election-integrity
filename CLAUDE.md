@@ -17,9 +17,14 @@ See git history.
 ## Files
 - `index.html` — the entire app (HTML + CSS + JS in one file, heavily commented — **keep the
   comments**). No framework: state is module-level variables, rendering is explicit function calls.
-- `functions/airtable.js` — Pages Function served at `/airtable`. Proxies Airtable and **enforces auth**.
-- `welcome.html` — public landing page (`/welcome`).
-- `backup.html` / `import.html` — admin data tools.
+  Browse is a **single view** (the old Citizen/Researcher toggle was merged 2026-07): a search box,
+  filters (chip buttons for short categories, a dropdown for States), always-on descriptions with
+  **Hide-descriptions / Hide-tags** toggles, and an **A–Z** bar.
+- `functions/airtable.js` — Pages Function served at `/airtable`. Proxies Airtable, **enforces auth**,
+  and **edge-caches public reads** (see "## Caching").
+- `welcome.html` — public landing page (`/welcome`); includes the 3-question "quick guide" quiz.
+- `ways.html` — plain-language "Ways to help" guide (`/ways`), kept consistent with the Focus-area filter.
+- `backup.html` / `import.html` / `add-states.html` — admin/data tools.
 
 **Pages Functions routing:** `functions/airtable.js` is served at `/airtable` (no `functions/` prefix).
 Don't "fix" that.
@@ -37,7 +42,8 @@ Rules:
   env var (Cloudflare Secret + local `.dev.vars`). It's entered at login, validated server-side, held
   in memory, and sent as `X-Admin-Password` on the four API helpers (`atGet`/`atCreate`/`atUpdate`/`atDelete`).
 - All Airtable access goes through the function — never call Airtable directly from client JS.
-- `atGet` uses `cache: 'no-store'` so the directory always shows fresh data after edits/backfills.
+- `atGet` sends `cache: 'no-store'` on the client fetch, but the **server** edge-caches anonymous public
+  reads (24h) while admin reads stay live — see "## Caching".
 
 ## Environment variables (Cloudflare Pages → Settings → Variables and secrets)
 - `AIRTABLE_TOKEN` — Airtable personal access token (**Secret**).
@@ -51,27 +57,62 @@ Relational, with **plain-text record IDs as foreign keys** (deliberate — not A
 - **Organizations** — approved records (Name, Description, Email, Phone, Website, `State` [free text =
   HQ location], NeedsText, `Declined` [bool], …).
 - **Pending** — submitted-but-unapproved orgs (same shape).
-- **Categories** — `Name`, `FieldKey`, `SortOrder`, `Active`. Active FieldKeys: `demo` (Demographic
-  focus), `need` (Needs), `state` (States), `phase` (Election phases), `work` (Activities), `geo`
-  (Regions), `voter` (Voter reg focus), `partisan` (Partisan affiliation).
+- **Categories** — `Name`, `FieldKey`, `SortOrder`, `Active`. Taxonomy reworked 2026-07. **Public
+  filters:** `focus` (Focus areas — "What they work on"), `help` (Ways to get involved — "How you can
+  help"), `demo` (communities), `state` (States, incl. the special value **`Nationwide`**). `partisan`
+  and `geo` (Regions) are still active in Airtable but **hidden** from the public UI (see HIDDEN_CAT_KEYS).
+  The old `work`/`phase`/`voter`/`need` categories are retired (hidden).
 - **CategoryValues** — options within a category (`CategoryID`, `CategoryName`, `CategoryKey`, `Value`,
   `SortOrder`, `Active`).
 - **OrgTags** — join table: `OrgID`, `ValueID`, `TagType` (= the category FieldKey, e.g. `state`, `geo`).
 
-### Filtering model — both Browse and the map filter via OrgTags (never the `State` text field)
-- **Region** (`geo`: Local / State / National / International) encodes an org's **scope**; every org has one.
-- **States** (`state`) = an org's **focus state**, only meaningful for state-scope orgs. The `State`
-  text field is HQ location only and is **not** used for filtering — the old free-text state matcher
-  was removed. National orgs surface via Region = National. (LWV national is tagged with all 50 states;
-  that's the tentative pattern for a future "serves all states" scope.)
+### Filtering model — Browse and the map filter via OrgTags (never the `State` text field)
+- **Focus areas** (`focus`) = what the org works on (Voter registration, GOTV, Ballot curing, Poll
+  observing, Audits & verification, Litigation, Research, Voter ID assistance, …). In Browse this filter
+  renders as labelled **sub-groups** (Helping people vote / Protecting the vote & the count / Legal &
+  policy / Information & truth) via `CATEGORY_GROUPS`; a value not listed there falls under a "More" heading.
+- **Ways to get involved** (`help`) = how a person plugs in (calling/texting, door knocking, postcards,
+  pro-bono legal, translation, data/tech, communications, donating, poll working/observing, general vol).
+- **State** (`state`): an org is tagged with specific state(s) **or** the special value **`Nationwide`**
+  (`const ALL_STATES = 'Nationwide'`), which counts as present in every state. Selecting a specific state
+  matches that state's orgs **plus** Nationwide orgs; the **"Only organizations specific to this state"**
+  checkbox (`stateExactOnly`) drops the Nationwide fallback and shows exact-state orgs only. The `State`
+  free-text field on Organizations is HQ/label only and is **not** used for filtering.
 - **Declined** orgs are hidden from Browse **and** the map (`renderMap` uses
   `mapOrgs = orgs.filter(o => !o.declined)`).
+- **`partisan`** (Partisan affiliation) is **hidden** from the public UI (kept only for internal reference).
 
 ### Hiding a category from the public UI
-`const HIDDEN_CAT_KEYS = ['partisan'];` (near the `T_` table-name constants in `index.html`) hides a
-category's FieldKey from the **public** interface — filter dropdowns, submission form, and card/modal
-tags. It's **display-only**: the Airtable data (category, values, org tags) is untouched, so removing a
-key fully restores it. (Admin ▸ Manage lists still shows all categories.) Currently hides Partisan affiliation.
+`const HIDDEN_CAT_KEYS = ['partisan', 'work', 'phase', 'need', 'voter', 'geo'];` (near the `T_`
+table-name constants in `index.html`) hides those FieldKeys from the **public** interface — filter
+controls, submission form, and card/modal tags. It's **display-only**: the Airtable data (category,
+values, org tags) is untouched, so removing a key fully restores it. (Admin ▸ Manage lists still shows
+all categories.) Currently hides Partisan affiliation, Regions (`geo`), and the retired
+work/phase/voter/need categories.
+
+### Org data & tags (current state)
+- **~56 organizations.** On 2026-07-09/10 every org's tags were **rebuilt from fresh web research**
+  (the prior tags were throwaway test data). Full record + rationale: `TAG_REVIEW.md`. New taxonomy
+  values added then: focus **`Voter ID assistance`**; communities **`People with disabilities`**,
+  **`Immigrants / new citizens`**.
+- **Scope:** the directory lists nonprofit and civic organizations that help eligible voters register,
+  stay informed, cast a ballot, and have that ballot counted. (Detailed editorial inclusion criteria are
+  kept in private project notes, not in this public repo.)
+- Bulk tag/org changes are done with one-off scripts that hit Airtable **directly** with the token
+  (kept out of the repo) — this **bypasses the function's cache purge** (see "## Caching").
+
+## Caching (public reads)
+The `/airtable` function serves **anonymous** GETs of the public tables from Cloudflare's edge cache
+(`PUBLIC_CACHE_TTL`, currently 24h) to keep Airtable API usage low. **Admin requests bypass the cache**
+(live data; `atGet` adds a cache-buster when logged in). A write **through the function** (admin
+POST/PATCH/DELETE) purges the affected table's cached copy, so admin edits show publicly within ~a minute.
+- **Gotcha:** one-off bulk scripts that write **directly to Airtable** (with the token) do NOT purge the
+  edge cache → the public site can lag up to the TTL. To push such changes live now, make any tag edit +
+  Save in the admin panel (purges Organizations + OrgTags), or wait out the TTL. The admin panel itself
+  always shows live data. (Local `wrangler` has no such lag — restart it or hard-refresh.)
+- **"Save → Server error 500" right after a bulk tag rebuild** = the loaded admin tab holds stale in-memory
+  OrgTag IDs (the old records were deleted), so it tries to delete tags that no longer exist. Fix:
+  **hard-refresh the admin panel** (Ctrl+F5) to reload current IDs.
 
 ## Local development
 - Needs Node + `wrangler` (global). From the repo: `wrangler pages dev . --port 8788`, then open
